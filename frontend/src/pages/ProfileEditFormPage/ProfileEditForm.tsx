@@ -23,6 +23,7 @@ import ProfileSnippetsSection from './ProfileSnippetsSection';
 import { createTranslatedResolver } from './TranslatedYupResolver';
 import convertFormDataForUpdating from './ConvertDataFunction';
 import FormFields from './FormFields';
+import { profileEditMockData } from './ProfileEditMockData';
 
 function ProfileEditForm() {
   const { t } = useTranslation();
@@ -31,7 +32,7 @@ function ProfileEditForm() {
   });
 
   const currentUserId = useSelector(
-    (state: RootReducerType) => state.user.userInfo.id
+    (state: RootReducerType) => state.user.userInfo?.id,
   );
 
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -79,8 +80,17 @@ function ProfileEditForm() {
         newPassword: '',
         confirmPassword: '',
       });
+    } else if (!data && !isLoading && !currentUserId) {
+      form.setValues({
+        name: profileEditMockData.name,
+        login: profileEditMockData.login,
+        email: profileEditMockData.email,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
     }
-  }, [data]);
+  }, [data, isLoading, error, currentUserId]);
 
   const handleSubmit = async (values: ProfileEditFormValues) => {
     try {
@@ -92,9 +102,8 @@ function ProfileEditForm() {
     }
   };
 
-  if (!currentUserId) return <div>{t('errors.userNotFound')}</div>;
   if (isLoading) return <div>{profileEditText('loading')}</div>;
-  if (error) return <div>{error.message}</div>;
+  // if (error) return <div>{error.message}</div>;
 
   return (
     <AppShell header={{ height: 70 }} style={{ height: '100vh' }}>
