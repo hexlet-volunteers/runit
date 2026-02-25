@@ -18,6 +18,9 @@ import userSettingsSlice, {
 } from './userSettingsSlice';
 import type { RootReducerType } from '../types/slices';
 
+//новый slise, actions для нового лендинга!!!!!
+import codeReducer, { actions as codeActions } from '../newSlices/editorSlice';
+
 export const rootReducer = combineReducers<RootReducerType>({
   editor: editorReducer,
   terminal: terminalReducer,
@@ -27,6 +30,7 @@ export const rootReducer = combineReducers<RootReducerType>({
   user: userSlice,
   checkboxes: checkboxesSlice,
   userSettings: userSettingsSlice,
+  code: codeReducer,// для редактора нового лендинга
 });
 
 export type RootState = ReturnType<typeof rootReducer>;
@@ -47,5 +51,6 @@ export const actions = {
   ...userActions,
   ...checkboxesActions,
   ...userSettingsActions,
+  ...codeActions,
   runCode,
 };

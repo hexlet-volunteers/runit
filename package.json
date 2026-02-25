@@ -37,7 +37,7 @@
     "@trpc/server": "^11.6.0",
     "better-sqlite3": "^12.4.1",
     "drizzle-orm": "^0.44.6",
-    "fastify": "^5.6.1",
+    "fastify": "^5.7.3",
     "zod": "^4.1.11"
   },
   "devDependencies": {
