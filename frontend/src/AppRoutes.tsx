@@ -12,7 +12,7 @@ import routes from './routes';
 import ScrollToTop from './utils/scrollToTop.js';
 
 import DefaultLoader from './components/Loaders/DefaultLoader';
-import ProfileEditForm from './pages/ProfileEditForm/ProfileEditForm';
+import ProfileEditPage from './pages/ProfileEditFormPage/ProfileEditForm';
 
 const ProfilePageNew = lazy(() => import('./pages/ProfilePage'));
 // const Landing = lazy(() => import('./pages/landing/Landing'));
@@ -64,7 +64,7 @@ function AppRoutes() {
       <ScrollToTop />
       <Routes>
         <Route path={routes.profilePageNew()} element={<ProfilePageNew />} />
-        <Route path={routes.editProfilePath()} element={<ProfileEditForm />} />
+        <Route path={routes.editProfilePath()} element={<ProfileEditPage />} />
         <Route
           element={
             <ProtectedRoute
@@ -75,7 +75,7 @@ function AppRoutes() {
             />
           }
         >
-          <Route index element={<Landing/>} />
+          <Route index element={<Landing />} />
         </Route>
         <Route element={<Layout />}>
           <Route path={routes.oldLandingPath()} element={<OldLanding />} />
@@ -92,10 +92,6 @@ function AppRoutes() {
               />
             }
           >
-            <Route
-              path={routes.myProfilePagePath()}
-              element={<MyProfileRoute />}
-            />
             <Route
               path={routes.settingsPagePath()}
               element={<SettingsPage />}
