@@ -206,6 +206,15 @@
     "java": "Java",
     "ruby": "Ruby"
   },
+  "privPolicy": {
+    "header": "Privacy policy will be available soon"
+  },
+  "publicOffer": {
+    "header": "Public offer will be available soon"
+  },
+  "consentToProc": {
+    "header": "Personal data processing consent will be available soon"
+  },
   "modals": {
     "inDevelopment": {
       "message": "This feature is not available yet",
@@ -357,19 +366,24 @@
     "signInButton": "Sign In"
   },
   "signUp": {
-    "footer": {
-      "signInHeader": "Already have an account? "
-    },
     "pageHeader": "Signing Up",
     "username": "Username",
     "email": "Email",
     "password": "Password",
-    "checkedOutAgree": "I checked out and agree",
-    "userAgreement": "Пользовательское соглашение(v1.3)",
+    "checkedOutAgree": "I checked out and agree ",
+    "licenseAgreement": "User license agreement(v1.3), ",
+    "privacyPolicy": "Privacy policy(v2.0), ",
+    "publicOffer": "Public offer(v1.1), ",
+    "consentToProcessing": "Consent to the processing of personal data(v1.0)",
     "registerButton": "Sign up",
     "haveAnAccount": "I already have an account",
     "or": "or",
-    "signUpFailed": "Sign Up is failed"
+    "vkBtn": "VK",
+    "yandexBtn": "Yandex ID",
+    "gitHubBtn": "GitHub",
+    "signUpFailed": "Sign up is failed",
+    "success": "Registration completed successfully",
+    "agreementRequired": "Agreement with terms required"
   },
   "snippetActions": {
     "additionalHeader": "Additional Actions",

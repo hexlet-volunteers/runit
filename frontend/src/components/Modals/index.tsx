@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { actions } from '../../slices';
 
-import SignUpModal from './SignUp';
+import NewSignUpModal from './NewSignUp';
 import SignInModal from './SignIn';
 import RemoveAccount from './RemoveAccount';
 import NewSnippet from './NewSnippet';
@@ -17,7 +17,7 @@ import RemoveAvatarModal from './RemoveAvatar';
 import DeleteSnippetModal from './DeleteSnippetModal';
 
 const modals = {
-  signingUp: SignUpModal,
+  signingUp: NewSignUpModal,
   signingIn: SignInModal,
   removeAccount: RemoveAccount,
   newSnippet: NewSnippet,

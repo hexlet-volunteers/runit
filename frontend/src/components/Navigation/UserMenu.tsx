@@ -21,12 +21,12 @@ function UserMenu() {
     keyPrefix: 'snippetActions',
   });
   const dispatch = useDispatch();
-  const username = useSelector(
-    (state: RootReducerType) => state.user.userInfo.username,
-  );
-  const avatar = useSelector(
-    (state: RootReducerType) => state.userSettings.avatar,
-  );
+  // const username = useSelector(
+  //  (state: RootReducerType) => state.user.userInfo.username,
+  // );
+  // const avatar = useSelector(
+  //  (state: RootReducerType) => state.userSettings.avatar,
+  // );
 
   const handleNewSnippet = () => {
     dispatch(actions.openModal({ type: 'newSnippet' }));
@@ -39,23 +39,11 @@ function UserMenu() {
         className="d-flex p-0 px-lg-2 align-items-center nav-link"
         variant="link"
       >
-        <div className="logo-height">
-          {avatar ? (
-            <img
-              alt=""
-              className="rounded-circle overflow-hidden h-100"
-              height="100%"
-              src={avatar}
-              width="100%"
-            />
-          ) : (
-            <Avatar username={username} />
-          )}
-        </div>
+        <div className="logo-height"></div>
         <span className="visually-hidden">{tPA('header')}</span>
       </Dropdown.Toggle>
       <Dropdown.Menu as="ul">
-        <Dropdown.Header as="li">{username}</Dropdown.Header>
+        <Dropdown.Header as="li">username</Dropdown.Header>
         <li>
           <Dropdown.Item as={Button} onClick={handleNewSnippet}>
             {tSA('new')}
