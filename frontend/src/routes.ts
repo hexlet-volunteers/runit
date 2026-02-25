@@ -72,6 +72,9 @@ export default {
   forgotPassPagePath: () => '/forgot_password',
   resetPassPagePath: (hash = ':hash') => `/recovery/${hash}`,
   licenseAgreementPath: () => '/licenseAgreement',
+  privacyPolicyPath: () => '/policy',
+  publicOfferPath: () => '/offer',
+  consentToProcessingPath: () => '/consent',
   snippetPagePath: (username = ':username', slug = ':slug') =>
     `u/${username}/snippets/${slug}`,
   embedSnippetPagePath: (username = ':username', slug = ':slug') =>

@@ -23,9 +23,9 @@ import AdminPanelButton from './AdminPanelButton';
 function Navigation() {
   const { isLoggedIn } = useAuth();
   const { t: tN } = useTranslation('translation', { keyPrefix: 'navbar' });
-  const isAdmin = useSelector(
-    (state: RootReducerType) => state.user.userInfo.isAdmin,
-  );
+  //  const isAdmin = useSelector(
+  //  (state: RootReducerType) => state.user.userInfo.isAdmin,
+  // );
   const guestUser = localStorage.getItem('guestUserData');
 
   return (
@@ -49,7 +49,7 @@ function Navigation() {
             as="ul"
             className="flex-sm-row flex-column flex-wrap ms-sm-auto align-items-sm-center align-items-start gap-2"
           >
-            {isAdmin && isLoggedIn && <AdminPanelButton />}
+            {isLoggedIn && <AdminPanelButton />}
             <LanguageSelector />
             <ThemeSelector />
             {isLoggedIn && !guestUser && <UserMenu />}

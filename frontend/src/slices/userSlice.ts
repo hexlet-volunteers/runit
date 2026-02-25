@@ -27,6 +27,12 @@ const userSlice = createSlice({
     setUserInfo: (state, { payload }) => {
       state.userInfo = payload;
     },
+    setCurrentUser: (state, { payload }) => {
+      console.log('Текущий state ДО:', JSON.parse(JSON.stringify(state)));
+      state.userInfo = payload;
+      state.status = 'fulfilled';
+      console.log('Текущий state ПОСЛЕ:', JSON.parse(JSON.stringify(state)));
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -41,5 +47,6 @@ const userSlice = createSlice({
 });
 
 export const { actions } = userSlice;
+export const { setCurrentUser } = userSlice.actions;
 
 export default userSlice.reducer;

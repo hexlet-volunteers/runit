@@ -15,18 +15,18 @@ import DefaultLoader from './components/Loaders/DefaultLoader';
 import ProfileEditPage from './pages/ProfileEditFormPage/ProfileEditForm';
 
 const ProfilePageNew = lazy(() => import('./pages/ProfilePage'));
-// const Landing = lazy(() => import('./pages/landing/Landing'));
+
 const Landing = lazy(() => import('./pages/landing/home-page'));
 
-const OldLanding = lazy(() => import('./pages/old-landing'));
-
-const ProfilePage = lazy(() => import('./pages/profile'));
 const SettingsPage = lazy(() => import('./pages/settings'));
 const SnippetPage = lazy(() => import('./pages/snippet'));
 const AboutPage = lazy(() => import('./pages/about'));
 const SignUpPage = lazy(() => import('./pages/signup'));
 const SignInPage = lazy(() => import('./pages/signin'));
 const LicenseAgreement = lazy(() => import('./pages/license-agreement'));
+const PrivacyPolicy = lazy(() => import('./pages/privacyPolicy'));
+const PublicOffer = lazy(() => import('./pages/publicOffer'));
+const ConsentToProcesing = lazy(() => import('./pages/consentToProcessing'));
 const ForgotPasswordPage = lazy(() => import('./pages/forgot-password'));
 const ResetPasswordPage = lazy(() => import('./pages/reset-password'));
 const NotFoundPage = lazy(() => import('./pages/404'));
@@ -66,6 +66,16 @@ function AppRoutes() {
         <Route path={routes.profilePageNew()} element={<ProfilePageNew />} />
         <Route path={routes.editProfilePath()} element={<ProfileEditPage />} />
         <Route
+          path={routes.licenseAgreementPath()}
+          element={<LicenseAgreement />}
+        />
+        <Route path={routes.privacyPolicyPath()} element={<PrivacyPolicy />} />
+        <Route path={routes.publicOfferPath()} element={<PublicOffer />} />
+        <Route
+          path={routes.consentToProcessingPath()}
+          element={<ConsentToProcesing />}
+        />
+        <Route
           element={
             <ProtectedRoute
               // FIXME: Всегда isAllowed пока не готова авторизация
@@ -78,12 +88,9 @@ function AppRoutes() {
           <Route index element={<Landing />} />
         </Route>
         <Route element={<Layout />}>
-          <Route path={routes.oldLandingPath()} element={<OldLanding />} />
           <Route path={routes.homePagePath()} element={<SnippetPage />} />
           <Route path={routes.snippetPagePath()} element={<SnippetPage />} />
           <Route path={routes.aboutPagePath()} element={<AboutPage />} />
-          <Route path={routes.profilePagePath()} element={<ProfilePage />} />
-
           <Route
             element={
               <ProtectedRoute
@@ -117,10 +124,6 @@ function AppRoutes() {
           <Route
             path={routes.resetPassPagePath()}
             element={<ResetPasswordPage />}
-          />
-          <Route
-            path={routes.licenseAgreementPath()}
-            element={<LicenseAgreement />}
           />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

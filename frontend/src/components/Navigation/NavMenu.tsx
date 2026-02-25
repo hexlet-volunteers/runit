@@ -11,17 +11,17 @@ import routes from '../../routes';
 
 function MySnippetsLink() {
   const { t: tN } = useTranslation('translation', { keyPrefix: 'navbar' });
-  const username = useSelector(
-    (state: RootReducerType) => state.user.userInfo.username,
-  );
+  // const username = useSelector(
+  //  (state: RootReducerType) => state.user.userInfo.username,
+  // );
 
   return (
     <Nav.Item as="li">
       <Nav.Link
         as={Link}
         className="icon-link"
-        eventKey={routes.profilePagePath(username)}
-        to={routes.profilePagePath(username)}
+        eventKey={routes.profilePageNew()}
+        to={routes.profilePageNew()}
       >
         <span>
           <GridFill className="bi me-1" />

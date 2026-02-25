@@ -30,9 +30,11 @@ settings:
     - .jsx
     - .ts
     - .tsx
+    - .d.ts
   import/parsers:
     '@typescript-eslint/parser':
       - .ts
+      - d.ts
   import/resolver:
     node:
       extensions:
@@ -40,10 +42,11 @@ settings:
         - .jsx
         - .ts
         - .tsx
+        - .d.ts
 
 rules:
   import/no-cycle: [2, { maxDepth: 1 }]
-  'react/jsx-filename-extension': ['error', 'extensions': ['.jsx', '.tsx']]
+  'react/jsx-filename-extension': ['error', { 'extensions': ['.jsx', '.tsx'] }]
   import/prefer-default-export: 0
   import/extensions: 0
   no-console: 0

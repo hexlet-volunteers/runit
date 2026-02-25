@@ -1,5 +1,5 @@
 import { UseFormReturnType } from '@mantine/form';
-import { ProfileEditFormValues } from '../pages/ProfileEditForm/TranslatedYupResolver';
+import { ProfileEditFormValues } from '../pages/ProfileEditFormPage/TranslatedYupResolver';
 import { EditorStateType } from './slices';
 
 export type TypeInitialFormState = {
@@ -87,4 +87,10 @@ export interface EditFormFieldsProps {
   form: UseFormReturnType<ProfileEditFormValues>;
   emailConfirmed?: boolean;
   isSubmitting?: boolean;
+}
+
+export interface SignUpUserInputData {
+  username: string;
+  email: string;
+  password: string;
 }
