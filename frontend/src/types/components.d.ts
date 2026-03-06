@@ -94,3 +94,8 @@ export interface SignUpUserInputData {
   email: string;
   password: string;
 }
+
+export interface SignInUserInputData {
+  email: string;
+  password: string;
+}

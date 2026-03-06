@@ -357,12 +357,11 @@
     }
   },
   "signIn": {
-    "footer": {
-      "signUpAction": "Create a free one",
-      "signUpHeader": "No account?"
-    },
-    "pageHeader": "Signing In",
-    "remindPass": "I can't remember the password",
+    "header": "Signing In",
+    "email": "Email",
+    "password": "Password",
+    "forgotPass": "Can't remember the password?",
+    "createAnAccount": "Create an account",
     "signInButton": "Sign In"
   },
   "signUp": {

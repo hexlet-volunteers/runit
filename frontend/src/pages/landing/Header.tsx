@@ -13,7 +13,6 @@ import {
   Text,
 } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
 import { useDispatch } from 'react-redux';
 
 import RunItLogoLight from './assets/HeaderLightThemeLogo.svg';
@@ -22,7 +21,6 @@ import RunItLogoDark from './assets/HeaderDarkThemeLogo.svg';
 import LanguageSelector from '../../components/Navigation/LanguageSelector';
 import ThemeSelector from '../../components/Navigation/ThemeSelector';
 
-import routes from '../../routes';
 import { actions } from '../../slices/index';
 
 export function Header() {
@@ -33,16 +31,14 @@ export function Header() {
     keyPrefix: 'profileActions',
   });
 
-  const redir = useNavigate();
-
   const dispatch = useDispatch();
 
   const handleOpenSignUpModal = () => {
     dispatch(actions.openModal({ type: 'signingUp' }));
   };
 
-  const handleRedirToSignIn = () => {
-    redir(routes.signInPagePath());
+  const handleOpenSignInModal = () => {
+    dispatch(actions.openModal({ type: 'signingIn' }));
   };
 
   const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] =
@@ -80,7 +76,7 @@ export function Header() {
           <Button
             variant="default"
             radius="xl"
-            onClick={() => handleRedirToSignIn()}
+            onClick={() => handleOpenSignInModal()}
           >
             {profileTextContent('signIn')}
           </Button>
@@ -119,7 +115,7 @@ export function Header() {
             <Button variant="default" onClick={() => handleOpenSignUpModal()}>
               <span>{profileTextContent('signUp')}</span>
             </Button>
-            <Button onClick={() => handleRedirToSignIn()}>
+            <Button onClick={() => handleOpenSignInModal()}>
               <span>{profileTextContent('signIn')}</span>
             </Button>
           </Group>
