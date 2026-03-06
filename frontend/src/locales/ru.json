@@ -490,12 +490,11 @@
     }
   },
   "signIn": {
-    "footer": {
-      "signUpAction": "Создать",
-      "signUpHeader": "Нет аккаунта?"
-    },
-    "pageHeader": "Вход",
-    "remindPass": "Не помню пароль",
+    "header": "Вход",
+    "email": "Почта",
+    "password": "Пароль",
+    "forgotPass": "Забыли пароль?",
+    "createAnAccount": "Создать аккаунт",
     "signInButton": "Войти"
   },
   "signUp": {
