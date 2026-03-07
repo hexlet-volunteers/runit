@@ -3,7 +3,8 @@ import { CodeState } from 'src/types/slices';
 
 
 const initialState: CodeState = {
-  editorCode: 'заглушка',
+  editorCode: 'const a = 1',
+  language: 'javascript',
   scriptValue: `<script src="https://sandbox.example.com/widget.js"></script>`, //мок данные
   iframeValue: `<iframe src="https://ваш-сайт.ru/sandbox/123" width="100%" height="400"></iframe>`, //мок данные
 };

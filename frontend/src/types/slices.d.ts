@@ -174,6 +174,7 @@ export type UserSliceStateType = {
 // для нового редактора в новом лендинге
 export interface CodeState {
   editorCode: string;
+  language: string;
   scriptValue: string;
   iframeValue: string;
 }

@@ -1,3 +1,4 @@
+import { useDispatch, useSelector } from 'react-redux';
 import {
   Grid,
   Group,
@@ -12,15 +13,17 @@ import {
   Accordion,
   Paper,
   CopyButton,
-  Textarea,
+  useMantineTheme,
+  Loader,
 } from '@mantine/core';
 import '@mantine/core/styles.css';
-import { useDispatch, useSelector } from 'react-redux';
+import MonacoEditor from '@monaco-editor/react';
+import { actions as codeActions } from '../../newSlices/editorSlice';
 import { RootState } from '../../slices/index';
 import PlayIcon from '../../assets/images/icons/snippetIcons/Play.svg?react';
 import SaveIcon from '../../assets/images/icons/snippetIcons/DocumentPlus.svg?react';
 import LinkIcon from '../../assets/images/icons/snippetIcons/Link.svg?react';
-import { actions as codeActions } from '../../newSlices/editorSlice';
+
 
 function ItemButtons() {
   const items = [
@@ -51,9 +54,10 @@ function ItemButtons() {
 
 export function Editor() {
   const dispatch = useDispatch();
-  const { editorCode, scriptValue, iframeValue } = useSelector(
+  const { editorCode, language, scriptValue, iframeValue } = useSelector(
     (state: RootState) => state.code,
   );
+  const theme = useMantineTheme();
 
   return (
     <Stack justify="center">
@@ -80,23 +84,40 @@ export function Editor() {
             </Group>
           </Group>
 
-          <Textarea
-            onChange={(e) =>
-              dispatch(codeActions.setEditorCode(e.currentTarget.value))
-            }
-            styles={(theme) => ({
-              input: {
-                border: `1px solid ${theme.colors.gray[3]}`,
-                borderRadius: theme.radius.md,
-                minHeight: 400,
-                maxHeight: 600,
-                padding: theme.spacing.xs,
-                resize: 'vertical',
-              },
-            })}
-            value={editorCode}
-            variant="unstyled"
-          />
+          <div
+            style={{
+              border: `1px solid ${theme.colors.gray[3]}`,
+              borderRadius: theme.radius.md,
+              padding: theme.spacing.xs,
+              resize: 'vertical',
+              overflow: 'auto',
+              minHeight: 400,
+              maxHeight: 600,
+              height: 400,
+            }}
+          >
+            <MonacoEditor
+              height="100%"
+              language={language}
+              loading={<Loader color="gray" type="dots" />}
+              onChange={(value) =>
+                dispatch(codeActions.setEditorCode(value || ''))
+              }
+              options={{
+                lineNumbers: 'off',
+                renderLineHighlight: 'none',
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                overviewRulerLanes: 0,
+                scrollbar: {
+                  useShadows: false,
+                },
+              }}
+              theme="vs-light"
+              value={editorCode}
+            />
+          </div>
         </Card>
 
         <Card pl={0} pr={0} radius="md" withBorder>
