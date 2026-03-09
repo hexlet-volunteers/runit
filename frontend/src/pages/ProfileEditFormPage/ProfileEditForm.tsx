@@ -21,7 +21,7 @@ import routes from '../../routes';
 import Header from './Header';
 import ProfileSnippetsSection from './ProfileSnippetsSection';
 import { createTranslatedResolver } from './TranslatedYupResolver';
-import convertFormDataForUpdating from './ConvertDataFunction';
+import convertFormDataForUpdating from './convertDataFunction';
 import FormFields from './FormFields';
 import { profileEditMockData } from './ProfileEditMockData';
 

@@ -39,7 +39,6 @@ function NewSignUpModal({ handleClose, isOpen }) {
       <Group justify="center">
         <Anchor
           c="dimmed"
-          href=""
           mt="md"
           onClick={() => dispatch(actions.openModal({ type: 'signingIn' }))}
           size="sm"

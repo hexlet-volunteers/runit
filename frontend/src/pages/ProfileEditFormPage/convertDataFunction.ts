@@ -1,4 +1,4 @@
-import { UpdateUserInputData } from 'src/types/components';
+import { UpdateUserInputData } from '../../types/components';
 import type { ProfileEditFormValues } from './TranslatedYupResolver';
 
 function convertFormDataForUpdating(

@@ -171,6 +171,13 @@ export type UserSliceStateType = {
   userInfo: Partial<FetchedCurrentUser>;
 };
 
+// для нового редактора в новом лендинге
+export interface CodeState {
+  editorCode: string;
+  scriptValue: string;
+  iframeValue: string;
+}
+
 export type RootReducerType = {
   editor: EditorStateType;
   terminal: TerminalStateType;
@@ -180,4 +187,5 @@ export type RootReducerType = {
   user: UserSliceStateType;
   checkboxes: CheckboxesSnippetsStateType;
   userSettings: UserSettingsStateType;
+  code: CodeState; // для нового редактора в новом лендинге
 };

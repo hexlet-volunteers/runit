@@ -7,7 +7,7 @@ import {
   Anchor,
 } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
-import { EditFormFieldsProps } from 'src/types/components';
+import { EditFormFieldsProps } from '../../types/components';
 
 function FormFields({
   form,
@@ -65,10 +65,10 @@ function FormFields({
       </Stack>
       {!emailConfirmed && (
         <Group gap="xs" justify="flex-start" mt="md">
-          <Anchor c='orange' size="xs" underline="never">
+          <Anchor c="orange" size="xs" underline="never">
             {profileEditText('notConfirmed')}
           </Anchor>
-          <Anchor c='orange' size="xs" underline="always">
+          <Anchor c="orange" size="xs" underline="always">
             {profileEditText('sendLetterAgain')}
           </Anchor>
         </Group>

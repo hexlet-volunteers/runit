@@ -17,7 +17,7 @@ import { useDispatch } from 'react-redux';
 
 import { useTRPC } from '../../../utils/trpc';
 import routes from '../../../routes';
-import convertFormDataForApi from './ConvertDataFunction';
+import convertFormDataForApi from './convertDataFunction';
 import { setCurrentUser } from '../../../slices/userSlice';
 import { actions } from '../../../slices/modalSlice';
 import type { FetchedCurrentUser } from '../../../types/slices';
@@ -36,6 +36,7 @@ function NewSignUpForm() {
   const dispatch = useDispatch();
 
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [checkboxDisabled, setCheckboxDisabled] = useState(false);
 
   const trpc = useTRPC();
   const createUserOptions = trpc.users.createUser.mutationOptions();
@@ -44,6 +45,7 @@ function NewSignUpForm() {
     onError: (error) => {
       console.error(error);
       setSubmitError(signUpText('signUpFailed'));
+      setCheckboxDisabled(true);
     },
     onSuccess: (data) => {
       const userData: FetchedCurrentUser = {
@@ -78,6 +80,7 @@ function NewSignUpForm() {
 
   const handleSubmit = (values: SignUpFormValues) => {
     setSubmitError(null);
+    setCheckboxDisabled(false);
     if (!agreed) {
       setSubmitError(signUpText('agreementRequired'));
       return;
@@ -87,6 +90,7 @@ function NewSignUpForm() {
       userCreator.mutate(apiData);
     } catch (error) {
       setSubmitError(signUpText('signUpFailed'));
+      setCheckboxDisabled(true);
     }
   };
 
@@ -122,6 +126,7 @@ function NewSignUpForm() {
       </Stack>
       <Checkbox
         checked={agreed}
+        disabled={checkboxDisabled}
         label={<CheckboxLinks t={signUpText} />}
         mb="md"
         mt="md"
