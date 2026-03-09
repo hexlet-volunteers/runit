@@ -15,6 +15,7 @@ import { SignInUserInputData } from '../../../types/components';
 import routes from '../../../routes';
 import { actions } from '../../../slices/modalSlice';
 import { setCurrentUser } from '../../../slices/userSlice';
+import { createTranslatedResolver } from './translatedYupResolver';
 
 function NewSignInForm() {
   const { t } = useTranslation();
@@ -32,6 +33,7 @@ function NewSignInForm() {
       email: '',
       password: '',
     } satisfies SignInUserInputData,
+    validate: createTranslatedResolver(t),
   });
 
   const handleSubmit = (values: SignInUserInputData) => {
