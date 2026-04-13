@@ -11,6 +11,4 @@ app.listen({ port, host }, (err: Error | null, address: string) => {
     console.error('Error starting server:', err);
     process.exit(1);
   }
-  console.log(`Server is running on ${address}`);
-  console.log(`welcome endpoint: ${address}/`);
 });
