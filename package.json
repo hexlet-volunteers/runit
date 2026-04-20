@@ -6,14 +6,15 @@
   "engines": {
     "node": ">=18.13.0"
   },
-  "type": "module",
+  "type": "module", 
   "scripts": {
     "dev": "npm run db:setup && tsx watch src/server.ts",
     "build": "npm run db:setup && tsc",
     "start": "node dist/server.js",
-    "db:setup": "npm run db:generate && npm run db:migrate",
+    "db:setup": "npm run db:generate && npm run db:migrate ",
     "db:migrate": "drizzle-kit migrate",
     "db:generate": "drizzle-kit generate",
+    "db:seed": "tsx src/db/seed.ts",
     "db:studio": "drizzle-kit studio",
     "db:reset": "rm -rf drizzle && npm run db:setup",
     "db:drop": "drizzle-kit drop",
