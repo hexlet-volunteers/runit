@@ -11,7 +11,7 @@ import {
   updateRecoverHash,
   getUserSettings,
   updateUserSettings,
-  getData,
+  // getData,
   createUserSchema, 
   getUserByIdSchema,
   getUserByEmailSchema,
@@ -52,10 +52,10 @@ export const userRouter = router({
       return user;
     }),
 
-  getAllUsers: publicProcedure
-    .query(async () => {
-      return await getAllUsers();
-    }),
+  // getAllUsers: publicProcedure
+  //   .query(async () => {
+  //     return await getAllUsers();
+  //   }),
 
   createUser: publicProcedure
     .input(createUserSchema)
@@ -83,7 +83,7 @@ export const userRouter = router({
     }),
 
 
-  // получить настройки пользователя - profile?
+  // получить настройки пользователя 
   getUserSettings: publicProcedure
   .input(getUserByIdSchema)
   .query(async ({ input }) => {
@@ -98,9 +98,10 @@ export const userRouter = router({
   }),
 
    // или это - profile? настройки И сниппеты
-  getData: publicProcedure
-  .input(getUserByIdSchema)
-  .query(async ({ input }) => {
-    return await getData({ id: input });
-  }),
+   // переделать в getData
+  // getData: publicProcedure
+  // .input(getUserByIdSchema)
+  // .query(async ({ input }) => {
+  //   return await getData({ id: input });
+  // }),
 });

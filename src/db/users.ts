@@ -303,45 +303,48 @@ export async function updateUserSettings(
 }
 
 // получение данных пользователя - настройки и сниппеты
-export async function getData({ id }: { id: number }): Promise<any> {
-  try {
-    const currentUser = await getUserById(id);
-    if (!currentUser) {
-      throw new Error('User not found');
-    }
 
-    const settings = await getUserSettings(id);
+// todo: сделать отдельно getSnippetsByUser 
 
-    const userSnippets = await db
-      .select({
-        snippet: snippets,
-        user: users,
-      })
-      .from(snippets)
-      .innerJoin(users, eq(snippets.userId, users.id))
-      .where(eq(snippets.userId, id));
+// export async function getData({ id }: { id: number }): Promise<any> {
+//   try {
+//     const currentUser = await getUserById(id);
+//     if (!currentUser) {
+//       throw new Error('User not found');
+//     }
 
-    const userData = {
-      ...currentUser,
-      language: settings.language,
-      theme: settings.theme,
-      avatar_base64: settings.avatarBase64,
-    };
+//     const settings = await getUserSettings(id);
 
-    const formattedSnippets = userSnippets.map(item => ({
-      ...item.snippet,
-      user: item.user,
-    }));
+//     const userSnippets = await db
+//       .select({
+//         snippet: snippets,
+//         user: users,
+//       })
+//       .from(snippets)
+//       .innerJoin(users, eq(snippets.userId, users.id))
+//       .where(eq(snippets.userId, id));
 
-    return {
-      currentUser: userData,
-      snippets: formattedSnippets,
-    };
-  } catch (error) {
-    console.error('Error getting user data:', error);
-    throw new Error('Failed to get user data');
-  }
-}   
+//     const userData = {
+//       ...currentUser,
+//       language: settings.language,
+//       theme: settings.theme,
+//       avatar_base64: settings.avatarBase64,
+//     };
+
+//     const formattedSnippets = userSnippets.map(item => ({
+//       ...item.snippet,
+//       user: item.user,
+//     }));
+
+//     return {
+//       currentUser: userData,
+//       snippets: formattedSnippets,
+//     };
+//   } catch (error) {
+//     console.error('Error getting user data:', error);
+//     throw new Error('Failed to get user data');
+//   }
+// }   
 
 // временная для тестирования:
 export async function deleteAllUsers() {
