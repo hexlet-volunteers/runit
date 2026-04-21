@@ -20,7 +20,6 @@ export const runMigrations = async () => {
   try {
     const migrationsPath = path.join(__dirname, '../../drizzle');
     await migrate(db, { migrationsFolder: migrationsPath });
-    console.log('Migrations completed successfully');
   } catch (error) {
     console.error('Migration failed:', error);
     throw error;

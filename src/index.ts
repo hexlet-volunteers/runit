@@ -14,7 +14,6 @@ const getApp = async () => {
   }
  
 // to do: подключить полноценное логирование (pino-pretty)
-// убрать consol.log с прода
 
   const server = fastify({
   logger: {
@@ -26,10 +25,6 @@ const getApp = async () => {
     ignoreTrailingSlash: true
   },
 });
-
-  console.log('🔍 appRouter type:', typeof appRouter);
-  // console.log('🔍 createContext type:', typeof createContext);
-  console.log('🔍 appRouter procedures:', Object.keys(appRouter._def?.procedures || {}));
 
   server.get('/', async (request, reply) => {
     reply.type('text/html').send(`
@@ -53,8 +48,6 @@ const getApp = async () => {
   });
 
     try {
-    console.log('📡 Registering tRPC plugin...');
-    
     await server.register(fastifyTRPCPlugin, {
       prefix: '/trpc',
       trpcOptions: {
@@ -65,8 +58,6 @@ const getApp = async () => {
         },
       } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
     });
-    
-    console.log('✅ tRPC plugin registered successfully');
   } catch (error) {
     console.error('❌ Failed to register tRPC plugin:', error);
     throw error;
