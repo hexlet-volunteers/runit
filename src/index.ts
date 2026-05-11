@@ -2,14 +2,16 @@ import { fastify } from 'fastify';
 import { fastifyTRPCPlugin, FastifyTRPCPluginOptions, } from '@trpc/server/adapters/fastify';
 
 import { runMigrations } from './db/connection';
+import { seedHomePageData } from './db/seedHomePageData';
 import { appRouter, type AppRouter } from './router/index';
 // import { createContext } from './context';
 
 const getApp = async () => {
    try {
     await runMigrations();
+    await seedHomePageData();
   } catch (error) {
-    console.error('Migration failed:', error);
+    console.error('Migration/Seeding failed:', error);
     throw error;
   }
  
@@ -26,10 +28,6 @@ const getApp = async () => {
     ignoreTrailingSlash: true
   },
 });
-
-  console.log('🔍 appRouter type:', typeof appRouter);
-  // console.log('🔍 createContext type:', typeof createContext);
-  console.log('🔍 appRouter procedures:', Object.keys(appRouter._def?.procedures || {}));
 
   server.get('/', async (request, reply) => {
     reply.type('text/html').send(`
@@ -53,8 +51,6 @@ const getApp = async () => {
   });
 
     try {
-    console.log('📡 Registering tRPC plugin...');
-    
     await server.register(fastifyTRPCPlugin, {
       prefix: '/trpc',
       trpcOptions: {
@@ -65,8 +61,6 @@ const getApp = async () => {
         },
       } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
     });
-    
-    console.log('✅ tRPC plugin registered successfully');
   } catch (error) {
     console.error('❌ Failed to register tRPC plugin:', error);
     throw error;
