@@ -9,14 +9,7 @@ import {
   updateSectionSchema,
 } from '../db/homePage';
 
-/**
- * Получение данных главной страницы и редактирование компонентов
-*/
 export const homePageRouter = router({
-  /**
-   * @route homePage.getHomePageData
-   * @returns {HomePageData} Данные главной страницы в структуре для фронтенда
-  */
   getHomePageData: publicProcedure
     .query(async () => {
       const components = await getHomePageData();
@@ -25,9 +18,6 @@ export const homePageRouter = router({
       };
     }),
 
-  /**
-   * Получение одного компонента по ID
-  */
   getComponentById: publicProcedure
     .input(z.number().positive())
     .query(async ({ input }) => {
@@ -38,9 +28,6 @@ export const homePageRouter = router({
       return component;
     }),
 
-  /**
-   * Создание нового компонента
-  */
   adminCreateComponent: publicProcedure
     .input(createSectionSchema)
     .mutation(async ({ input }) => {
@@ -49,9 +36,6 @@ export const homePageRouter = router({
       return component;
     }),
 
-  /**
-   * Редактирование компонента
-  */
   adminUpdateComponent: publicProcedure
     .input(updateSectionSchema)
     .mutation(async ({ input }) => {

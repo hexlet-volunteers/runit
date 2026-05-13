@@ -7,16 +7,13 @@ import {
   type NewSection
 } from './schema/schema';
 
-/**
- * Валидация данных для компонентов главной страницы
-*/
 export const sectionSchema = z.object({
   id: z.number(),
-  title: z.string().min(1, 'Title не может быть пустым'),
-  description: z.string().min(1, 'Description не может быть пустым'),
+  title: z.string().min(1),
+  description: z.string().min(1),
   content: z
     .string()
-    .min(1, 'Content не может быть пустым')
+    .min(1)
     .refine((value) => {
       try {
         const parsed = JSON.parse(value);
@@ -26,20 +23,20 @@ export const sectionSchema = z.object({
       }
     },
     {
-      message: 'Content должен быть валидным JSON',
+      message: 'Content must be valid JSON',
     }
   ),
-  componentType: z.string().min(1, 'Type не может быть пустым'),
+  componentType: z.string().min(1),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 });
 
 export const createSectionSchema = z.object({
-  title: z.string().min(1, 'Title не может быть пустым'),
-  description: z.string().min(1, 'Description не может быть пустым'),
+  title: z.string().min(1),
+  description: z.string().min(1),
   content: z
     .string()
-    .min(1, 'Content не может быть пустой строкой')
+    .min(1)
     .refine((value) => {
       try {
         const parsed = JSON.parse(value);
@@ -54,10 +51,10 @@ export const createSectionSchema = z.object({
       }
     },
     {
-      message: 'Content должен быть валидным непустым JSON объектом',
+      message: 'Content must be valid JSON',
     }
   ),
-  componentType: z.string().min(1, 'Type не может быть пустым'),
+  componentType: z.string().min(1),
 });
 
 export const updateSectionSchema = createSectionSchema.partial().extend({
@@ -68,24 +65,17 @@ export type ValidSection = z.infer<typeof sectionSchema>;
 export type CreateSectiontInput = z.infer<typeof createSectionSchema>;
 export type UpdateSectionInput = z.infer<typeof updateSectionSchema>;
 
-/**
- * @route homePage.getHomePageData
- * @returns {HomePageData} Данные главной страницы
-*/
 export async function getHomePageData(): Promise<ValidSection[]> {
   try {
     const data = await db.select().from(sections)
 
     return data.map((section) => sectionSchema.parse(section));
   } catch (error) {
-    console.error('Ошибка получения данных главной страницы:', error);
-    throw new Error('Не удалось получить данные главной страницы');
+    console.error('Get home page data error:', error);
+    throw new Error('Failed to get home page data');
   }
 }
 
-/**
- * Получение одного компонента по ID
-*/
 export async function getSectionById(id: number): Promise<ValidSection | undefined> {
   try {
     const [data] = await db
@@ -96,14 +86,11 @@ export async function getSectionById(id: number): Promise<ValidSection | undefin
     
     return sectionSchema.parse(data);
   } catch (error) {
-    console.error('Ошибка получения компонента по ID:', error);
-    throw new Error('Не удалось получить компонент');
+    console.error('Get section by ID error:', error);
+    throw new Error('Failed to get section by ID');
   }
 }
 
-/**
- * Создание нового компонента
-*/
 export async function createSection(input: CreateSectiontInput): Promise<ValidSection> {
   try {
     const newSection: NewSection = {
@@ -115,26 +102,23 @@ export async function createSection(input: CreateSectiontInput): Promise<ValidSe
     const data = await db.insert(sections).values(newSection).returning();
 
     if (!data || data.length === 0) {
-      throw new Error('Не удалось создать компонент');
+      throw new Error('Failed to create section');
     }
 
     return sectionSchema.parse(data[0]);
   } catch (error) {
-    console.error('Ошибка создания компонента главной страницы:', error);
-    throw new Error('Не удалось создать компонент');
+    console.error('Create section error:', error);
+    throw new Error('Failed to create section');
   }
 }
 
-/**
- * Редактирование существующего компонента
-*/
 export async function updateSection(input: UpdateSectionInput): Promise<ValidSection> {
   try {
     const { id, ...updateData } = input;
     const component = await getSectionById(id);
     
     if (!component) {
-      throw new Error(`Компонент с ID ${id} не найден`);
+      throw new Error(`Component with ID ${id} not found`);
     }
 
     const data = await db
@@ -147,12 +131,12 @@ export async function updateSection(input: UpdateSectionInput): Promise<ValidSec
       .returning();
 
     if (!data || data.length === 0) {
-      throw new Error('Не удалось обновить компонент');
+      throw new Error('Failed to update section');
     }
 
     return sectionSchema.parse(data[0]);
   } catch (error) {
-    console.error('Ошибка обновления компонента:', error);
-    throw new Error('Не удалось обновить компонент');
+    console.error('Update section error:', error);
+    throw new Error('Failed to update section');
   }
 }
