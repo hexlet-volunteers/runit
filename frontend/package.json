@@ -41,7 +41,7 @@
     "react-image-file-resizer": "^0.4.8",
     "react-redux": "^8.1.2",
     "react-resizable-panels": "^0.0.54",
-    "react-router": "^6.14.2",
+    "react-router": "^6.30.4",
     "react-router-dom": "^6.14.2",
     "react-toastify": "^10.0.4",
     "react-transition-group": "^4.4.5",
