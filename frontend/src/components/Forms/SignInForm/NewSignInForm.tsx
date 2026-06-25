@@ -27,6 +27,7 @@ function NewSignInForm() {
   const dispatch = useDispatch();
 
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm({
     initialValues: {
@@ -38,6 +39,7 @@ function NewSignInForm() {
 
   const handleSubmit = (values: SignInUserInputData) => {
     setSubmitError(null);
+    setIsLoading(true);
     try {
       // после реализации процедуры авторизации добавить функцию signIn
       dispatch(setCurrentUser(values));
@@ -45,6 +47,9 @@ function NewSignInForm() {
       navigate(routes.profilePageNew());
     } catch (error) {
       setSubmitError(t('errors.signInFailed'));
+    }
+    finally {
+      setIsLoading(false);
     }
   };
 
@@ -72,9 +77,9 @@ function NewSignInForm() {
         />
       </Stack>
       <Button
-        disabled={false}
+        disabled={isLoading}
         fullWidth
-        loading={false}
+        loading={isLoading}
         mt="lg"
         radius="md"
         size="md"
