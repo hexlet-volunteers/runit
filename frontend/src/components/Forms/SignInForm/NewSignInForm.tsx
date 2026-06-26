@@ -41,7 +41,7 @@ function NewSignInForm() {
     setSubmitError(null);
     setIsLoading(true);
     try {
-      // после реализации процедуры авторизации добавить функцию signIn
+      // TODO: после реализации процедуры авторизации добавить функцию signIn
       dispatch(setCurrentUser(values));
       dispatch(actions.closeModal());
       navigate(routes.profilePageNew());
