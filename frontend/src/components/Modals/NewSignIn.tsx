@@ -6,6 +6,13 @@ import NewSignInForm from '../Forms/SignInForm/NewSignInForm';
 import SocialButtons from './SocialButtons/SocialButtons';
 import { actions } from '../../slices';
 
+/**
+ * Модальное окно входа.
+ *
+ * Содержит форму входа, ссылку на сброс пароля,
+ * ссылку на регистрацию и кнопки социальных сетей.
+ */
+
 function NewSignInModal({ handleClose, isOpen }) {
   const { t: signInText } = useTranslation('translation', {
     keyPrefix: 'signIn',

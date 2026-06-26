@@ -5,6 +5,13 @@ import { SOCIAL_BUTTONS } from '../../../utils/socialButtons';
 
 import styles from './styles/SocialButtons.module.scss';
 
+/**
+ * Компонент с кнопками входа через социальные сети (GitHub, VK, Яндекс ID).
+ *
+ * Используется в модалках входа и регистрации.
+ * Кнопки рендерятся на основе массива SOCIAL_BUTTONS из utils.
+ */
+
 function SocialButtons() {
   const { t: signUpText } = useTranslation('translation', {
     keyPrefix: 'signUp',
