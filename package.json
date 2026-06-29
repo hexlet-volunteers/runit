@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "online editor for coding",
   "engines": {
-    "node": ">=18.13.0"
+    "node": ">=24.0.0"
   },
   "type": "module",
   "scripts": {
@@ -21,7 +21,7 @@
     "test:ci": "npx start-server-and-test start-server http://localhost:3000 test",
     "test:withDocker": "WITHOUT_DOCKER = false playwright test",
     "generate:types": "tsc --emitDeclarationOnly --outDir types",
-    "test:debug": "yarn test -- --ui"
+    "test:debug": "npm test -- --ui"
   },
   "repository": {
     "type": "git",
@@ -36,6 +36,7 @@
   "dependencies": {
     "@trpc/server": "^11.6.0",
     "better-sqlite3": "^12.4.1",
+    "dotenv": "^17.4.2",
     "drizzle-orm": "^0.44.6",
     "fastify": "^5.8.5",
     "zod": "^4.1.11"
