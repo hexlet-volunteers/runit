@@ -428,7 +428,7 @@
     "name": "Имя",
     "login": "Логин",
     "email": "Почта",
-    "notConfirmed": "Почта не подтверждена.",
+    "notConfirmed": "Почта не подтверждена",
     "sendLetterAgain": "Отправить письмо еще раз",
     "currentPassword": "Текущий пароль",
     "newPassword": "Новый пароль",

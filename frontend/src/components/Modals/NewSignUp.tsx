@@ -1,11 +1,17 @@
-import { Anchor, Button, Divider, Group, Modal, Title } from '@mantine/core';
+import { Anchor, Divider, Group, Modal, Title } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
-import { GithubIcon } from '@mantinex/dev-icons';
 
 import NewSignUpForm from '../Forms/SignUpForm/NewSignUpForm';
+import SocialButtons from './SocialButtons/SocialButtons';
 import { actions } from '../../slices';
-import { SOCIAL_BUTTONS } from '../../utils/socialButtons';
+
+/**
+ * Модальное окно регистрации.
+ *
+ * Содержит форму регистрации, ссылку на сброс пароля,
+ * ссылку на модальное окно входа и кнопки социальных сетей.
+ */
 
 function NewSignUpModal({ handleClose, isOpen }) {
   const { t: signUpText } = useTranslation('translation', {
@@ -47,28 +53,7 @@ function NewSignUpModal({ handleClose, isOpen }) {
         </Anchor>
       </Group>
       <Divider label={signUpText('or')} labelPosition="center" my="md" />
-      <Group align="center" gap="sm" grow>
-        {SOCIAL_BUTTONS.map(
-          ({ key, icon: Icon, component: Component, size }) => (
-            <Button
-              key={key}
-              leftSection={
-                Icon === GithubIcon ? <Icon size={size} /> : <Component />
-              }
-              size="md"
-              styles={{
-                label: {
-                  whiteSpace: 'normal',
-                  textAlign: 'center',
-                },
-              }}
-              variant="default"
-            >
-              {signUpText(key)}
-            </Button>
-          ),
-        )}
-      </Group>
+      <SocialButtons />
     </Modal>
   );
 }

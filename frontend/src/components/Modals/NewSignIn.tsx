@@ -1,11 +1,17 @@
-import { Anchor, Button, Divider, Group, Modal, Title } from '@mantine/core';
+import { Anchor, Divider, Group, Modal, Title } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
-import { GithubIcon } from '@mantinex/dev-icons';
 
 import NewSignInForm from '../Forms/SignInForm/NewSignInForm';
+import SocialButtons from './SocialButtons/SocialButtons';
 import { actions } from '../../slices';
-import { SOCIAL_BUTTONS } from '../../utils/socialButtons';
+
+/**
+ * Модальное окно входа.
+ *
+ * Содержит форму входа, ссылку на сброс пароля,
+ * ссылку на регистрацию и кнопки социальных сетей.
+ */
 
 function NewSignInModal({ handleClose, isOpen }) {
   const { t: signInText } = useTranslation('translation', {
@@ -54,29 +60,7 @@ function NewSignInModal({ handleClose, isOpen }) {
         </Anchor>
       </Group>
       <Divider label={signUpText('or')} labelPosition="center" my="md" />
-      <Group align="center" gap="sm" grow>
-        {SOCIAL_BUTTONS.map(
-          ({ key, icon: Icon, component: Component, size }) => (
-            <Button
-              key={key}
-              leftSection={
-                Icon === GithubIcon ? <Icon size={size} /> : <Component />
-              }
-              size="md"
-              // Стили нужны для корректного отображения Яндекс ID
-              styles={{
-                label: {
-                  whiteSpace: 'normal',
-                },
-              }}
-              variant="default"
-            >
-              {signUpText(key)}
-            </Button>
-          ),
-        )}
-      </Group>
-
+      <SocialButtons />
     </Modal>
   );
 }

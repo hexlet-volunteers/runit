@@ -38,12 +38,14 @@ export function Header() {
   const dispatch = useDispatch();
 
   const handleOpenSignUpModal = () => {
-    dispatch(actions.openModal({ type: 'signingUp' }));
+    closeDrawer();
+    dispatch(actions.openModal({ type: 'signingUp' })); 
   };
 
 
-    const handleOpenSignInModal = () => {
-    dispatch(actions.openModal({ type: 'signingIn' })); 
+  const handleOpenSignInModal = () => {
+    closeDrawer();
+    dispatch(actions.openModal({ type: 'signingIn' }));
   }
 
   const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] =
@@ -90,7 +92,7 @@ export function Header() {
           </Button>
         </Group>
 
-        <Burger opened={drawerOpened} onClick={toggleDrawer} hiddenFrom="lg" />
+        <Burger opened={drawerOpened} onClick={toggleDrawer} hiddenFrom="md" />
       </Group>
       <Drawer
         opened={drawerOpened}
