@@ -4,7 +4,7 @@
 
 ## About
 
-Runit is an environment for writing and executing code that will be actively used on all Hexlet Rus Ltd platforms. The closest counterpart is the repl.it service. The backend is developed in NestJS and TypeScript, the frontend uses React.
+Runit is an environment for writing and executing code that will be actively used on all Hexlet Rus Ltd platforms. The closest counterpart is the repl.it service. The backend is developed in Fastify and TypeScript with tRPC, the frontend uses React.
 
 Tasks:
 
@@ -21,23 +21,23 @@ Tasks can be discussed in [Telegram](https://t.me/hexletcommunity/12).
 
 ## System requirements
 
-* Node >= 18.13.0
-* [Yarn 1 (Classic)](https://classic.yarnpkg.com/)
+* Node >= 24
+* npm >= 9
 * PostgreSQL for use in production environments or SQLite for use in local development environments
 
 ## Install dependencies for backend and run
 
 ```bash
-yarn
-yarn dev
+npm install
+npm run dev
 ```
 
 ## Install dependencies for frontend and run
 
 ```bash
 cd frontend
-yarn
-yarn start
+npm install
+npm run start
 ```
 
 <http://localhost:3000>

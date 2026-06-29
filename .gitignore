@@ -48,7 +48,4 @@ lerna-debug.log*
 /db/*.sqlite3-journal
 /*drizzle
 
-# npm
-package-lock.json
-
 tmp
