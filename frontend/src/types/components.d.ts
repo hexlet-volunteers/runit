@@ -99,3 +99,8 @@ export interface SignInUserInputData {
   email: string;
   password: string;
 }
+
+export interface ForgotPasswordUserInputData {
+  email: string;
+}
+

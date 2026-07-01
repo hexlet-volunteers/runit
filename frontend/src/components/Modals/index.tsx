@@ -15,10 +15,12 @@ import AttemptDuplicateSnippet from './AttemptDuplicateSnippet';
 import ChangeAvatarModal from './ChangeAvatar';
 import RemoveAvatarModal from './RemoveAvatar';
 import DeleteSnippetModal from './DeleteSnippetModal';
+import NewForgotPasswordModal from './NewForgotPasswordModal';
 
 const modals = {
   signingUp: NewSignUpModal,
   signingIn: NewSignInModal,
+  forgotPass: NewForgotPasswordModal,
   removeAccount: RemoveAccount,
   newSnippet: NewSnippet,
   sharingSnippet: ShareSnippet,

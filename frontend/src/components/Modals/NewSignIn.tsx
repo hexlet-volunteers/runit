@@ -42,7 +42,12 @@ function NewSignInModal({ handleClose, isOpen }) {
     >
       <NewSignInForm />
       <Group justify="space-between">
-        <Anchor c="dimmed" href="" mt="md" size="sm">
+        <Anchor
+          c="dimmed"
+          mt="md"
+          size="sm"
+          onClick={() => dispatch(actions.openModal({ type: 'forgotPass' }))}
+        >
           {signInText('forgotPass')}
         </Anchor>
         <Anchor

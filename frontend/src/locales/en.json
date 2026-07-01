@@ -298,7 +298,7 @@
     "email": "Email",
     "notConfirmed": "Email is not confirmed.",
     "sendLetterAgain": "Send letter again",
-    "currentPassword":"Current password",
+    "currentPassword": "Current password",
     "newPassword": "New password",
     "confirmPassword": "Confirm new password",
     "cancel": "Cancel",
@@ -339,7 +339,12 @@
   "forgotPass": {
     "pageHeader": "Forgot password?",
     "resetButton": "Reset password",
-    "successAlert": "An email with a password reset link has been sent to your email"
+    "successAlert": "An email with a password reset link has been sent to your email",
+    "modalHeader": "Reset password",
+    "returnToSignIn": "Return to sign in",
+    "submit": "Send link",
+    "email": "Email",
+    "description": "Enter your email address — we’ll send you a password reset link"
   },
   "resetPass": {
     "pageHeader": "Enter new password",
