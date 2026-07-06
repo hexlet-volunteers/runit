@@ -1,7 +1,44 @@
 import { useState } from 'react';
-import { Box, Button, Group, Paper, Text, Textarea } from '@mantine/core';
+import { Box, Button, Group, Paper, Text } from '@mantine/core';
 import { editorColors, langMeta } from '../../theme';
 import { runJavaScript, RunResult } from '../../runner';
+
+// Палитра подсветки (tokyo-night, как в макете)
+const HL = {
+  comment: '#565f89',
+  keyword: '#bb9af7',
+  string: '#9ece6a',
+  number: '#ff9e64',
+};
+
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// Лёгкая regex-подсветка JS для демо-виджета (полноценная — в редакторе, Monaco)
+function highlightJS(src: string): string {
+  const re =
+    /(\/\/[^\n]*)|('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`)|\b(const|let|var|function|return|if|else|for|while|of|in|new|class|true|false|null|undefined)\b|\b(\d+(?:\.\d+)?)\b/g;
+  let out = '';
+  let last = 0;
+  for (let m = re.exec(src); m; m = re.exec(src)) {
+    out += escapeHtml(src.slice(last, m.index));
+    const [full, comment, str, kw, num] = m;
+    const color = comment ? HL.comment : str ? HL.string : kw ? HL.keyword : HL.number;
+    out += `<span style="color:${color}">${escapeHtml(full)}</span>`;
+    last = m.index + full.length;
+  }
+  return out + escapeHtml(src.slice(last));
+}
+
+const CODE_FONT: React.CSSProperties = {
+  fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+  fontSize: 14,
+  lineHeight: 1.7,
+  padding: '4px 8px',
+  margin: 0,
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'break-word',
+};
 
 const INITIAL_CODE = `// Попробуйте — код выполняется по-настоящему
 const languages = ['JavaScript', 'Python', 'PHP', 'Ruby'];
@@ -88,27 +125,36 @@ export default function DemoWidget() {
           </Button>
         </Group>
 
-        {/* Тёмная область кода */}
+        {/* Тёмная область кода: подсвеченный <pre> под прозрачной textarea */}
         <Box p="sm" style={{ background: editorColors.bg }}>
-          <Textarea
-            value={code}
-            onChange={(e) => setCode(e.currentTarget.value)}
-            autosize
-            minRows={8}
-            maxRows={16}
-            aria-label="Код demo.js"
-            styles={{
-              input: {
+          <div style={{ position: 'relative' }}>
+            <pre
+              aria-hidden
+              style={{ ...CODE_FONT, color: editorColors.text, minHeight: '11em' }}
+              // eslint-disable-next-line react/no-danger
+              dangerouslySetInnerHTML={{ __html: `${highlightJS(code)}\n` }}
+            />
+            <textarea
+              value={code}
+              onChange={(e) => setCode(e.currentTarget.value)}
+              aria-label="Код demo.js"
+              spellCheck={false}
+              style={{
+                ...CODE_FONT,
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
                 background: 'transparent',
                 border: 'none',
-                color: editorColors.text,
-                fontFamily: "'JetBrains Mono', ui-monospace, monospace",
-                fontSize: 14,
-                lineHeight: 1.7,
-                padding: '4px 8px',
-              },
-            }}
-          />
+                outline: 'none',
+                resize: 'none',
+                color: 'transparent',
+                caretColor: editorColors.text,
+                overflow: 'hidden',
+              }}
+            />
+          </div>
         </Box>
 
         {/* Блок результата */}
