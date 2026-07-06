@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Badge,
   Box,
@@ -8,7 +9,6 @@ import {
   Stack,
   Text,
   Title,
-  Tooltip,
 } from '@mantine/core';
 import AppHeader from '../../components/AppHeader';
 import AppFooter from '../../components/AppFooter';
@@ -16,15 +16,36 @@ import DemoWidget from './DemoWidget';
 import Features from './Features';
 import Languages from './Languages';
 
+const scrollToEmbedding = () =>
+  document.getElementById('embedding')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
 export default function Landing() {
+  const location = useLocation();
+
+  useEffect(() => {
+    // Переход по /#embedding из шапки (react-router не скроллит к hash сам)
+    if (location.hash === '#embedding') scrollToEmbedding();
+  }, [location.hash]);
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <AppHeader />
 
       <Box component="main" style={{ flex: 1, background: '#f8f9fa' }}>
         {/* HERO */}
-        <Container size="lg" py={{ base: 48, sm: 72 }}>
-          <Stack align="center" gap="lg">
+        <Container size="lg" py={{ base: 48, sm: 72 }} pos="relative">
+          {/* Мягкое радиальное свечение за hero, как в макете */}
+          <Box
+            aria-hidden
+            pos="absolute"
+            inset={0}
+            style={{
+              background:
+                'radial-gradient(ellipse 70% 55% at 50% 30%, rgba(77, 171, 247, 0.14), transparent 70%)',
+              pointerEvents: 'none',
+            }}
+          />
+          <Stack align="center" gap="lg" pos="relative">
             <Badge
               size="lg"
               variant="light"
@@ -63,12 +84,10 @@ export default function Landing() {
               <Button size="lg" component={Link} to="/editor">
                 Создать сниппет
               </Button>
-              {/* TODO(#843): страница «Как это встраивается» (гайд по embed) ещё не готова */}
-              <Tooltip label="В разработке (#843)">
-                <Button size="lg" variant="light" data-disabled onClick={(e) => e.preventDefault()}>
-                  Как это встраивается →
-                </Button>
-              </Tooltip>
+              {/* TODO(#841): позже ведёт на демо-страницу встраивания; пока — к секции фич */}
+              <Button size="lg" variant="light" onClick={scrollToEmbedding}>
+                Как это встраивается →
+              </Button>
             </Group>
 
             {/* Живой мини-редактор */}
@@ -79,7 +98,7 @@ export default function Landing() {
         </Container>
 
         {/* ФИЧИ */}
-        <Container size="lg" py={{ base: 32, sm: 48 }}>
+        <Container id="embedding" size="lg" py={{ base: 32, sm: 48 }}>
           <Features />
         </Container>
 
