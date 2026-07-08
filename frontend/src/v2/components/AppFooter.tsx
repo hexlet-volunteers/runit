@@ -14,10 +14,10 @@ export default function AppFooter() {
             </Text>
           </Group>
           <Group gap="lg">
-            <Anchor component={Link} to="/" c="dimmed" fz="sm">
+            <Anchor component={Link} to="/#features" c="dimmed" fz="sm">
               Возможности
             </Anchor>
-            <Anchor component={Link} to="/" c="dimmed" fz="sm">
+            <Anchor component={Link} to="/#embedding" c="dimmed" fz="sm">
               Встраивание
             </Anchor>
             <Anchor component={Link} to="/legal" c="dimmed" fz="sm">
