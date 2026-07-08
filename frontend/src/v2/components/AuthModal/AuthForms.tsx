@@ -244,7 +244,7 @@ function ResetForm() {
           autoComplete="email"
           {...form.getInputProps('email')}
         />
-        <Button type="submit" size="md" radius="md" fullWidth loading={loading}>
+        <Button type="submit" size="md" fullWidth loading={loading}>
           Отправить ссылку
         </Button>
         <Anchor
