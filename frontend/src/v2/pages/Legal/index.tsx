@@ -60,8 +60,7 @@ const termsSections: Array<{ title: string; body: string }> = [
     title: '5. Гарантии и ответственность',
     body:
       'Сервис предоставляется «как есть». Мы стремимся к непрерывной доступности, но не ' +
-      'отвечаем за убытки из-за перерывов в работе. Ответственность Сервиса в любом случае ' +
-      'ограничена суммой, фактически уплаченной вами за использование Сервиса. ' +
+      'отвечаем за убытки из-за перерывов в работе. ' +
       'Вопросы — support@hexlet.io.',
   },
 ];
@@ -124,12 +123,6 @@ export default function LegalPage() {
                 Редакция от 12 мая 2026 года · ООО «Хекслет Рус»
               </Text>
             </Box>
-            {/* TODO(#844): экспорт правовых документов в PDF (генерация на бэкенде). */}
-            <Tooltip label="В разработке (#844)">
-              <Button variant="light" color="gray" data-disabled onClick={(e) => e.preventDefault()}>
-                Скачать PDF
-              </Button>
-            </Tooltip>
           </Group>
 
           <Tabs value={tab} onChange={handleTabChange} mt="xl">

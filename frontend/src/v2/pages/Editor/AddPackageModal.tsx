@@ -73,8 +73,7 @@ export default function AddPackageModal({ opened, onClose }: Props) {
         </Stack>
 
         <Text fz="sm" c="dimmed">
-          Менеджер пакетов появится позже (#823/#824). Версии будут фиксироваться
-          в runit.lock и подтягиваться при каждом запуске.
+          Версии фиксируются в runit.lock и подтягиваются при каждом запуске.
         </Text>
       </Stack>
     </Modal>
