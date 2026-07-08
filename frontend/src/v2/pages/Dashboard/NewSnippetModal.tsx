@@ -17,6 +17,7 @@ import {
   UnstyledButton,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { IconDice5 } from '@tabler/icons-react';
 import { langMeta } from '../../theme';
 import { useSession } from '../../session';
 import { useTRPCClient } from '../../../utils/trpc';
@@ -131,8 +132,9 @@ export default function NewSnippetModal({ opened, onClose }: Props) {
               onClick={rollName}
               loading={rolling}
               aria-label="Сгенерировать название"
+              c="dimmed"
             >
-              🎲
+              <IconDice5 size={20}/>
             </ActionIcon>
           </Group>
         </Stack>
