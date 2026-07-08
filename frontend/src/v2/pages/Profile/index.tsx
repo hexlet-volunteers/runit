@@ -188,7 +188,7 @@ export default function Profile() {
             </Stack>
           </Group>
           {isOwn && (
-            <Button variant="default" component={Link} to="/settings">
+            <Button variant="filled" component={Link} to="/settings">
               Настроить профиль
             </Button>
           )}
