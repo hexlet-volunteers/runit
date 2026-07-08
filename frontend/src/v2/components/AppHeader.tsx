@@ -39,9 +39,11 @@ export function RunitLogo({ size = 28 }: { size?: number }) {
 
 export function initialsOf(name: string): string {
   // TODO(#530, #536): единый компонент аватара-инициалов вместо base64-загрузок.
-  return name
-    .split(/[\s_.-]+/)
-    .filter(Boolean)
+  const parts = name.split(/[\s_.-]+/).filter(Boolean);
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return parts
     .slice(0, 2)
     .map((w) => w[0]?.toUpperCase())
     .join('');
