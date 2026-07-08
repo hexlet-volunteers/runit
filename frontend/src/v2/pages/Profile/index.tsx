@@ -21,6 +21,8 @@ import { useSession } from '../../session';
 import { langMeta } from '../../theme';
 import AppHeader, { initialsOf } from '../../components/AppHeader';
 import AppFooter from '../../components/AppFooter';
+import { plural } from '../Dashboard/lib';
+import { relativeDate } from '../Dashboard/lib';
 
 type Snippet = {
   id: number;
@@ -52,28 +54,6 @@ const MONTHS_GENITIVE = [
 function sinceLabel(date: Date): string {
   if (Number.isNaN(date.getTime()) || date.getTime() === 0) return 'недавнего времени';
   return `${MONTHS_GENITIVE[date.getMonth()]} ${date.getFullYear()}`;
-}
-
-// Простая относительная дата для карточек: «2 часа назад», «вчера», «12 мая 2026»
-function relativeDate(value: string | Date): string {
-  if (!value) return 'недавно';
-  const date = new Date(value);
-  const diffMs = Date.now() - date.getTime();
-  const hour = 3600_000;
-  const day = 24 * hour;
-  if (diffMs < hour) return 'только что';
-  if (diffMs < day) {
-    const h = Math.floor(diffMs / hour);
-    const mod10 = h % 10;
-    const mod100 = h % 100;
-    let word = 'часов';
-    if (mod10 === 1 && mod100 !== 11) word = 'час';
-    else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) word = 'часа';
-    return `${h} ${word} назад`;
-  }
-  if (diffMs < 2 * day) return 'вчера';
-  if (diffMs < 7 * day) return `${Math.floor(diffMs / day)} дн. назад`;
-  return `${date.getDate()} ${MONTHS_GENITIVE[date.getMonth()]} ${date.getFullYear()}`;
 }
 
 function SnippetCard({ snippet, username }: { snippet: Snippet; username: string }) {
@@ -202,7 +182,7 @@ export default function Profile() {
             <Text fw={800} fz={26}>
               {snippets.length}
             </Text>
-            <Text c="dimmed">сниппетов</Text>
+            <Text c="dimmed">{plural(snippets.length, ['сниппет', 'сниппета', 'сниппетов'])}</Text>
           </Group>
           <Group gap={8} align="baseline">
             <Text fw={800} fz={26}>

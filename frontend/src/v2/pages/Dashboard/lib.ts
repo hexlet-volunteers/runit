@@ -13,7 +13,7 @@ export type Snippet = {
 
 export const SNIPPETS_QUERY_KEY = ['v2', 'snippets', 'all'] as const;
 
-const plural = (n: number, forms: [string, string, string]): string => {
+export const plural = (n: number, forms: [string, string, string]): string => {
   const m10 = n % 10;
   const m100 = n % 100;
   if (m10 === 1 && m100 !== 11) return forms[0];
