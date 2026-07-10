@@ -148,6 +148,8 @@ export default function Profile() {
 
   const profileUser = userQuery.data ?? null;
 
+  // TODO: осуществить фильтрацию сниппетов на бэке, сделать отдельный эндпоинт по пользователю,
+  //       т.к. загружать все сниппеты это избыточно.
   const snippetsQuery = useQuery({
     queryKey: ['v2', 'profileSnippets', profileUser?.id],
     queryFn: async () => {

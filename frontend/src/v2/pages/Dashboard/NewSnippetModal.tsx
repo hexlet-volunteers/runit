@@ -23,6 +23,7 @@ import { useSession } from '../../session';
 import { useTRPCClient } from '../../../utils/trpc';
 import { sampleCode, SNIPPETS_QUERY_KEY } from './lib';
 
+/** Метка поля формы с кастомным стилем. */
 function FieldLabel({ children }: { children: string }) {
   return (
     <Text fz="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: 0.8 }}>
@@ -31,17 +32,20 @@ function FieldLabel({ children }: { children: string }) {
   );
 }
 
+/** Подсказки для каждого уровня видимости сниппета. */
 const VISIBILITY_HINTS: Record<string, string> = {
   private: 'Виден только вам',
   link: 'Доступен всем, у кого есть ссылка',
   public: 'Виден в вашем профиле и в поиске',
 };
 
+/** Свойства модального окна создания сниппета. */
 type Props = {
   opened: boolean;
   onClose: () => void;
 };
 
+/** Модальное окно создания нового сниппета с выбором языка, видимости и генерацией названия. */
 export default function NewSnippetModal({ opened, onClose }: Props) {
   const trpc = useTRPCClient();
   const queryClient = useQueryClient();
@@ -54,6 +58,7 @@ export default function NewSnippetModal({ opened, onClose }: Props) {
   const [withExample, setWithExample] = useState(true);
   const [rolling, setRolling] = useState(false);
 
+  /** Генерирует случайное название сниппета через API. */
   const rollName = async () => {
     setRolling(true);
     try {
@@ -82,10 +87,10 @@ export default function NewSnippetModal({ opened, onClose }: Props) {
       trpc.snippets.createSnippet.mutate({
         name: name.trim(),
         code: withExample ? (sampleCode[language] ?? '') : '',
-        language,
+        language: language as 'ruby' | 'java' | 'php' | 'python' | 'javascript' | 'html',
         userId: user!.id,
       }),
-    onSuccess: (created: { id: number }) => {
+    onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: SNIPPETS_QUERY_KEY });
       onClose();
       navigate(`/editor/${created.id}`);

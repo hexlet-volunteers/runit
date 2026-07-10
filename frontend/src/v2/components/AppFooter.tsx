@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Anchor, Box, Container, Group, Text } from '@mantine/core';
 import { RunitLogo } from './AppHeader';
 
+/** Компонент подвала сайта с навигационными ссылками и копирайтом. */
 export default function AppFooter() {
   return (
     <Box component="footer" py={28} mt="auto" style={{ borderTop: '1px solid #e9ecef', background: '#fff' }}>
