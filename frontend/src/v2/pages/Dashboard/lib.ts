@@ -13,6 +13,7 @@ export type Snippet = {
 
 export const SNIPPETS_QUERY_KEY = ['v2', 'snippets', 'all'] as const;
 
+/** Склонение существительных после числительных по правилам русского языка. */
 export const plural = (n: number, forms: [string, string, string]): string => {
   const m10 = n % 10;
   const m100 = n % 100;
