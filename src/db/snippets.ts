@@ -17,7 +17,7 @@ export const snippetSchema = z.object({
 });
  
 export const createSnippetSchema = z.object({
-  name: z.string().min(1).max(100),
+  name: z.string().min(1).max(30),
   code: z.string().min(1),
   slug: z.string().max(30).optional(),
   language: z.enum(['ruby', 'java', 'php', 'python', 'javascript', 'html']) ,
