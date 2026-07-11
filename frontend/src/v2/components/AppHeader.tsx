@@ -51,6 +51,7 @@ export function initialsOf(name: string): string {
     .join('');
 }
 
+// TODO: провести рефакторинг архитектуры (выделить в отдельную таску)
 /** Компонент шапки сайта с логотипом, навигацией и меню пользователя. */
 export default function AppHeader() {
   const { user, isGuest, logout } = useSession();
