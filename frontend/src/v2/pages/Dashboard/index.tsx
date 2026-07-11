@@ -26,6 +26,7 @@ import NewSnippetModal from './NewSnippetModal';
 import EmptyState from './EmptyState';
 import BulkBar from './BulkBar';
 import { sampleCode, SNIPPETS_QUERY_KEY, type Snippet } from './lib';
+import { ts } from './lib';
 
 function SearchIcon() {
   return (
@@ -79,8 +80,8 @@ export default function Dashboard() {
       sorted.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
     } else {
       sorted.sort((a, b) => {
-        const da = new Date(a.createdAt).getTime();
-        const db = new Date(b.createdAt).getTime();
+        const da = ts(a.createdAt);
+        const db = ts(b.createdAt);
         return sort === 'new' ? db - da : da - db;
       });
     }

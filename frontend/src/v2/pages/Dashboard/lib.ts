@@ -53,6 +53,11 @@ export function relativeDate(input: string | Date): string {
   return years === 1 ? 'год назад' : `${years} ${plural(years, ['год', 'года', 'лет'])} назад`;
 }
 
+export const ts = (d: string | null | undefined): number => {
+  const t = new Date(d).getTime();
+  return Number.isNaN(t) ? 0 : t;
+};
+
 // Стартовые примеры кода для «Начать с примера кода» и карточек пустого состояния.
 export const sampleCode: Record<string, string> = {
   javascript: [
