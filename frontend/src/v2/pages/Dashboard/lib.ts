@@ -13,6 +13,7 @@ export type Snippet = {
 
 export const SNIPPETS_QUERY_KEY = ['v2', 'snippets', 'all'] as const;
 
+/** Склонение существительных после числительных по правилам русского языка. */
 export const plural = (n: number, forms: [string, string, string]): string => {
   const m10 = n % 10;
   const m100 = n % 100;
@@ -53,6 +54,7 @@ export function relativeDate(input: string | Date): string {
   return years === 1 ? 'год назад' : `${years} ${plural(years, ['год', 'года', 'лет'])} назад`;
 }
 
+/** Приводит строку с датой к числовому таймстампу. Если дата некорректна или отсутствует — возвращает 0. */
 export const ts = (d: string | null | undefined): number => {
   const t = new Date(d).getTime();
   return Number.isNaN(t) ? 0 : t;

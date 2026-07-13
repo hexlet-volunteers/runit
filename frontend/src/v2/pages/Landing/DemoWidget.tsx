@@ -3,33 +3,36 @@ import { Box, Button, Group, Paper, Text } from '@mantine/core';
 import { editorColors, langMeta } from '../../theme';
 import { runJavaScript, RunResult } from '../../runner';
 
-// Палитра подсветки (tokyo-night, как в макете)
+/** Палитра подсветки синтаксиса (tokyo-night). */
 const HL = {
   comment: '#565f89',
   keyword: '#bb9af7',
   string: '#9ece6a',
   number: '#ff9e64',
+  method: '#4dabf7',
 };
 
+/** Экранирует HTML-спецсимволы для безопасной вставки в разметку. */
 const escapeHtml = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-// Лёгкая regex-подсветка JS для демо-виджета (полноценная — в редакторе, Monaco)
+/** Лёгкая regex-подсветка JavaScript для демо-виджета. */
 function highlightJS(src: string): string {
-  const re =
-    /(\/\/[^\n]*)|('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`)|\b(const|let|var|function|return|if|else|for|while|of|in|new|class|true|false|null|undefined)\b|\b(\d+(?:\.\d+)?)\b/g;
+const re =
+  /(\/\/[^\n]*)|('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`)|\b(const|let|var|function|return|if|else|for|while|of|in|new|class|true|false|null|undefined)\b|\b(\d+(?:\.\d+)?)\b|\b(forEach|log|map|filter|reduce|push|pop|shift|unshift)\b/g;
   let out = '';
   let last = 0;
   for (let m = re.exec(src); m; m = re.exec(src)) {
     out += escapeHtml(src.slice(last, m.index));
-    const [full, comment, str, kw, num] = m;
-    const color = comment ? HL.comment : str ? HL.string : kw ? HL.keyword : HL.number;
+    const [full, comment, str, kw, num, method] = m;
+    const color = comment ? HL.comment : str ? HL.string : kw ? HL.keyword : num ? HL.number : method ? HL.method : HL.number;
     out += `<span style="color:${color}">${escapeHtml(full)}</span>`;
     last = m.index + full.length;
   }
   return out + escapeHtml(src.slice(last));
 }
 
+/** Стили для моноширинного отображения кода. */
 const CODE_FONT: React.CSSProperties = {
   fontFamily: "'JetBrains Mono', ui-monospace, monospace",
   fontSize: 14,
@@ -40,6 +43,7 @@ const CODE_FONT: React.CSSProperties = {
   wordBreak: 'break-word',
 };
 
+/** Начальный код для демо-виджета. */
 const INITIAL_CODE = `// Попробуйте — код выполняется по-настоящему
 const languages = ['JavaScript', 'Python', 'PHP', 'Ruby'];
 
@@ -49,6 +53,7 @@ languages.forEach((lang, i) => {
 
 console.log('…и ещё 6 языков из коробки');`;
 
+/** Возвращает цвет для строки консоли в зависимости от её типа. */
 function lineColor(type: string): string {
   switch (type) {
     case 'error':
@@ -62,14 +67,13 @@ function lineColor(type: string): string {
   }
 }
 
-// Живой мини-редактор demo.js для лендинга.
-// TODO(#843): заменить Textarea на полноценный CodeMirror с подсветкой синтаксиса,
-// как в основном редакторе.
+/** Живой мини-редактор для лендинга с выполнением JavaScript. */
 export default function DemoWidget() {
   const [code, setCode] = useState(INITIAL_CODE);
   const [result, setResult] = useState<RunResult | null>(null);
   const [running, setRunning] = useState(false);
 
+  /** Запускает выполнение кода и сохраняет результат. */
   const handleRun = async () => {
     setRunning(true);
     try {

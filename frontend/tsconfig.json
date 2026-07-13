@@ -4,7 +4,7 @@
     "checkJs": false,
     "jsx": "react-jsx",
     "module": "es2020",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -13,7 +13,10 @@
     "target": "es2020",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
+     "rootDir": "./src",
+    "paths": {
+      "src/*": ["./src/*"]
+    },
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
@@ -22,7 +25,6 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "emitDeclarationOnly": true,
-    "types": ["@mantine/core"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "src/db"]
