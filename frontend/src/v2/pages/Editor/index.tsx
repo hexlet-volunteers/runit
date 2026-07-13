@@ -45,8 +45,10 @@ import {
 // TODO(#821, #609): серверное исполнение — сейчас JS выполняется в Web Worker,
 // остальные языки отвечают заглушкой unsupportedLanguage.
 
+/** Статус сохранения сниппета. */
 type SaveStatus = 'saved' | 'saving' | 'unsaved';
 
+/** Маппинг языка на имя файла по умолчанию. */
 const FILE_NAME_BY_LANGUAGE: Record<string, string> = {
   javascript: 'index.js',
   typescript: 'index.ts',
@@ -71,12 +73,14 @@ console.log('Позиций в корзине:', items.length);
 console.log('Сумма без скидки:', total, '₽');
 `;
 
+/** Мета-информация для каждого статуса сохранения. */
 const SAVE_STATUS_META: Record<SaveStatus, { color: string; label: string }> = {
   saved: { color: '#51cf66', label: 'Сохранено' },
   saving: { color: '#4dabf7', label: 'Сохранение…' },
   unsaved: { color: '#adb5bd', label: 'Не сохранено' },
 };
 
+/** Метка секции в боковой панели. */
 function SectionLabel({ children }: { children: string }) {
   return (
     <Text fz={11} fw={700} c="dimmed" style={{ letterSpacing: '0.08em' }}>
@@ -85,6 +89,7 @@ function SectionLabel({ children }: { children: string }) {
   );
 }
 
+/** Страница редактора сниппетов с Monaco Editor, консолью и сохранением. */
 export default function EditorPage() {
   const { id } = useParams();
   const snippetId = id ? Number(id) : null;
@@ -144,7 +149,7 @@ export default function EditorPage() {
       initializedFor.current = `id:${snippetId}`;
       setName(snippetQuery.data.name);
       setCode(snippetQuery.data.code);
-      setLanguage(snippetQuery.data.language);
+      setLanguage(snippetQuery.data.language ?? 'javascript');
       setSlug(snippetQuery.data.slug);
       setSaveStatus('saved');
     }
@@ -163,6 +168,7 @@ export default function EditorPage() {
   const snippetIdRef = useRef(snippetId);
   snippetIdRef.current = snippetId;
 
+  /** Сохраняет сниппет (создаёт или обновляет) через API. */
   const saveNow = useCallback(async () => {
     if (isGuest || !user) {
       auth.open('register');
@@ -176,7 +182,7 @@ export default function EditorPage() {
         const created = await trpc.snippets.createSnippet.mutate({
           name: nameRef.current,
           code: codeRef.current,
-          language: languageRef.current,
+          language: languageRef.current as 'ruby' | 'java' | 'php' | 'python' | 'javascript' | 'html',
           userId: user.id,
         });
         initializedFor.current = `id:${created.id}`;
@@ -188,7 +194,7 @@ export default function EditorPage() {
           id: snippetIdRef.current,
           name: nameRef.current,
           code: codeRef.current,
-          language: languageRef.current,
+          language: languageRef.current as 'ruby' | 'java' | 'php' | 'python' | 'javascript' | 'html',
         });
         setSaveStatus('saved');
       }
@@ -214,6 +220,7 @@ export default function EditorPage() {
 
   // --- Запуск -------------------------------------------------------------
   const runningRef = useRef(false);
+  /** Запускает выполнение кода (JS — в Web Worker, остальное — заглушка). */
   const handleRun = useCallback(async () => {
     if (runningRef.current) return;
     runningRef.current = true;
@@ -248,6 +255,7 @@ export default function EditorPage() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  /** Обработчик монтирования Monaco Editor: отслеживание позиции курсора и хоткей Ctrl+Enter. */
   const handleEditorMount: OnMount = (editor, monaco) => {
     editor.onDidChangeCursorPosition((e) => {
       setCursor({ line: e.position.lineNumber, col: e.position.column });
@@ -584,8 +592,8 @@ export default function EditorPage() {
           </div>
         </div>
 
-        {/* --- Правая панель: консоль/ввод (~40%) --- */}
-        <div style={{ width: '40%', maxWidth: 640, flexShrink: 0, minWidth: 260 }}>
+        {/* --- Правая панель: консоль/ввод (~25%) --- */}
+        <div style={{ width: '25%', flexShrink: 0, minWidth: 260 }}>
           <ConsolePanel
             tab={tab}
             onTabChange={setTab}
@@ -620,7 +628,7 @@ export default function EditorPage() {
         </Group>
         <Group gap="lg" wrap="nowrap">
           <Text fz={12} c="dimmed">UTF-8</Text>
-          <Text fz={12} c="dimmed">Runit v2.1 · MVP</Text>
+          <Text fz={12} c="dimmed">Runit v2.1</Text>
         </Group>
       </Group>
 

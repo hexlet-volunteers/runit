@@ -12,6 +12,7 @@ import {
 // TODO(#823, #824): настоящий менеджер пакетов (поиск по npm, установка,
 // runit.lock). Пока модалка-заглушка со статичным списком популярных пакетов.
 
+/** Статичный список популярных npm-пакетов для демонстрации. */
 const POPULAR_PACKAGES = [
   { name: 'lodash', version: '4.17.21', description: 'Утилиты для работы с данными' },
   { name: 'axios', version: '1.7.2', description: 'HTTP-клиент' },
@@ -20,11 +21,13 @@ const POPULAR_PACKAGES = [
   { name: 'nanoid', version: '5.0.7', description: 'Генератор коротких ID' },
 ];
 
+/** Свойства модального окна добавления пакета. */
 type Props = {
   opened: boolean;
   onClose: () => void;
 };
 
+/** Модальное окно добавления npm-пакета в окружение сниппета (заглушка, TODO #823/#824). */
 export default function AddPackageModal({ opened, onClose }: Props) {
   return (
     <Modal
@@ -73,8 +76,7 @@ export default function AddPackageModal({ opened, onClose }: Props) {
         </Stack>
 
         <Text fz="sm" c="dimmed">
-          Менеджер пакетов появится позже (#823/#824). Версии будут фиксироваться
-          в runit.lock и подтягиваться при каждом запуске.
+          Версии фиксируются в runit.lock и подтягиваются при каждом запуске.
         </Text>
       </Stack>
     </Modal>

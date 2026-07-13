@@ -3,8 +3,9 @@
     "allowJs": true,
     "checkJs": false,
     "jsx": "react-jsx",
-    "module": "esnext",
+    "module": "es2020",
     "moduleResolution": "bundler",
+    "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
@@ -12,7 +13,10 @@
     "target": "es2020",
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "./src", 
+    "rootDir": "./src",
+    "paths": {
+      "src/*": ["./src/*"]
+    },
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
@@ -20,7 +24,7 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "emitDeclarationOnly": true,
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "src/db"]

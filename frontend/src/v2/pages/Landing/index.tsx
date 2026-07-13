@@ -19,13 +19,18 @@ import Languages from './Languages';
 const scrollToEmbedding = () =>
   document.getElementById('embedding')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
+const scrollToFeatures = () =>
+  document.getElementById('features')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
 export default function Landing() {
   const location = useLocation();
 
   useEffect(() => {
-    // Переход по /#embedding из шапки (react-router не скроллит к hash сам)
+    // Переход по /#embedding и /#features из шапки и футера (react-router не скроллит к hash сам)
     if (location.hash === '#embedding') scrollToEmbedding();
+    if (location.hash === '#features') scrollToFeatures();
   }, [location.hash]);
+  
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -91,14 +96,14 @@ export default function Landing() {
             </Group>
 
             {/* Живой мини-редактор */}
-            <Box w="100%" maw={780} mt="xl">
+            <Box id="embedding" w="100%" maw={780} mt="xl">
               <DemoWidget />
             </Box>
           </Stack>
         </Container>
 
         {/* ФИЧИ */}
-        <Container id="embedding" size="lg" py={{ base: 32, sm: 48 }}>
+        <Container id="features" size="lg" py={{ base: 32, sm: 48 }}>
           <Features />
         </Container>
 
