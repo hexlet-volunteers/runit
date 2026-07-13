@@ -54,6 +54,12 @@ export function relativeDate(input: string | Date): string {
   return years === 1 ? 'год назад' : `${years} ${plural(years, ['год', 'года', 'лет'])} назад`;
 }
 
+/** Приводит строку с датой к числовому таймстампу. Если дата некорректна или отсутствует — возвращает 0. */
+export const ts = (d: string | null | undefined): number => {
+  const t = new Date(d).getTime();
+  return Number.isNaN(t) ? 0 : t;
+};
+
 // Стартовые примеры кода для «Начать с примера кода» и карточек пустого состояния.
 export const sampleCode: Record<string, string> = {
   javascript: [
