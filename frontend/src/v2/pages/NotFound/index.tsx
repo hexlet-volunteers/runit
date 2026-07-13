@@ -7,6 +7,7 @@ import { editorColors } from '../../theme';
 // TODO(#845): логировать 404-переходы и предлагать похожие публичные сниппеты
 // (поиск по slug через trpc.snippets.getAllSnippets + fuzzy-match).
 
+/** Стилизованная карточка терминала с сообщением об ошибке 404. */
 function TerminalCard() {
   return (
     <Box
@@ -37,6 +38,7 @@ function TerminalCard() {
   );
 }
 
+/** Страница 404 с визуализацией ошибки в стиле терминала. */
 export default function NotFoundPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>

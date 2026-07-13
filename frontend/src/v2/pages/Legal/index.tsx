@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Box,
-  Button,
   Container,
   Group,
   Paper,
@@ -10,7 +9,6 @@ import {
   Tabs,
   Text,
   Title,
-  Tooltip,
 } from '@mantine/core';
 import AppHeader from '../../components/AppHeader';
 import AppFooter from '../../components/AppFooter';

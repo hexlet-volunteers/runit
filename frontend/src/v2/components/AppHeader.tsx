@@ -12,6 +12,7 @@ import {
 import { useSession } from '../session';
 import { useAuthModal } from './AuthModal/context';
 
+/** Логотип Runit с иконкой и текстовым названием. */
 export function RunitLogo({ size = 28 }: { size?: number }) {
   return (
     <Group gap={8} wrap="nowrap">
@@ -37,6 +38,7 @@ export function RunitLogo({ size = 28 }: { size?: number }) {
   );
 }
 
+/** Возвращает инициалы из имени, разбивая его по пробелам, точкам, подчёркиваниям, дефисам. */
 export function initialsOf(name: string): string {
   // TODO(#530, #536): единый компонент аватара-инициалов вместо base64-загрузок.
   const parts = name.split(/[\s_.-]+/).filter(Boolean);
@@ -49,6 +51,8 @@ export function initialsOf(name: string): string {
     .join('');
 }
 
+// TODO: провести рефакторинг архитектуры (выделить в отдельную таску)
+/** Компонент шапки сайта с логотипом, навигацией и меню пользователя. */
 export default function AppHeader() {
   const { user, isGuest, logout } = useSession();
   const auth = useAuthModal();

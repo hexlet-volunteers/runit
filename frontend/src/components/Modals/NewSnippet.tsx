@@ -21,7 +21,7 @@ import type {
 import routes from '../../routes';
 
 import { useAuth, useSnippets } from '../../hooks/index';
-import { snippetName } from '../../utils/validationSchemas';
+import { snippetName, SNIPPET_NAME_MAX_LENGTH } from '../../utils/validationSchemas';
 import { actions as modalActions } from '../../slices/modalSlice';
 import icons from '../../utils/icons';
 
@@ -294,6 +294,7 @@ function NewSnippet({ handleClose, isOpen }) {
                     disabled={!formik.values.template || isLoading}
                     id="name"
                     isInvalid={formik.errors.name && formik.touched.name}
+                    maxLength={SNIPPET_NAME_MAX_LENGTH}
                     name="name"
                     onChange={formik.handleChange}
                     value={formik.values.name}
