@@ -13,7 +13,7 @@
     "target": "es2020",
     "sourceMap": true,
     "outDir": "./dist",
-     "rootDir": "./src",
+    "rootDir": "./src",
     "paths": {
       "src/*": ["./src/*"]
     },
