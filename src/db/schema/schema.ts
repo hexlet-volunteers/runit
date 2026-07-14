@@ -9,8 +9,8 @@ export const users = sqliteTable('users', {
   password: text('password', { length: 60 }).notNull(),
   isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
   recoverHash: text('recover_hash', { length: 50 }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });
 
 export const userSettings = sqliteTable('user_settings', {
@@ -19,8 +19,8 @@ export const userSettings = sqliteTable('user_settings', {
   theme: text('theme', { length: 20 }).notNull().default('system'),
   language: text('language', { length: 10 }).notNull().default('ru'),
   avatarBase64: text('avatar_base64'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });
 
 export const snippets = sqliteTable('snippets', {
@@ -30,8 +30,8 @@ export const snippets = sqliteTable('snippets', {
   code: text('code').notNull(),
   language: text('language', { length: 50 }),
   userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });
 
 export const sections = sqliteTable('sections', {
@@ -40,8 +40,8 @@ export const sections = sqliteTable('sections', {
   description: text('description').notNull(),
   content: text('content').notNull(),
   componentType: text('component_type').notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });
 
 export const usersRelations = relations(users, ({ many, one }) => ({
