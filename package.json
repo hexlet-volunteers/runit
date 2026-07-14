@@ -17,6 +17,8 @@
     "db:studio": "drizzle-kit studio",
     "db:reset": "rm -rf drizzle && npm run db:setup",
     "db:drop": "drizzle-kit drop",
+    "lint": "biome check src/",
+    "lint:fix": "biome check --write src/",
     "test": "playwright test",
     "test:ci": "npx start-server-and-test start-server http://localhost:3000 test",
     "test:withDocker": "WITHOUT_DOCKER = false playwright test",
@@ -42,6 +44,7 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.3",
     "@faker-js/faker": "^10.0.0",
     "@playwright/test": "^1.55.1",
     "@types/better-sqlite3": "^7.6.13",
