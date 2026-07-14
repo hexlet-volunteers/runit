@@ -1,7 +1,8 @@
 import { Box, Group, Loader, Text, Tooltip, UnstyledButton } from '@mantine/core';
-import { editorColors } from '../../../shared/theme/tokens';
+import { editorColors } from '../../../shared/theme';
 import type { ConsoleLine } from '../../../shared/runner';
-import { IconTrash } from '../../../shared/ui/icons';
+import { IconTrash } from '../../../shared/ui';
+import TabButton from './TabButton';
 
 export type OutputTab = 'console' | 'input';
 
@@ -22,35 +23,6 @@ type Props = {
   onStdinChange: (value: string) => void;
   onClear: () => void;
 };
-
-function TabButton({
-  active,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <UnstyledButton
-      onClick={onClick}
-      px={4}
-      style={{
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        fontSize: 12,
-        fontWeight: 700,
-        letterSpacing: '0.08em',
-        color: active ? editorColors.text : editorColors.dim,
-        borderBottom: `2px solid ${active ? editorColors.accent : 'transparent'}`,
-      }}
-    >
-      {label}
-    </UnstyledButton>
-  );
-}
 
 export default function ConsolePanel({
   tab,

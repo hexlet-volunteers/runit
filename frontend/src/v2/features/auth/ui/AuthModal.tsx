@@ -3,6 +3,7 @@ import { Modal } from '@mantine/core';
 import { AuthModalContext, type AuthMode } from '../context';
 import AuthForms from './AuthForms';
 
+
 export { useAuthModal } from '../context';
 
 export function AuthModalProvider({ children }: { children: ReactNode }) {

@@ -1,42 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Box, Button, Container, Group, Stack, Text, Title } from '@mantine/core';
+import { Button, Container, Group, Stack, Text, Title } from '@mantine/core';
 import { AppHeader } from '../../../widgets/header';
 import { AppFooter } from '../../../widgets/footer';
-import { editorColors } from '../../../shared/theme/tokens';
+import TerminalCard from './TerminalCard';
 
 // TODO(#845): логировать 404-переходы и предлагать похожие публичные сниппеты
 // (поиск по slug через trpc.snippets.getAllSnippets + fuzzy-match).
-
-/** Стилизованная карточка терминала с сообщением об ошибке 404. */
-function TerminalCard() {
-  return (
-    <Box
-      p="xl"
-      maw={720}
-      w="100%"
-      style={{
-        background: editorColors.bg,
-        border: `1px solid ${editorColors.border}`,
-        borderRadius: 16,
-        fontFamily: "'JetBrains Mono', ui-monospace, monospace",
-        fontSize: 15,
-        lineHeight: 2,
-        textAlign: 'left',
-      }}
-    >
-      <Text ff="inherit" fz="inherit">
-        <Text component="span" c={editorColors.accent}>$</Text>
-        <Text component="span" c={editorColors.text}> runit open s/xK91q</Text>
-      </Text>
-      <Text ff="inherit" fz="inherit" style={{ color: editorColors.error }}>
-        Ошибка 404: сниппет не найден
-      </Text>
-      <Text ff="inherit" fz="inherit" style={{ color: editorColors.dim }}>
-        Процесс завершился с кодом 1
-      </Text>
-    </Box>
-  );
-}
 
 /** Страница 404 с визуализацией ошибки в стиле терминала. */
 export default function NotFoundPage() {

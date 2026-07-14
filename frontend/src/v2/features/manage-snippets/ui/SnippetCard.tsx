@@ -1,19 +1,10 @@
 import { Link } from 'react-router-dom';
 import { ActionIcon, Anchor, Box, Checkbox, Group, Menu, Paper, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { langMeta } from '../../../shared/theme/tokens';
+import { langMeta } from '../../../shared/theme';
 import { type Snippet } from '../../../entities/snippet';
-import { relativeDate } from '../../../shared/lib/dates';
-
-function DotsIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-      <circle cx="5" cy="12" r="2" />
-      <circle cx="12" cy="12" r="2" />
-      <circle cx="19" cy="12" r="2" />
-    </svg>
-  );
-}
+import { relativeDate } from '../../../shared/lib';
+import { DotsIcon } from '../../../shared/ui';
 
 type Props = {
   snippet: Snippet;
@@ -23,6 +14,7 @@ type Props = {
   onDelete: () => void;
 };
 
+/** Карточка сниппета в дашборде: имя, язык, дата, чекбокс, меню (открыть/копировать/удалить). */
 export default function SnippetCard({
   snippet,
   username,
@@ -36,6 +28,7 @@ export default function SnippetCard({
     runnable: false,
   };
 
+  /** Копирует URL `/s/:username/:slug` в буфер обмена. Показывает уведомление об успехе или ошибке. */
   const copyLink = async () => {
     const url = `${window.location.origin}/s/${username}/${snippet.slug}`;
     try {
@@ -46,6 +39,7 @@ export default function SnippetCard({
     }
   };
 
+  /** Запрашивает подтверждение и вызывает onDelete. */
   const handleDelete = () => {
     // eslint-disable-next-line no-alert
     if (window.confirm(`Удалить сниппет «${snippet.name}»? Это действие необратимо.`)) {

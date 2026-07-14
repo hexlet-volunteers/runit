@@ -18,13 +18,13 @@ import {
 import { notifications } from '@mantine/notifications';
 import { AppHeader } from '../../../widgets/header';
 import { AppFooter } from '../../../widgets/footer';
-import { langMeta } from '../../../shared/theme/tokens';
+import { langMeta } from '../../../shared/theme';
 import { useSession } from '../../../entities/user';
-import { useTRPCClient } from '../../../shared/api/trpc';
+import { useTRPCClient } from '../../../shared/api';
 import { SnippetCard, EmptyState, BulkBar } from '../../../features/manage-snippets';
 import { NewSnippetModal } from '../../../features/create-snippet';
 import { SNIPPETS_QUERY_KEY, sampleCode, type Snippet } from '../../../entities/snippet';
-import { SearchIcon } from '../../../shared/ui/icons';
+import { SearchIcon } from '../../../shared/ui';
 
 type SortMode = 'new' | 'old' | 'name';
 

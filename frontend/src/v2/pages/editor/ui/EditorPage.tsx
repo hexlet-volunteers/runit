@@ -23,16 +23,19 @@ import { useQuery } from '@tanstack/react-query';
 import MonacoEditor, { type OnMount } from '@monaco-editor/react';
 import { notifications } from '@mantine/notifications';
 
-import { useTRPCClient } from '../../../shared/api/trpc';
-import { editorColors, langMeta } from '../../../shared/theme/tokens';
+import { useTRPCClient } from '../../../shared/api';
+import { editorColors, langMeta } from '../../../shared/theme';
 import { useSession } from '../../../entities/user';
 import { useAuthModal } from '../../../features/auth';
-import { RunitLogo } from '../../../shared/ui/RunitLogo';
-import { initialsOf } from '../../../widgets/header';
+import { RunitLogo } from '../../../shared/ui';
+
+
+import { initialsOf } from '../../../shared/lib/initialsOf';
 import { runJavaScript, unsupportedLanguage, type ConsoleLine } from '../../../shared/runner';
 import { ConsolePanel, type OutputTab } from '../../../features/run-code';
 import { ShareModal } from '../../../features/share-snippet';
 import AddPackageModal from './AddPackageModal';
+import SectionLabel from './SectionLabel';
 import {
   IconArrowLeft,
   IconHistory,
@@ -40,7 +43,7 @@ import {
   IconPlus,
   IconShare,
   IconUsers,
-} from '../../../shared/ui/icons';
+} from '../../../shared/ui';
 
 // Экран редактора Runit v2 (docs/design/editor.png).
 // TODO(#821, #609): серверное исполнение — сейчас JS выполняется в Web Worker,
@@ -80,15 +83,6 @@ const SAVE_STATUS_META: Record<SaveStatus, { color: string; label: string }> = {
   saving: { color: '#4dabf7', label: 'Сохранение…' },
   unsaved: { color: '#adb5bd', label: 'Не сохранено' },
 };
-
-/** Метка секции в боковой панели. */
-function SectionLabel({ children }: { children: string }) {
-  return (
-    <Text fz={11} fw={700} c="dimmed" style={{ letterSpacing: '0.08em' }}>
-      {children}
-    </Text>
-  );
-}
 
 /** Страница редактора сниппетов с Monaco Editor, консолью и сохранением. */
 export default function EditorPage() {

@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { useTRPCClient } from '../../shared/api/trpc';
+import { useTRPCClient } from '../../shared/api';
 
 import type { SessionUser, SessionContextValue } from './types';
 

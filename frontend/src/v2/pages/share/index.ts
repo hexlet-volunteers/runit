@@ -1,1 +1,1 @@
-export { default } from '../../pages/share/ui/SharePage'
+export { default } from './ui/SharePage'

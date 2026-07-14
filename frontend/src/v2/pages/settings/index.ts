@@ -1,1 +1,1 @@
-export { default } from '../../pages/settings/ui/SettingsPage'
+export { default } from './ui/SettingsPage'

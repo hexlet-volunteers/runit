@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   Avatar,
-  Box,
   Button,
   Card,
   Center,
@@ -16,13 +15,15 @@ import {
   Title,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import { useTRPCClient } from '../../../shared/api/trpc';
+import { useTRPCClient } from '../../../shared/api';
 import { useSession } from '../../../entities/user';
-import { langMeta } from '../../../shared/theme/tokens';
-import { AppHeader, initialsOf } from '../../../widgets/header';
+import { AppHeader } from '../../../widgets/header';
+import { initialsOf } from '../../../shared/lib/initialsOf';
 import { AppFooter } from '../../../widgets/footer';
-import { plural, relativeDate } from '../../../shared/lib/dates';
+import { plural } from '../../../shared/lib';
 import { type Snippet } from '../../../entities/snippet'
+import NotFoundState from './NotFoundState';
+import SnippetCard from './SnippetCard';
 
 const MONTHS_GENITIVE = [
   'января',
@@ -39,71 +40,21 @@ const MONTHS_GENITIVE = [
   'декабря',
 ];
 
-// «В Runit с марта 2024»
+/**
+ * Форматирует дату регистрации в родительном падеже: «марта 2024».
+ * @param date — дата регистрации пользователя.
+ * @returns строка вида «марта 2024» или «недавнего времени», если дата некорректна.
+ */
 function sinceLabel(date: Date): string {
   if (Number.isNaN(date.getTime()) || date.getTime() === 0) return 'недавнего времени';
   return `${MONTHS_GENITIVE[date.getMonth()]} ${date.getFullYear()}`;
 }
 
-function SnippetCard({ snippet, username }: { snippet: Snippet; username: string }) {
-  const meta = langMeta[snippet.language] ?? {
-    label: snippet.language,
-    dot: '#adb5bd',
-    runnable: false,
-  };
-  return (
-    <Card
-      withBorder
-      radius="lg"
-      p="lg"
-      component={Link}
-      to={`/s/${username}/${snippet.slug}`}
-      style={{ textDecoration: 'none', color: 'inherit' }}
-    >
-      <Group justify="space-between" wrap="nowrap" mb="sm">
-        <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
-          <Box
-            w={10}
-            h={10}
-            style={{ borderRadius: '50%', background: meta.dot, flexShrink: 0 }}
-          />
-          <Text ff="monospace" fw={600} truncate>
-            {snippet.name}
-          </Text>
-        </Group>
-        <Text c="dimmed" fz="sm" style={{ flexShrink: 0 }}>
-          {meta.label}
-        </Text>
-      </Group>
-      <Group justify="space-between" mt="md">
-        <Text c="dimmed" fz="sm">
-          {relativeDate(snippet.updatedAt ?? snippet.createdAt)}
-        </Text>
-        {/* TODO(#828): счётчики просмотров и форков сниппета */}
-        <Text c="dimmed" fz="sm">
-          — просмотров · — форков
-        </Text>
-      </Group>
-    </Card>
-  );
-}
-
-function NotFoundState({ username }: { username: string }) {
-  return (
-    <Center py={80}>
-      <Stack align="center" gap="sm">
-        <Title order={2}>Пользователь не найден</Title>
-        <Text c="dimmed" ta="center">
-          Профиля @{username} не существует или он был удалён.
-        </Text>
-        <Button component={Link} to="/" mt="sm">
-          На главную
-        </Button>
-      </Stack>
-    </Center>
-  );
-}
-
+/**
+ * Страница профиля пользователя.
+ * Доступна по маршруту /u/:username.
+ * Отображает аватар, никнейм, дату регистрации, статистику и список публичных сниппетов.
+ */
 export default function ProfilePage() {
   const { username = '' } = useParams();
   const trpc = useTRPCClient();

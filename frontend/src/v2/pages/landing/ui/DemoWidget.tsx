@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Box, Button, Group, Paper, Text } from '@mantine/core';
-import { editorColors, langMeta } from '../../../shared/theme/tokens';
+import { editorColors, langMeta } from '../../../shared/theme';
 import { runJavaScript, type RunResult } from '../../../shared/runner';
 
 /** Палитра подсветки синтаксиса (tokyo-night). */

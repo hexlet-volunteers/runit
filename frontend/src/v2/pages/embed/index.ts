@@ -1,1 +1,1 @@
-export { default } from '../../pages/embed/ui/EmbedPage'
+export { default } from './ui/EmbedPage'

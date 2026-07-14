@@ -1,1 +1,1 @@
-export { default } from '../../pages/editor/ui/EditorPage'
+export { default } from './ui/EditorPage'

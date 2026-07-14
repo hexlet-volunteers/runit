@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Anchor, Box, Container, Group, Text } from '@mantine/core';
-import { RunitLogo } from '../../shared/ui/RunitLogo';
+import { RunitLogo } from '../../shared/ui';
 
 // TODO: провести рефакторинг архитектуры (выделить в отдельную таску)
 /** Компонент подвала сайта с навигационными ссылками и копирайтом. */

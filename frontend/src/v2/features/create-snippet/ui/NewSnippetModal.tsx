@@ -18,19 +18,11 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconDice5 } from '@tabler/icons-react';
-import { langMeta } from '../../../shared/theme/tokens';
+import { langMeta } from '../../../shared/theme';
 import { useSession } from '../../../entities/user';
-import { useTRPCClient } from '../../../shared/api/trpc';
+import { useTRPCClient } from '../../../shared/api';
 import { SNIPPETS_QUERY_KEY, sampleCode } from '../../../entities/snippet';
-
-/** Метка поля формы с кастомным стилем. */
-function FieldLabel({ children }: { children: string }) {
-  return (
-    <Text fz="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: 0.8 }}>
-      {children}
-    </Text>
-  );
-}
+import FieldLabel from './FieldLabel';
 
 /** Подсказки для каждого уровня видимости сниппета. */
 const VISIBILITY_HINTS: Record<string, string> = {

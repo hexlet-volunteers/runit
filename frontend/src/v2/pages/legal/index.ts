@@ -1,1 +1,1 @@
-export { default } from '../../pages/legal/ui/LegalPage'
+export { default } from './ui/LegalPage'

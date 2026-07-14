@@ -31,7 +31,6 @@ export default function LandingPage() {
     if (location.hash === '#features') scrollToFeatures();
   }, [location.hash]);
   
-
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <AppHeader />

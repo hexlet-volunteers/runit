@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Anchor, Box, Button, Center, Group, Loader, Text } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import { useTRPCClient } from '../../../shared/api/trpc';
-import { editorColors, langMeta } from '../../../shared/theme/tokens';
+import { useTRPCClient } from '../../../shared/api';
+import { editorColors, langMeta } from '../../../shared/theme';
 import { runJavaScript, unsupportedLanguage, type RunResult } from '../../../shared/runner';
 import { type Snippet } from '../../../entities/snippet'
 

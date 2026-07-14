@@ -10,8 +10,8 @@ import {
 } from '@mantine/core';
 import { useSession } from '../../entities/user';
 import { useAuthModal } from '../../features/auth';
-import { RunitLogo } from '../../shared/ui/RunitLogo'
-import { initialsOf } from './initialsOf'
+import { RunitLogo } from '../../shared/ui'
+import { initialsOf } from '../../shared/lib/initialsOf'
 
 // TODO: провести рефакторинг архитектуры (выделить в отдельную таску)
 /** Компонент шапки сайта с логотипом, навигацией и меню пользователя. */

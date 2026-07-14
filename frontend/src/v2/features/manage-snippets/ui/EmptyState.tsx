@@ -1,5 +1,5 @@
 import { Box, Button, Group, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
-import { langMeta } from '../../../shared/theme/tokens';
+import { langMeta } from '../../../shared/theme';
 import { sampleCode } from '../../../entities/snippet';
 
 const EXAMPLE_LANGS = ['javascript', 'python', 'php'] as const;
@@ -10,6 +10,7 @@ type Props = {
   creating: boolean;
 };
 
+/** Пустое состояние дашборда: предложение создать сниппет или выбрать пример. */
 export default function EmptyState({ onCreateClick, onCreateExample, creating }: Props) {
   return (
     <Stack align="center" gap="lg" py={64}>

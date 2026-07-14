@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Box,
@@ -12,22 +11,12 @@ import {
 } from '@mantine/core';
 import { AppHeader } from '../../../widgets/header';
 import { AppFooter } from '../../../widgets/footer';
+import LegalSection from './LegalSection';
 
+/** Вкладки правовой страницы: условия использования / конфиденциальность. */
 type LegalTab = 'terms' | 'privacy';
 
-function LegalSection({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <Box>
-      <Title order={4} mb={6}>
-        {title}
-      </Title>
-      <Text c="dark.6" style={{ lineHeight: 1.65 }}>
-        {children}
-      </Text>
-    </Box>
-  );
-}
-
+/** Секции вкладки «Условия использования». */
 const termsSections: Array<{ title: string; body: string }> = [
   {
     title: '1. О сервисе',
@@ -63,6 +52,7 @@ const termsSections: Array<{ title: string; body: string }> = [
   },
 ];
 
+/** Секции вкладки «Конфиденциальность». */
 const privacySections: Array<{ title: string; body: string }> = [
   {
     title: '1. Какие данные мы храним',
@@ -97,11 +87,13 @@ const privacySections: Array<{ title: string; body: string }> = [
   },
 ];
 
+/** Страница /legal с табами «Условия использования» и «Конфиденциальность». Управляется ?tab=. */
 export default function LegalPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get('tab');
   const tab: LegalTab = rawTab === 'privacy' ? 'privacy' : 'terms';
 
+  /** Переключает вкладку и обновляет query-параметр `?tab=` в URL. */
   const handleTabChange = (value: string | null) => {
     const next: LegalTab = value === 'privacy' ? 'privacy' : 'terms';
     setSearchParams(next === 'terms' ? {} : { tab: next }, { replace: true });

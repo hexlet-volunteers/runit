@@ -1,5 +1,5 @@
 import { Box, Group, Text, Title } from '@mantine/core';
-import { langMeta } from '../../../shared/theme/tokens';
+import { langMeta } from '../../../shared/theme';
 
 // Чипы «10 языков — из коробки». В MVP реально исполняется только JavaScript,
 // остальные чипы — просто витрина (это ок по макету).
