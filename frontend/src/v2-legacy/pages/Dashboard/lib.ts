@@ -24,7 +24,6 @@ export const plural = (n: number, forms: [string, string, string]): string => {
 
 // Относительная дата по-русски: «2 часа назад», «вчера», «месяц назад».
 export function relativeDate(input: string | Date): string {
-  if (!input) return 'недавно'; // бэкенд может отдавать null в createdAt (баг таймстампов схемы)
   const date = new Date(input);
   const diffMs = Date.now() - date.getTime();
   if (Number.isNaN(date.getTime())) return '';
