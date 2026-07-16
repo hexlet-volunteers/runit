@@ -1,3 +1,3 @@
 export { SessionContext, useSession } from './model/session';
 export type { SessionUser, SessionContextValue } from './types';
-export { useUserById } from './api'
+export { useUserById, useUserByUsername } from './api';

@@ -15,13 +15,14 @@ import {
   Title,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import { useTRPCClient } from '../../../shared/api';
 import { useSession } from '../../../entities/user';
+import { useUserByUsername } from '../../../entities/user';
+import { useTRPCClient } from '../../../shared/api';
 import { AppHeader } from '../../../widgets/header';
 import { initialsOf } from '../../../shared/lib/initialsOf';
 import { AppFooter } from '../../../widgets/footer';
 import { plural } from '../../../shared/lib';
-import { type Snippet } from '../../../entities/snippet'
+import { type Snippet, getAllSnippets } from '../../../entities/snippet';
 import NotFoundState from './NotFoundState';
 import SnippetCard from './SnippetCard';
 
@@ -46,7 +47,8 @@ const MONTHS_GENITIVE = [
  * @returns строка вида «марта 2024» или «недавнего времени», если дата некорректна.
  */
 function sinceLabel(date: Date): string {
-  if (Number.isNaN(date.getTime()) || date.getTime() === 0) return 'недавнего времени';
+  if (Number.isNaN(date.getTime()) || date.getTime() === 0)
+    return 'недавнего времени';
   return `${MONTHS_GENITIVE[date.getMonth()]} ${date.getFullYear()}`;
 }
 
@@ -62,7 +64,7 @@ export default function ProfilePage() {
 
   const userQuery = useQuery({
     queryKey: ['v2', 'user', username],
-    queryFn: () => trpc.users.getUserByUsername.query(username),
+    queryFn: () => useUserByUsername(trpc, username),
     retry: false,
   });
 
@@ -73,7 +75,7 @@ export default function ProfilePage() {
   const snippetsQuery = useQuery({
     queryKey: ['v2', 'profileSnippets', profileUser?.id],
     queryFn: async () => {
-      const all = (await trpc.snippets.getAllSnippets.query()) as Snippet[];
+      const all = await getAllSnippets(trpc);
       return all.filter((s) => s.userId === profileUser!.id);
     },
     enabled: !!profileUser,
@@ -124,7 +126,9 @@ export default function ProfilePage() {
             <Text fw={800} fz={26}>
               {snippets.length}
             </Text>
-            <Text c="dimmed">{plural(snippets.length, ['сниппет', 'сниппета', 'сниппетов'])}</Text>
+            <Text c="dimmed">
+              {plural(snippets.length, ['сниппет', 'сниппета', 'сниппетов'])}
+            </Text>
           </Group>
           <Group gap={8} align="baseline">
             <Text fw={800} fz={26}>
@@ -152,14 +156,19 @@ export default function ProfilePage() {
             <Stack align="center" gap={4} py="lg">
               <Text fw={600}>Пока нет публичных сниппетов</Text>
               <Text c="dimmed" fz="sm" ta="center">
-                Когда @{profileUser.username} опубликует сниппеты, они появятся здесь.
+                Когда @{profileUser.username} опубликует сниппеты, они появятся
+                здесь.
               </Text>
             </Stack>
           </Card>
         ) : (
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
             {snippets.map((s) => (
-              <SnippetCard key={s.id} snippet={s} username={profileUser.username} />
+              <SnippetCard
+                key={s.id}
+                snippet={s}
+                username={profileUser.username}
+              />
             ))}
           </SimpleGrid>
         )}
@@ -168,7 +177,9 @@ export default function ProfilePage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div
+      style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
+    >
       <AppHeader />
       <Container size="lg" py="xl" style={{ width: '100%', flex: 1 }}>
         {content}

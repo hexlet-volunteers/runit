@@ -1,1 +1,2 @@
-export { useUserById } from './useUserById'
+export { useUserById } from './useUserById';
+export { useUserByUsername } from './useUserByUsername';

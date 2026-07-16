@@ -16,7 +16,7 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useTRPCClient } from '../../../shared/api';
 import { editorColors, langMeta } from '../../../shared/theme';
 import { useSession } from '../../../entities/user';
@@ -26,7 +26,11 @@ import { initialsOf } from '../../../shared/lib/initialsOf';
 import { AppFooter } from '../../../widgets/footer';
 import CodeCard from './CodeCard';
 import NotFoundState from './NotFoundState';
-import { type Snippet, createSnippet } from '../../../entities/snippet'
+import {
+  type Snippet,
+  createSnippet,
+  useSnippetBySlug,
+} from '../../../entities/snippet';
 
 /** Относительная дата по-русски: «сегодня», «вчера», «N дн. назад» либо locale-дата. */
 export function relativeDate(iso: string): string {
@@ -48,11 +52,11 @@ export default function SharePage() {
   const { user, isGuest } = useSession();
   const auth = useAuthModal();
 
-  const { data: snippet, isLoading, isError } = useQuery({
-    queryKey: ['v2', 'snippet-by-slug', username, slug],
-    queryFn: () => trpc.snippets.getSnippetByUsernameSlug.query({ username, slug }),
-    retry: false,
-  });
+  const {
+    data: snippet,
+    isLoading,
+    isError,
+  } = useSnippetBySlug(username, slug);
 
   const forkMutation = useMutation({
     mutationFn: async (s: Snippet) =>
@@ -82,7 +86,14 @@ export default function SharePage() {
     : '';
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f8f9fa' }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        background: '#f8f9fa',
+      }}
+    >
       <AppHeader />
 
       <Container size="lg" py="xl" style={{ width: '100%' }}>
@@ -105,13 +116,24 @@ export default function SharePage() {
                 <Text ff="monospace" fz="sm" c="dimmed">
                   {shareUrl}
                 </Text>
-                <Badge variant="light" color="green" size="sm" radius="sm" leftSection="•">
+                <Badge
+                  variant="light"
+                  color="green"
+                  size="sm"
+                  radius="sm"
+                  leftSection="•"
+                >
                   публичный
                 </Badge>
               </Group>
 
               {/* Заголовок + действия. На мобильной ширине Group переносит блоки на новую строку. */}
-              <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
+              <Group
+                justify="space-between"
+                align="flex-start"
+                gap="md"
+                wrap="wrap"
+              >
                 <Group gap="md" wrap="wrap">
                   <Title order={2} ff="monospace">
                     {(snippet as Snippet).name}
@@ -153,7 +175,11 @@ export default function SharePage() {
                       </Button>
                     )}
                   </CopyButton>
-                  <Button onClick={() => navigate(`/editor/${(snippet as Snippet).id}`)}>
+                  <Button
+                    onClick={() =>
+                      navigate(`/editor/${(snippet as Snippet).id}`)
+                    }
+                  >
                     Открыть в редакторе
                   </Button>
                 </Group>
@@ -164,7 +190,13 @@ export default function SharePage() {
                 <Avatar color="blue" radius="xl" size="sm">
                   {initialsOf(username)}
                 </Avatar>
-                <Anchor component={Link} to={`/u/${username}`} fw={600} fz="sm" c="dark.9">
+                <Anchor
+                  component={Link}
+                  to={`/u/${username}`}
+                  fw={600}
+                  fz="sm"
+                  c="dark.9"
+                >
                   {username}
                 </Anchor>
                 <Text fz="sm" c="dimmed">
@@ -181,14 +213,17 @@ export default function SharePage() {
 
             <CodeCard
               snippet={snippet as Snippet}
-              onOpenEditor={() => navigate(`/editor/${(snippet as Snippet).id}`)}
+              onOpenEditor={() =>
+                navigate(`/editor/${(snippet as Snippet).id}`)
+              }
             />
 
             {/* Встраивание */}
             <Stack gap="xs">
               <Title order={3}>Встроить этот сниппет</Title>
               <Text c="dimmed" fz="sm">
-                Вставьте код на любую страницу — виджет всегда показывает актуальную версию.
+                Вставьте код на любую страницу — виджет всегда показывает
+                актуальную версию.
               </Text>
               <Group align="stretch" gap="md" wrap="wrap">
                 <Box
@@ -207,14 +242,22 @@ export default function SharePage() {
                     ff="monospace"
                     fz={13}
                     c={editorColors.text}
-                    style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}
+                    style={{
+                      margin: 0,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-all',
+                    }}
                   >
                     {embedCode}
                   </Text>
                 </Box>
                 <CopyButton value={embedCode}>
                   {({ copied, copy }) => (
-                    <Button variant="light" onClick={copy} style={{ alignSelf: 'flex-start' }}>
+                    <Button
+                      variant="light"
+                      onClick={copy}
+                      style={{ alignSelf: 'flex-start' }}
+                    >
                       {copied ? 'Скопировано' : 'Копировать код'}
                     </Button>
                   )}
@@ -226,7 +269,12 @@ export default function SharePage() {
             <Stack gap="xs">
               <Title order={3}>Статистика</Title>
               {/* TODO(#840): графики запусков и список страниц встраивания. */}
-              <Card withBorder radius="lg" padding="xl" style={{ opacity: 0.6 }}>
+              <Card
+                withBorder
+                radius="lg"
+                padding="xl"
+                style={{ opacity: 0.6 }}
+              >
                 <Center py="lg">
                   <Stack align="center" gap={4}>
                     <Text fw={600} c="dimmed">

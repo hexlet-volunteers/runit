@@ -1,11 +1,21 @@
 import { useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Anchor, Box, Button, Center, Group, Loader, Text } from '@mantine/core';
-import { useQuery } from '@tanstack/react-query';
-import { useTRPCClient } from '../../../shared/api';
+import {
+  Anchor,
+  Box,
+  Button,
+  Center,
+  Group,
+  Loader,
+  Text,
+} from '@mantine/core';
 import { editorColors, langMeta } from '../../../shared/theme';
-import { runJavaScript, unsupportedLanguage, type RunResult } from '../../../shared/runner';
-import { type Snippet } from '../../../entities/snippet'
+import {
+  runJavaScript,
+  unsupportedLanguage,
+  type RunResult,
+} from '../../../shared/runner';
+import { type Snippet, useSnippetBySlug } from '../../../entities/snippet';
 
 // Компактный embed-виджет (без AppHeader/AppFooter — страница живёт внутри iframe).
 // TODO(#841): варианты оформления card/minimal/tabs (query-параметр variant).
@@ -29,20 +39,20 @@ function lineColor(type: string): string {
 export default function EmbedPage() {
   const { username = '', slug = '' } = useParams();
   const [searchParams] = useSearchParams();
-  const trpc = useTRPCClient();
 
   const theme = searchParams.get('theme') === 'dark' ? 'dark' : 'light';
   const heightParam = Number(searchParams.get('height'));
-  const widgetHeight = Number.isFinite(heightParam) && heightParam > 0 ? heightParam : null;
+  const widgetHeight =
+    Number.isFinite(heightParam) && heightParam > 0 ? heightParam : null;
 
   const [result, setResult] = useState<RunResult | null>(null);
   const [running, setRunning] = useState(false);
 
-  const { data: snippet, isLoading, isError } = useQuery({
-    queryKey: ['v2', 'embed-snippet', username, slug],
-    queryFn: () => trpc.snippets.getSnippetByUsernameSlug.query({ username, slug }),
-    retry: false,
-  });
+  const {
+    data: snippet,
+    isLoading,
+    isError,
+  } = useSnippetBySlug(username, slug);
 
   // Палитра «рамки» виджета: тёмная или светлая по query-параметру theme.
   const frame =
@@ -111,7 +121,12 @@ export default function EmbedPage() {
       }}
     >
       {/* Шапка виджета */}
-      <Group justify="space-between" px="md" py={8} style={{ borderBottom: `1px solid ${frame.border}` }}>
+      <Group
+        justify="space-between"
+        px="md"
+        py={8}
+        style={{ borderBottom: `1px solid ${frame.border}` }}
+      >
         <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
           <Text ff="monospace" fz="sm" c={frame.text} truncate>
             {fileName}
@@ -131,21 +146,50 @@ export default function EmbedPage() {
           </Text>
         </Group>
         <Group gap="sm" wrap="nowrap">
-          <Anchor href={shareHref} target="_blank" rel="noopener noreferrer" fz="sm" fw={600}>
+          <Anchor
+            href={shareHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            fz="sm"
+            fw={600}
+          >
             Открыть в Runit ↗
           </Anchor>
-          <Button size="compact-sm" onClick={() => run(s)} loading={running} leftSection={<span aria-hidden>▶</span>}>
+          <Button
+            size="compact-sm"
+            onClick={() => run(s)}
+            loading={running}
+            leftSection={<span aria-hidden>▶</span>}
+          >
             Запустить
           </Button>
         </Group>
       </Group>
 
       {/* Код (read-only) */}
-      <Box style={{ flex: 1, minHeight: 0, overflow: 'auto', background: editorColors.bg, padding: '12px 16px' }}>
-        <pre style={{ margin: 0, fontFamily: 'var(--mantine-font-family-monospace)', fontSize: 13, lineHeight: 1.65 }}>
+      <Box
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflow: 'auto',
+          background: editorColors.bg,
+          padding: '12px 16px',
+        }}
+      >
+        <pre
+          style={{
+            margin: 0,
+            fontFamily: 'var(--mantine-font-family-monospace)',
+            fontSize: 13,
+            lineHeight: 1.65,
+          }}
+        >
           {s.code.split('\n').map((line, i) => (
             // eslint-disable-next-line react/no-array-index-key
-            <div key={i} style={{ color: editorColors.text, whiteSpace: 'pre' }}>
+            <div
+              key={i}
+              style={{ color: editorColors.text, whiteSpace: 'pre' }}
+            >
               {line || ' '}
             </div>
           ))}
@@ -166,20 +210,38 @@ export default function EmbedPage() {
           }}
         >
           <Group justify="space-between" mb={4}>
-            <Text fz={10} fw={700} c={editorColors.dim} style={{ letterSpacing: 1 }}>
+            <Text
+              fz={10}
+              fw={700}
+              c={editorColors.dim}
+              style={{ letterSpacing: 1 }}
+            >
               РЕЗУЛЬТАТ
             </Text>
-            <Text fz={10} c={result.exitCode === 0 ? editorColors.ok : editorColors.error}>
+            <Text
+              fz={10}
+              c={result.exitCode === 0 ? editorColors.ok : editorColors.error}
+            >
               exit {result.exitCode} · {Math.round(result.durationMs)} мс
             </Text>
           </Group>
-          <pre style={{ margin: 0, fontFamily: 'var(--mantine-font-family-monospace)', fontSize: 12, lineHeight: 1.6 }}>
+          <pre
+            style={{
+              margin: 0,
+              fontFamily: 'var(--mantine-font-family-monospace)',
+              fontSize: 12,
+              lineHeight: 1.6,
+            }}
+          >
             {result.lines.length === 0 ? (
               <span style={{ color: editorColors.dim }}>(нет вывода)</span>
             ) : (
               result.lines.map((l, i) => (
                 // eslint-disable-next-line react/no-array-index-key
-                <div key={i} style={{ color: lineColor(l.type), whiteSpace: 'pre-wrap' }}>
+                <div
+                  key={i}
+                  style={{ color: lineColor(l.type), whiteSpace: 'pre-wrap' }}
+                >
                   {l.text}
                 </div>
               ))
@@ -189,7 +251,12 @@ export default function EmbedPage() {
       )}
 
       {/* Подпись */}
-      <Group gap={6} px="md" py={6} style={{ borderTop: `1px solid ${frame.border}`, flexShrink: 0 }}>
+      <Group
+        gap={6}
+        px="md"
+        py={6}
+        style={{ borderTop: `1px solid ${frame.border}`, flexShrink: 0 }}
+      >
         <Text c="blue.6" fz="xs" aria-hidden>
           ⚡
         </Text>
