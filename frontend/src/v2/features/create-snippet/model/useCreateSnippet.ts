@@ -4,9 +4,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
 import { useSession } from '../../../entities/user';
 import { useTRPCClient } from '../../../shared/api';
-import { SNIPPETS_QUERY_KEY, sampleCode } from '../../../entities/snippet';
-import { generateSnippetName, createSnippet } from '../api/createSnippet'
-import { type Props } from '../types'
+import {
+  SNIPPETS_QUERY_KEY,
+  sampleCode,
+  generateSnippetName,
+  createSnippet,
+} from '../../../entities/snippet';
+import { type Props } from '../types';
 
 /**
  * Хук управления состоянием и логикой создания сниппета.
@@ -36,12 +40,15 @@ export default function useCreateSnippet({ opened, onClose }: Props) {
       const generated = await generateSnippetName(trpc);
       setName(generated.name);
     } catch {
-      notifications.show({ message: 'Не удалось сгенерировать имя', color: 'red' });
+      notifications.show({
+        message: 'Не удалось сгенерировать имя',
+        color: 'red',
+      });
     } finally {
       setRolling(false);
     }
   };
-  
+
   // При открытии — сброс формы и сразу сгенерированное имя, как в макете.
   useEffect(() => {
     if (!opened) return;
@@ -54,12 +61,12 @@ export default function useCreateSnippet({ opened, onClose }: Props) {
   }, [opened]);
 
   const createMutation = useMutation({
-    mutationFn: () => createSnippet(trpc, {
+    mutationFn: () =>
+      createSnippet(trpc, {
         name: name.trim(),
         code: withExample ? (sampleCode[language] ?? '') : '',
         // TODO: typescript есть в langMeta на фронте, но не в createSnippetSchema — добавить туда 'typescript'.
-        //       Бэкенд-типы (types/router/) возвращают string | null, поэтому as-приведение необходимо.
-        language: language as 'ruby' | 'java' | 'php' | 'python' | 'javascript' | 'html',
+        language,
         userId: user!.id,
       }),
     onSuccess: (created) => {
@@ -68,10 +75,24 @@ export default function useCreateSnippet({ opened, onClose }: Props) {
       navigate(`/editor/${created.id}`);
     },
     onError: () => {
-      notifications.show({ message: 'Не удалось создать сниппет', color: 'red' });
+      notifications.show({
+        message: 'Не удалось создать сниппет',
+        color: 'red',
+      });
     },
   });
 
-  return { name, setName, language, setLanguage, visibility, setVisibility,
-           withExample, setWithExample, rolling, rollName, createMutation };
+  return {
+    name,
+    setName,
+    language,
+    setLanguage,
+    visibility,
+    setVisibility,
+    withExample,
+    setWithExample,
+    rolling,
+    rollName,
+    createMutation,
+  };
 }

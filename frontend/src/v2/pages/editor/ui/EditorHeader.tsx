@@ -20,9 +20,24 @@ import {
   IconUsers,
 } from '../../../shared/ui';
 
-import { type EditorHeaderProps } from '../types'
 import { useAuthModal } from '../../../features/auth';
 import { useSession } from '../../../entities/user';
+import { type Meta } from '../types'
+
+export type EditorHeaderProps = {
+    setName: (name: string) => void,
+    name: string,
+    meta: Meta,
+    saveNow: () => void,
+    statusMeta: {
+      color: string;
+      label: string;
+    },
+    markDirty: () => void,
+    handleRun: () => Promise<void>,
+    setShareOpened: (v: boolean) => void,
+    running: boolean,
+}
 
 export default function EditorHeader( props: EditorHeaderProps ) {
   const { user, isGuest } = useSession();

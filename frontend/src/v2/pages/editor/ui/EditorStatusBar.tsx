@@ -2,7 +2,15 @@ import {
   Group,
   Text,
 } from '@mantine/core';
-import { type StatusBarProps } from '../types'
+import { type Meta } from '../types'
+
+export type StatusBarProps = {
+  meta: Meta,
+  cursor: {
+    line: number;
+    col: number;
+  },
+}
 
 export default function EditorStatusBar(props: StatusBarProps) {
   const {meta, cursor } = props;

@@ -10,7 +10,13 @@ import SectionLabel from './SectionLabel';
 import {
   IconPlus,
 } from '../../../shared/ui';
-import { type EditorSidebarProps } from '../types'
+import { type Meta } from '../types'
+
+export type EditorSidebarProps = {
+  meta: Meta,
+  fileName: string,
+  setPackageOpened: (v: boolean) => void
+}
 
 export default function EditorSidebar(props: EditorSidebarProps) {
   const {meta, fileName, setPackageOpened } = props;

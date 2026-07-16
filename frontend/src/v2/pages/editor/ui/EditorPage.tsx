@@ -1,37 +1,29 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import {
-  Box,
-  Button,
-  Center,
-  Loader,
-  Stack,
-  Text,
-} from '@mantine/core';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { Box, Button, Center, Loader, Stack, Text } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import MonacoEditor, { type OnMount } from '@monaco-editor/react';
-import { notifications } from '@mantine/notifications';
 
 import { useTRPCClient } from '../../../shared/api';
 import { editorColors, langMeta } from '../../../shared/theme';
 import { useSession } from '../../../entities/user';
-import { useAuthModal } from '../../../features/auth';
 
 import { ConsolePanel } from '../../../features/run-code';
 import { ShareModal } from '../../../features/share-snippet';
 import AddPackageModal from './AddPackageModal';
 
-import { FILE_NAME_BY_LANGUAGE, STARTER_CODE, SAVE_STATUS_META } from '../lib/constants'
-import { type SaveStatus } from "../types";
+import {
+  FILE_NAME_BY_LANGUAGE,
+  STARTER_CODE,
+  SAVE_STATUS_META,
+} from '../lib/constants';
 import EditorHeader from './EditorHeader';
-import EditorSidebar from './EditorSidebar'
-import EditorStatusBar from './EditorStatusBar'
-import { useRunner } from '../../../features/run-code'
+import EditorSidebar from './EditorSidebar';
+import EditorStatusBar from './EditorStatusBar';
+import { useRunner } from '../../../features/run-code';
+import { useSnippetById, generateSnippetName } from '../../../entities/snippet';
+import { useSnippetSave } from '../model';
+import { useUserById } from '../../../entities/user';
 
 // Экран редактора Runit v2 (docs/design/editor.png).
 // TODO(#821, #609): серверное исполнение — сейчас JS выполняется в Web Worker,
@@ -41,21 +33,17 @@ import { useRunner } from '../../../features/run-code'
 export default function EditorPage() {
   const { id } = useParams();
   const snippetId = id ? Number(id) : null;
-  const navigate = useNavigate();
   const trpc = useTRPCClient();
-  const { user, isGuest } = useSession();
-  const auth = useAuthModal();
+  const { user } = useSession();
 
   const [name, setName] = useState('');
   const [code, setCode] = useState(STARTER_CODE);
   const [language, setLanguage] = useState('javascript');
-  const [slug, setSlug] = useState<string | null>(null);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('unsaved');
   const [cursor, setCursor] = useState({ line: 1, col: 1 });
   const [shareOpened, setShareOpened] = useState(false);
   const [packageOpened, setPackageOpened] = useState(false);
 
-  // Рефы для стабильных колбэков (хоткей, monaco-команда, debounce).
+  // Рефы для стабильных колбэков (saveNow использует их через useSnippetSave).
   const nameRef = useRef(name);
   const codeRef = useRef(code);
   const languageRef = useRef(language);
@@ -63,33 +51,60 @@ export default function EditorPage() {
   codeRef.current = code;
   languageRef.current = language;
 
-  const { running, lines, stdin, runRef, setStdin, tab, setTab, handleRun, clearLines } = useRunner(code, language)
+  const {
+    running,
+    lines,
+    stdin,
+    runRef,
+    setStdin,
+    tab,
+    setTab,
+    handleRun,
+    clearLines,
+  } = useRunner(code, language);
+  const {
+    saveNow,
+    markDirty,
+    saveStatus,
+    setSaveStatus,
+    slug,
+    setSlug,
+    snippetIdRef,
+  } = useSnippetSave(snippetId, nameRef, codeRef, languageRef);
 
   const initializedFor = useRef<string>('');
 
   // --- Данные -------------------------------------------------------------
+  /** Загрузка сниппета по ID (только для существующих). */
   const snippetQuery = useQuery({
     queryKey: ['v2-editor-snippet', snippetId],
-    queryFn: () => trpc.snippets.getSnippetById.query(snippetId as number),
+    queryFn: () => useSnippetById(trpc, snippetId as number),
     enabled: snippetId != null,
     retry: false,
   });
 
+  /** Загрузка владельца сниппета для подписи в ShareModal. */
   const ownerQuery = useQuery({
     queryKey: ['v2-editor-owner', snippetQuery.data?.userId],
-    queryFn: () => trpc.users.getUserById.query(snippetQuery.data!.userId),
+    queryFn: () => useUserById(trpc, snippetQuery.data!.userId),
     enabled: snippetQuery.data?.userId != null,
   });
 
+  /** Генерация имени для нового черновика (только для новых сниппетов). */
   const draftNameQuery = useQuery({
     queryKey: ['v2-editor-draft-name'],
-    queryFn: () => trpc.snippets.generateSnippetName.query(),
+    queryFn: () => generateSnippetName(trpc),
     enabled: snippetId == null,
     staleTime: Infinity,
   });
 
+  /** Инициализация стейта редактора при загрузке существующего сниппета. */
   useEffect(() => {
-    if (snippetId != null && snippetQuery.data && initializedFor.current !== `id:${snippetId}`) {
+    if (
+      snippetId != null &&
+      snippetQuery.data &&
+      initializedFor.current !== `id:${snippetId}`
+    ) {
       initializedFor.current = `id:${snippetId}`;
       setName(snippetQuery.data.name);
       setCode(snippetQuery.data.code);
@@ -99,68 +114,17 @@ export default function EditorPage() {
     }
   }, [snippetId, snippetQuery.data]);
 
+  /** Установка имени из сгенерированного draft-имени для нового сниппета. */
   useEffect(() => {
-    if (snippetId == null && draftNameQuery.data && initializedFor.current === '') {
+    if (
+      snippetId == null &&
+      draftNameQuery.data &&
+      initializedFor.current === ''
+    ) {
       initializedFor.current = 'draft';
       setName(draftNameQuery.data.name);
     }
   }, [snippetId, draftNameQuery.data]);
-
-  // --- Сохранение ---------------------------------------------------------
-  // TODO(#826): разрешение конфликтов и оффлайн-черновики.
-  const savingRef = useRef(false);
-  const snippetIdRef = useRef(snippetId);
-  snippetIdRef.current = snippetId;
-
-  /** Сохраняет сниппет (создаёт или обновляет) через API. */
-  const saveNow = useCallback(async () => {
-    if (isGuest || !user) {
-      auth.open('register');
-      return;
-    }
-    if (savingRef.current) return;
-    savingRef.current = true;
-    setSaveStatus('saving');
-    try {
-      if (snippetIdRef.current == null) {
-        const created = await trpc.snippets.createSnippet.mutate({
-          name: nameRef.current,
-          code: codeRef.current,
-          language: languageRef.current as 'ruby' | 'java' | 'php' | 'python' | 'javascript' | 'html',
-          userId: user.id,
-        });
-        initializedFor.current = `id:${created.id}`;
-        setSlug(created.slug);
-        setSaveStatus('saved');
-        navigate(`/editor/${created.id}`, { replace: true });
-      } else {
-        await trpc.snippets.updateSnippet.mutate({
-          id: snippetIdRef.current,
-          name: nameRef.current,
-          code: codeRef.current,
-          language: languageRef.current as 'ruby' | 'java' | 'php' | 'python' | 'javascript' | 'html',
-        });
-        setSaveStatus('saved');
-      }
-    } catch {
-      setSaveStatus('unsaved');
-      notifications.show({ message: 'Не удалось сохранить сниппет', color: 'red' });
-    } finally {
-      savingRef.current = false;
-    }
-  }, [isGuest, user, auth, trpc, navigate]);
-
-  // Автосохранение с debounce 1.5 c — только для сохранённого сниппета юзера.
-  useEffect(() => {
-    if (saveStatus !== 'unsaved') return undefined;
-    if (isGuest || snippetId == null) return undefined;
-    const timer = setTimeout(() => {
-      void saveNow();
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [saveStatus, name, code, isGuest, snippetId, saveNow]);
-
-  const markDirty = useCallback(() => setSaveStatus('unsaved'), []);
 
   /** Обработчик монтирования Monaco Editor: отслеживание позиции курсора и хоткей Ctrl+Enter. */
   const handleEditorMount: OnMount = (editor, monaco) => {
@@ -186,7 +150,9 @@ export default function EditorPage() {
     return (
       <Center h="100vh">
         <Stack align="center" gap="sm">
-          <Text fw={700} fz="lg">Сниппет не найден</Text>
+          <Text fw={700} fz="lg">
+            Сниппет не найден
+          </Text>
           <Button component={Link} to="/snippets" variant="light">
             К моим сниппетам
           </Button>
@@ -195,7 +161,11 @@ export default function EditorPage() {
     );
   }
 
-  const meta = langMeta[language] ?? { label: language, dot: '#adb5bd', runnable: false };
+  const meta = langMeta[language] ?? {
+    label: language,
+    dot: '#adb5bd',
+    runnable: false,
+  };
   const fileName = FILE_NAME_BY_LANGUAGE[language] ?? 'index.txt';
   const statusMeta = SAVE_STATUS_META[saveStatus];
   const shareUsername = ownerQuery.data?.username ?? user?.username ?? 'guest';
@@ -225,9 +195,12 @@ export default function EditorPage() {
 
       {/* ===== Основная область ===== */}
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-
         {/* --- Левый сайдбар (212px) --- */}
-        <EditorSidebar fileName={fileName} meta={meta} setPackageOpened={setPackageOpened}/>
+        <EditorSidebar
+          fileName={fileName}
+          meta={meta}
+          setPackageOpened={setPackageOpened}
+        />
 
         {/* --- Центр: редактор кода --- */}
         <div
@@ -303,7 +276,7 @@ export default function EditorPage() {
       </div>
 
       {/* ===== Статус-бар (28px) ===== */}
-      <EditorStatusBar meta={meta} cursor={cursor}/>
+      <EditorStatusBar meta={meta} cursor={cursor} />
 
       <ShareModal
         opened={shareOpened}
@@ -312,7 +285,10 @@ export default function EditorPage() {
         slug={slug ?? 'draft'}
         saved={snippetIdRef.current != null || slug != null}
       />
-      <AddPackageModal opened={packageOpened} onClose={() => setPackageOpened(false)} />
+      <AddPackageModal
+        opened={packageOpened}
+        onClose={() => setPackageOpened(false)}
+      />
     </div>
   );
 }

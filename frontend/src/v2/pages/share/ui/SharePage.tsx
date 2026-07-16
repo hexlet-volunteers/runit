@@ -26,7 +26,7 @@ import { initialsOf } from '../../../shared/lib/initialsOf';
 import { AppFooter } from '../../../widgets/footer';
 import CodeCard from './CodeCard';
 import NotFoundState from './NotFoundState';
-import { type Snippet } from '../../../entities/snippet'
+import { type Snippet, createSnippet } from '../../../entities/snippet'
 
 /** Относительная дата по-русски: «сегодня», «вчера», «N дн. назад» либо locale-дата. */
 export function relativeDate(iso: string): string {
@@ -54,19 +54,14 @@ export default function SharePage() {
     retry: false,
   });
 
-  // TODO: бэкенд возвращает `id?` и `language: string`, а useMutation ожидает строгие типы.
-  // Временное решение:
-  // as Promise<{ id: number }> и
-  // language as 'ruby' | 'java' | 'php' | 'python' | 'javascript' | 'html',
-  // когда бэкенд поправит — убрать.
   const forkMutation = useMutation({
     mutationFn: async (s: Snippet) =>
-      trpc.snippets.createSnippet.mutate({
+      createSnippet(trpc, {
         name: `${s.name}-fork`,
         code: s.code,
-        language: s.language as 'ruby' | 'java' | 'php' | 'python' | 'javascript' | 'html',
+        language: s.language,
         userId: user!.id,
-      }) as Promise<{ id: number }>,
+      }),
     onSuccess: (created: { id: number }) => navigate(`/editor/${created.id}`),
   });
 
