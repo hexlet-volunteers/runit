@@ -1,8 +1,10 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Modal } from '@mantine/core';
-import { type AuthMode } from '../../features/auth/types';
-import { AuthModalContext } from '../../features/auth/model/authModal';
-import AuthForms from '../../features/auth/ui/AuthForms';
+import {
+  type AuthMode,
+  AuthModalContext,
+  AuthForms,
+} from '../../features/auth';
 
 export function AuthModalProvider({ children }: { children: ReactNode }) {
   const [opened, setOpened] = useState(false);
@@ -11,7 +13,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       opened,
-      mode, 
+      mode,
       setMode,
       open: (m: AuthMode = 'login') => {
         setMode(m);
