@@ -1,0 +1,74 @@
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useTRPCClient } from '../../shared/api';
+import {
+  SessionContext,
+  getUserByEmail,
+  createUser,
+} from '../../entities/user';
+import type { SessionUser } from '../../entities/user';
+
+// TODO(#639, #792): мок-сессия до появления настоящей авторизации на бэкенде.
+// login не проверяет пароль (bcrypt-контур появится в #791/#639), сессия живёт
+// в localStorage. Контракт хука сохранится при переходе на реальный auth.
+
+const STORAGE_KEY = 'runit.v2.session';
+
+const readStored = (): SessionUser | null => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as SessionUser) : null;
+  } catch {
+    return null;
+  }
+};
+
+export function SessionProvider({ children }: { children: ReactNode }) {
+  const trpc = useTRPCClient();
+  const [user, setUser] = useState<SessionUser | null>(readStored);
+
+  const persist = useCallback((u: SessionUser | null) => {
+    if (u) localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
+    else localStorage.removeItem(STORAGE_KEY);
+    setUser(u);
+  }, []);
+
+  const login = useCallback(
+    async (email: string, _password: string) => {
+      // TODO(#639): реальная проверка пароля на сервере.
+      const found = await getUserByEmail(trpc, email);
+      const u: SessionUser = {
+        id: found.id,
+        username: found.username,
+        email: found.email,
+      };
+      persist(u);
+      return u;
+    },
+    [trpc, persist],
+  );
+
+  const register = useCallback(
+    async (username: string, email: string, password: string) => {
+      const created = await createUser(trpc, { username, email, password });
+      const u: SessionUser = {
+        id: created.id,
+        username: created.username,
+        email: created.email,
+      };
+      persist(u);
+      return u;
+    },
+    [trpc, persist],
+  );
+
+  const logout = useCallback(() => persist(null), [persist]);
+
+  const value = useMemo(
+    () => ({ user, isGuest: !user, login, register, logout }),
+    [user, login, register, logout],
+  );
+
+  return (
+    <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
+  );
+}
