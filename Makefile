@@ -11,13 +11,11 @@ dev-frontend:
 build:
 	npm run build
 
-lint:
+lint-backend:
 	npm run lint
-	npm run lint --prefix frontend
 
-lint-fix:
+lint-fix-backend:
 	npm run lint:fix
-	npm run lint:fix --prefix frontend
 
 test:
 	npm test
@@ -31,4 +29,4 @@ db-reset:
 db-studio:
 	npm run db:studio
 
-.PHONY: install dev dev-frontend build lint lint-fix test db-setup db-reset db-studio
+.PHONY: install dev dev-frontend build lint-backend lint-fix-backend test db-setup db-reset db-studio

@@ -44,6 +44,39 @@ npm run start
 
 <http://localhost:3000>
 
+## Типы для фронтенда
+
+Бэкенд генерирует TypeScript-типы для фронтенда через tRPC. При изменении схем или роутеров на бэкенде нужно перегенерировать типы:
+
+```bash
+npm run generate:types
+```
+
+Типы сохраняются в папку `types/` и используются фронтендом для автодополнения и проверки типов.
+
+## Линтер (Biome)
+
+На бэкенде используется [Biome](https://biomejs.dev/) — линтер и форматтер в одном инструменте. Конфиг находится в [biome.json](biome.json), покрывает папку `src/`.
+
+Запуск линтера:
+
+```bash
+# Проверка только бэкенда
+npm run lint
+
+# Автоисправление только бэкенда
+npm run lint:fix
+```
+
+Или через Makefile:
+
+```bash
+make lint-backend       # проверка
+make lint-fix-backend   # автоисправление
+```
+
+В VSCode Biome работает автоматически при сохранении файла — нужно установить расширение [Biome](https://marketplace.visualstudio.com/items?itemName=biomejs.biome). 
+
 ## Старая API документация
 
 Структура API старого проекта находится [здесь](https://runit.hexlet.ru/api).
