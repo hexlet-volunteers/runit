@@ -1,4 +1,4 @@
-import { initTRPC } from "@trpc/server";
+import { initTRPC } from '@trpc/server';
 
 // import type { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 // import { db } from './db/connection';
@@ -22,9 +22,9 @@ import { initTRPC } from "@trpc/server";
 // });
 
 const t = initTRPC.create({
-	errorFormatter({ shape }) {
-		return shape;
-	},
+  errorFormatter({ shape }) {
+    return shape;
+  },
 });
 
 export const router = t.router;
