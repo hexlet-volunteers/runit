@@ -40,8 +40,8 @@ export const updateUserSchema = z.object({
   username: z.string().min(3).max(20).optional(),
   email: z.string().email().max(60).optional(),
   password: z.string().min(6).max(60).optional(),
-  isAdmin: z.boolean().optional(),
   recoverHash: z.string().max(50).optional(),
+  // isAdmin is intentionally excluded — role changes require a separate admin-only procedure (add when auth is implemented)
 });
 
 export const userSettingsSchema = z.object({
