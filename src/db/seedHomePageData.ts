@@ -1,19 +1,16 @@
 import { db } from './connection';
-import { sections } from './schema/schema';
 import type { NewSection } from './schema/schema';
+import { sections } from './schema/schema';
 
 /**
  * Данные для главной страницы
  * Запускается при инициализации для заполнения таблицы sections начальными данными, если она пустая
  * Каждый компонент имеет title, description, content (в виде JSON строки) и componentType для определения типа компонента на фронте
-*/
+ */
 export async function seedHomePageData(): Promise<void> {
   try {
     // Проверяем, есть ли уже данные в таблице sections
-    const existingComponents = await db
-      .select()
-      .from(sections)
-      .limit(1);
+    const existingComponents = await db.select().from(sections).limit(1);
 
     if (existingComponents.length > 0) {
       return;
@@ -28,7 +25,8 @@ export async function seedHomePageData(): Promise<void> {
         content: JSON.stringify({
           subHeader: 'Быстрый старт',
           header: 'Мгновенный IDE в браузере',
-          subtitle: 'Пишите и запускайте код без установки конфигурации. Делитесь сниппетами, подключайте песочницы и встраваивайте в документацию.',
+          subtitle:
+            'Пишите и запускайте код без установки конфигурации. Делитесь сниппетами, подключайте песочницы и встраваивайте в документацию.',
           content: [
             {
               id: 1,
@@ -72,7 +70,8 @@ export async function seedHomePageData(): Promise<void> {
             {
               id: 3,
               title: 'Встраивание',
-              textContent: 'HTML-виджет и React-компонент для любой документации.',
+              textContent:
+                'HTML-виджет и React-компонент для любой документации.',
               icon: 'LinkIcon',
             },
             {
@@ -186,7 +185,10 @@ export async function seedHomePageData(): Promise<void> {
       },
     ];
 
-    const inserted = await db.insert(sections).values(sampleSections).returning();
+    const _inserted = await db
+      .insert(sections)
+      .values(sampleSections)
+      .returning();
   } catch (error) {
     console.error('Error seeding home page data:', error);
     throw error;

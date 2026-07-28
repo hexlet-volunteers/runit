@@ -1,21 +1,20 @@
-import { router, publicProcedure } from '../context';
-import { 
-  createSnippetSchema, 
-  updateSnippetSchema,
-  getSnippetByIdSchema,
-  getSnippetByUsernameSlugSchema,
-  deleteSnippetSchema,
-  getSnippetById,
-  getSnippetByUsernameSlug,
-  getAllSnippets,
+import { publicProcedure, router } from '../context';
+import {
   createSnippet,
-  updateSnippet,
+  createSnippetSchema,
   deleteSnippet,
-  generateName
+  deleteSnippetSchema,
+  generateName,
+  getAllSnippets,
+  getSnippetById,
+  getSnippetByIdSchema,
+  getSnippetByUsernameSlug,
+  getSnippetByUsernameSlugSchema,
+  updateSnippet,
+  updateSnippetSchema,
 } from '../db/snippets';
 
 export const snippetRouter = router({
-
   getSnippetById: publicProcedure
     .input(getSnippetByIdSchema)
     .query(async ({ input }) => {
@@ -30,17 +29,19 @@ export const snippetRouter = router({
   getSnippetByUsernameSlug: publicProcedure
     .input(getSnippetByUsernameSlugSchema)
     .query(async ({ input }) => {
-      const snippet = await getSnippetByUsernameSlug(input.username, input.slug);
+      const snippet = await getSnippetByUsernameSlug(
+        input.username,
+        input.slug,
+      );
       if (!snippet) {
         throw new Error('Snippet not found');
       }
       return snippet;
     }),
 
-  getAllSnippets: publicProcedure
-    .query(async () => {
-      return await getAllSnippets();
-    }),
+  getAllSnippets: publicProcedure.query(async () => {
+    return await getAllSnippets();
+  }),
 
   createSnippet: publicProcedure
     .input(createSnippetSchema)
@@ -53,11 +54,11 @@ export const snippetRouter = router({
     .mutation(async ({ input }) => {
       const { id, ...updates } = input;
       const updatedSnippet = await updateSnippet(id, updates);
-      
+
       if (!updatedSnippet) {
         throw new Error('Snippet not found');
       }
-      
+
       return updatedSnippet;
     }),
 
@@ -65,16 +66,15 @@ export const snippetRouter = router({
     .input(deleteSnippetSchema)
     .mutation(async ({ input }) => {
       const success = await deleteSnippet(input.id);
-        
+
       if (!success) {
         throw new Error('Snippet not found');
       }
-        
+
       return { success: true, id: input.id };
     }),
 
-  generateSnippetName: publicProcedure
-    .query(() => {
-      return { name: generateName() };
-    }),
+  generateSnippetName: publicProcedure.query(() => {
+    return { name: generateName() };
+  }),
 });
