@@ -116,7 +116,6 @@ export default function DemoWidget() {
           </Group>
           <Button
             size="xs"
-            radius="md"
             loading={running}
             onClick={handleRun}
             leftSection={
