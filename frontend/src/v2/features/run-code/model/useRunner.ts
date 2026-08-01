@@ -42,19 +42,22 @@ export default function useRunner(code: string, language: string) {
     runningRef.current = true;
     setRunning(true);
     setTab('console');
-    const result =
-      languageRef.current === 'javascript'
-        ? await runJavaScript(codeRef.current, stdinRef.current)
-        : unsupportedLanguage(languageRef.current);
-    setLines([
-      ...result.lines,
-      {
-        type: 'system',
-        text: `Процесс завершён с кодом ${result.exitCode} за ${Math.max(1, Math.round(result.durationMs))} мс`,
-      },
-    ]);
-    runningRef.current = false;
-    setRunning(false);
+    try {
+      const result =
+        languageRef.current === 'javascript'
+          ? await runJavaScript(codeRef.current, stdinRef.current)
+          : unsupportedLanguage(languageRef.current);
+      setLines([
+        ...result.lines,
+        {
+          type: 'system',
+          text: `Процесс завершён с кодом ${result.exitCode} за ${Math.max(1, Math.round(result.durationMs))} мс`,
+        },
+      ]);
+    } finally {
+      runningRef.current = false;
+      setRunning(false);
+    }
   }, []);
 
   const runRef = useRef(handleRun);
