@@ -1,11 +1,7 @@
-import { eq, desc } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod/v4';
 import { db } from './connection';
-import { 
-  sections,
-  type Section,
-  type NewSection
-} from './schema/schema';
+import { type NewSection, sections } from './schema/schema';
 
 export const sectionSchema = z.object({
   id: z.number(),
@@ -14,18 +10,19 @@ export const sectionSchema = z.object({
   content: z
     .string()
     .min(1)
-    .refine((value) => {
-      try {
-        const parsed = JSON.parse(value);
-        return typeof parsed === 'object' && parsed !== null;
-      } catch {
-        return false;
-      }
-    },
-    {
-      message: 'Content must be valid JSON',
-    }
-  ),
+    .refine(
+      (value) => {
+        try {
+          const parsed = JSON.parse(value);
+          return typeof parsed === 'object' && parsed !== null;
+        } catch {
+          return false;
+        }
+      },
+      {
+        message: 'Content must be valid JSON',
+      },
+    ),
   componentType: z.string().min(1),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
@@ -37,23 +34,24 @@ export const createSectionSchema = z.object({
   content: z
     .string()
     .min(1)
-    .refine((value) => {
-      try {
-        const parsed = JSON.parse(value);
-        return (
-          typeof parsed === 'object' &&
-          parsed !== null &&
-          !Array.isArray(parsed) &&
-          Object.keys(parsed).length > 0
-        );
-      } catch {
-        return false;
-      }
-    },
-    {
-      message: 'Content must be valid JSON',
-    }
-  ),
+    .refine(
+      (value) => {
+        try {
+          const parsed = JSON.parse(value);
+          return (
+            typeof parsed === 'object' &&
+            parsed !== null &&
+            !Array.isArray(parsed) &&
+            Object.keys(parsed).length > 0
+          );
+        } catch {
+          return false;
+        }
+      },
+      {
+        message: 'Content must be valid JSON',
+      },
+    ),
   componentType: z.string().min(1),
 });
 
@@ -67,7 +65,7 @@ export type UpdateSectionInput = z.infer<typeof updateSectionSchema>;
 
 export async function getHomePageData(): Promise<ValidSection[]> {
   try {
-    const data = await db.select().from(sections)
+    const data = await db.select().from(sections);
 
     return data.map((section) => sectionSchema.parse(section));
   } catch (error) {
@@ -76,14 +74,16 @@ export async function getHomePageData(): Promise<ValidSection[]> {
   }
 }
 
-export async function getSectionById(id: number): Promise<ValidSection | undefined> {
+export async function getSectionById(
+  id: number,
+): Promise<ValidSection | undefined> {
   try {
     const [data] = await db
       .select()
       .from(sections)
       .where(eq(sections.id, id))
       .limit(1);
-    
+
     return sectionSchema.parse(data);
   } catch (error) {
     console.error('Get section by ID error:', error);
@@ -91,7 +91,9 @@ export async function getSectionById(id: number): Promise<ValidSection | undefin
   }
 }
 
-export async function createSection(input: CreateSectiontInput): Promise<ValidSection> {
+export async function createSection(
+  input: CreateSectiontInput,
+): Promise<ValidSection> {
   try {
     const newSection: NewSection = {
       title: input.title,
@@ -112,11 +114,13 @@ export async function createSection(input: CreateSectiontInput): Promise<ValidSe
   }
 }
 
-export async function updateSection(input: UpdateSectionInput): Promise<ValidSection> {
+export async function updateSection(
+  input: UpdateSectionInput,
+): Promise<ValidSection> {
   try {
     const { id, ...updateData } = input;
     const component = await getSectionById(id);
-    
+
     if (!component) {
       throw new Error(`Component with ID ${id} not found`);
     }

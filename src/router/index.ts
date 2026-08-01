@@ -1,10 +1,10 @@
 import { router } from '../context';
-import { userRouter } from './userRouter';
-import { snippetRouter } from './snippetRouter';
 import { homePageRouter } from './homePageRouter';
+import { snippetRouter } from './snippetRouter';
+import { userRouter } from './userRouter';
 
 export const appRouter = router({
-  users: userRouter,    // Роутер для пользователей
+  users: userRouter, // Роутер для пользователей
   snippets: snippetRouter, // Роутер для сниппетов
   homePage: homePageRouter, // Роутер для главной страницы
 });

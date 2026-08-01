@@ -1,20 +1,20 @@
-import { eq, desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { z } from 'zod/v3';
 import { db } from './connection';
-import { 
-  users,
-  snippets, 
-  userSettings,
-  type User,
+import {
   type NewUser,
+  type NewUserSettings,
+  snippets,
+  type User,
   type UserSettings,
-  type NewUserSettings
- } from './schema/schema';
+  userSettings,
+  users,
+} from './schema/schema';
 
- // to do:
- // 1) дописать сброс пароля resetPassword
+// to do:
+// 1) дописать сброс пароля resetPassword
 // 2) recover  - подключить sentry
-// 3) checkHash 
+// 3) checkHash
 
 export const userSchema = z.object({
   id: z.number(),
@@ -40,8 +40,8 @@ export const updateUserSchema = z.object({
   username: z.string().min(3).max(20).optional(),
   email: z.string().email().max(60).optional(),
   password: z.string().min(6).max(60).optional(),
-  isAdmin: z.boolean().optional(),
   recoverHash: z.string().max(50).optional(),
+  // isAdmin is intentionally excluded — role changes require a separate admin-only procedure (add when auth is implemented)
 });
 
 export const userSettingsSchema = z.object({
@@ -69,7 +69,7 @@ export const updateUserSettingsSchema = z.object({
 });
 
 export const deleteUserSchema = z.object({
-  id: z.coerce.number().positive()
+  id: z.coerce.number().positive(),
 });
 
 export const getUserByIdSchema = z.number();
@@ -87,7 +87,7 @@ export async function getUserById(id: number): Promise<User | undefined> {
       .from(users)
       .where(eq(users.id, id))
       .limit(1);
-    
+
     return user;
   } catch (error) {
     console.error('Error getting user by id:', error);
@@ -102,7 +102,7 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
       .from(users)
       .where(eq(users.email, email))
       .limit(1);
-    
+
     return user;
   } catch (error) {
     console.error('Error getting user by email:', error);
@@ -110,14 +110,16 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
   }
 }
 
-export async function getUserByUsername(username: string): Promise<User | undefined> {
+export async function getUserByUsername(
+  username: string,
+): Promise<User | undefined> {
   try {
     const [user] = await db
       .select()
       .from(users)
       .where(eq(users.username, username))
       .limit(1);
-    
+
     return user;
   } catch (error) {
     console.error('Error getting user by username:', error);
@@ -132,7 +134,7 @@ export async function getAllUsers(): Promise<User[]> {
       .select()
       .from(users)
       .orderBy(desc(users.createdAt));
-    
+
     return allUsers;
   } catch (error) {
     console.error('Error getting all users:', error);
@@ -150,11 +152,11 @@ export async function createUser(userData: CreateUserInput): Promise<User> {
     };
 
     const result = await db.insert(users).values(newUser).returning();
-    
+
     if (!result[0]) {
       throw new Error('Failed to create user');
     }
-    
+
     return result[0];
   } catch (error) {
     console.error('Error creating user:', error);
@@ -171,8 +173,8 @@ export async function createUser(userData: CreateUserInput): Promise<User> {
 }
 
 export async function updateUser(
-  id: number,  
-  updates: Omit<UpdateUserInput, 'id'> // ← используем UpdateUserInput и исключаем id
+  id: number,
+  updates: Omit<UpdateUserInput, 'id'>, // ← используем UpdateUserInput и исключаем id
 ): Promise<User | null> {
   try {
     const updateData: Partial<NewUser> = {
@@ -206,9 +208,7 @@ export async function updateUser(
 
 export async function deleteUser(id: number): Promise<boolean> {
   try {
-    const result = await db
-      .delete(users)
-      .where(eq(users.id, id));
+    const result = await db.delete(users).where(eq(users.id, id));
 
     return result.changes > 0;
   } catch (error) {
@@ -217,7 +217,10 @@ export async function deleteUser(id: number): Promise<boolean> {
   }
 }
 
-export async function updateRecoverHash(email: string, recoverHash: string | null): Promise<boolean> {
+export async function updateRecoverHash(
+  email: string,
+  recoverHash: string | null,
+): Promise<boolean> {
   try {
     const result = await db
       .update(users)
@@ -247,12 +250,12 @@ export async function getUserSettings(userId: number): Promise<UserSettings> {
         language: 'ru',
         avatarBase64: null,
       };
-      
+
       const createdSettings = await db
         .insert(userSettings)
         .values(newSettings)
         .returning();
-      
+
       settingsUser = createdSettings;
     }
 
@@ -265,12 +268,12 @@ export async function getUserSettings(userId: number): Promise<UserSettings> {
 
 // обновить настройки пользователя
 export async function updateUserSettings(
-  id: number, 
-  updateData: Omit<UpdateUserSettingsInput, 'userId'> // ← исключаем userId
-): Promise<any> {
+  id: number,
+  updateData: Omit<UpdateUserSettingsInput, 'userId'>, // ← исключаем userId
+): Promise<UserSettings> {
   try {
     // Валидация теперь не нужна, т.к. тип уже правильный
-    
+
     const updatedSettings = await db
       .update(userSettings)
       .set({
@@ -287,15 +290,7 @@ export async function updateUserSettings(
       throw new Error('Failed to update user settings');
     }
 
-    const settings = updatedSettings[0];
-    const currentUser = await getUserById(id);
-
-    return {
-      ...currentUser,
-      language: settings.language,
-      theme: settings.theme,
-      avatar_base64: settings.avatarBase64,
-    };
+    return updatedSettings[0];
   } catch (error) {
     console.error('Error updating user settings:', error);
     throw new Error('Failed to update user settings');
@@ -303,7 +298,14 @@ export async function updateUserSettings(
 }
 
 // получение данных пользователя - настройки и сниппеты
-export async function getData({ id }: { id: number }): Promise<any> {
+export async function getData({ id }: { id: number }): Promise<{
+  currentUser: User & {
+    language: string;
+    theme: string;
+    avatarBase64: string | null;
+  };
+  snippets: (typeof snippets.$inferSelect & { user: User })[];
+}> {
   try {
     const currentUser = await getUserById(id);
     if (!currentUser) {
@@ -325,10 +327,10 @@ export async function getData({ id }: { id: number }): Promise<any> {
       ...currentUser,
       language: settings.language,
       theme: settings.theme,
-      avatar_base64: settings.avatarBase64,
+      avatarBase64: settings.avatarBase64,
     };
 
-    const formattedSnippets = userSnippets.map(item => ({
+    const formattedSnippets = userSnippets.map((item) => ({
       ...item.snippet,
       user: item.user,
     }));
@@ -341,7 +343,7 @@ export async function getData({ id }: { id: number }): Promise<any> {
     console.error('Error getting user data:', error);
     throw new Error('Failed to get user data');
   }
-}   
+}
 
 // временная для тестирования:
 export async function deleteAllUsers() {

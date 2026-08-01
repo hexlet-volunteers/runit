@@ -1,0 +1,1 @@
+export const SNIPPETS_QUERY_KEY = ['v2', 'snippets', 'all'] as const;

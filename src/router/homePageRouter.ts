@@ -1,22 +1,21 @@
-import { router, publicProcedure } from '../context';
 import { z } from 'zod/v4';
+import { publicProcedure, router } from '../context';
 import {
+  createSection,
+  createSectionSchema,
   getHomePageData,
   getSectionById,
-  createSection,
   updateSection,
-  createSectionSchema,
   updateSectionSchema,
 } from '../db/homePage';
 
 export const homePageRouter = router({
-  getHomePageData: publicProcedure
-    .query(async () => {
-      const components = await getHomePageData();
-      return {
-        components,
-      };
-    }),
+  getHomePageData: publicProcedure.query(async () => {
+    const components = await getHomePageData();
+    return {
+      components,
+    };
+  }),
 
   getComponentById: publicProcedure
     .input(z.number().positive())

@@ -1,34 +1,38 @@
+import {
+  type FastifyTRPCPluginOptions,
+  fastifyTRPCPlugin,
+} from '@trpc/server/adapters/fastify';
 import { fastify } from 'fastify';
-import { fastifyTRPCPlugin, FastifyTRPCPluginOptions, } from '@trpc/server/adapters/fastify';
 
 import { runMigrations } from './db/connection';
 import { seedHomePageData } from './db/seedHomePageData';
-import { appRouter, type AppRouter } from './router/index';
+import { type AppRouter, appRouter } from './router/index';
+
 // import { createContext } from './context';
 
 const getApp = async () => {
-   try {
+  try {
     await runMigrations();
     await seedHomePageData();
   } catch (error) {
     console.error('Migration/Seeding failed:', error);
     throw error;
   }
- 
-// to do: подключить полноценное логирование (pino-pretty)
+
+  // to do: подключить полноценное логирование (pino-pretty)
 
   const server = fastify({
-  logger: {
-    level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-  },
-  routerOptions: {
-    maxParamLength: 1000,
-    caseSensitive: false,
-    ignoreTrailingSlash: true
-  },
-});
+    logger: {
+      level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+    },
+    routerOptions: {
+      maxParamLength: 1000,
+      caseSensitive: false,
+      ignoreTrailingSlash: true,
+    },
+  });
 
-  server.get('/', async (request, reply) => {
+  server.get('/', async (_request, reply) => {
     reply.type('text/html').send(`
       <!DOCTYPE html>
       <html lang="en">
@@ -45,11 +49,11 @@ const getApp = async () => {
     `);
   });
 
-  server.get('/hello', async (request, reply) => {
+  server.get('/hello', async (_request, reply) => {
     reply.type('text/plain').send('Hello world');
   });
 
-    try {
+  try {
     await server.register(fastifyTRPCPlugin, {
       prefix: '/trpc',
       trpcOptions: {
