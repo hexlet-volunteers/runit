@@ -1,8 +1,28 @@
 # Образ бэкенда Runit (Fastify + tRPC + Drizzle).
 # Фронтенд собирается отдельно: frontend/Dockerfile (статика + Caddy).
+#
+# better-sqlite3 — нативный модуль, и для текущей версии готового бинарника под
+# Node 24 нет, поэтому он компилируется через node-gyp. Тулчейн (python3, make,
+# g++) нужен только на стадиях установки зависимостей: в финальный образ он не
+# попадает — туда копируются уже собранные node_modules.
+
+# ---------- Прод-зависимости (компилируются здесь) ----------
+FROM node:24-slim AS prod-deps
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
 
 # ---------- Сборка ----------
 FROM node:24-slim AS build
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -13,11 +33,11 @@ RUN npm ci
 
 COPY tsconfig.json drizzle.config.ts ./
 COPY src ./src
+COPY bin ./bin
 
 # Сборка: генерация миграций из схемы, компиляция и добавление расширений в
 # ESM-импорты (bin/fix-esm-imports.mjs — без него node dist/server.js падает).
 # Прогон миграций — при старте контейнера, в build-стадии боевой БД нет.
-COPY bin ./bin
 RUN npm run build
 
 # ---------- Рантайм ----------
@@ -26,10 +46,8 @@ FROM node:24-slim AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 
-# Только прод-зависимости: better-sqlite3 ставится из готового бинарника.
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
-
+COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/drizzle ./drizzle
 
