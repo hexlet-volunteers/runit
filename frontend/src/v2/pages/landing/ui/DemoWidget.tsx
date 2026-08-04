@@ -2,46 +2,7 @@ import { useState } from 'react';
 import { Box, Button, Group, Paper, Text } from '@mantine/core';
 import { editorColors, langMeta } from '../../../shared/theme';
 import { runCode, type RunResult } from '../../../shared/runner';
-
-/** Палитра подсветки синтаксиса (tokyo-night). */
-const HL = {
-  comment: '#565f89',
-  keyword: '#bb9af7',
-  string: '#9ece6a',
-  number: '#ff9e64',
-  method: '#4dabf7',
-};
-
-/** Экранирует HTML-спецсимволы для безопасной вставки в разметку. */
-const escapeHtml = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-/** Лёгкая regex-подсветка JavaScript для демо-виджета. */
-function highlightJS(src: string): string {
-const re =
-  /(\/\/[^\n]*)|('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`)|\b(const|let|var|function|return|if|else|for|while|of|in|new|class|true|false|null|undefined)\b|\b(\d+(?:\.\d+)?)\b|\b(forEach|log|map|filter|reduce|push|pop|shift|unshift)\b/g;
-  let out = '';
-  let last = 0;
-  for (let m = re.exec(src); m; m = re.exec(src)) {
-    out += escapeHtml(src.slice(last, m.index));
-    const [full, comment, str, kw, num, method] = m;
-    const color = comment ? HL.comment : str ? HL.string : kw ? HL.keyword : num ? HL.number : method ? HL.method : HL.number;
-    out += `<span style="color:${color}">${escapeHtml(full)}</span>`;
-    last = m.index + full.length;
-  }
-  return out + escapeHtml(src.slice(last));
-}
-
-/** Стили для моноширинного отображения кода. */
-const CODE_FONT: React.CSSProperties = {
-  fontFamily: "'JetBrains Mono', ui-monospace, monospace",
-  fontSize: 14,
-  lineHeight: 1.7,
-  padding: '4px 8px',
-  margin: 0,
-  whiteSpace: 'pre-wrap',
-  wordBreak: 'break-word',
-};
+import { CODE_FONT, highlightJs } from '../../../shared/lib';
 
 /** Начальный код для демо-виджета. */
 const INITIAL_CODE = `// Попробуйте — код выполняется по-настоящему
@@ -137,7 +98,7 @@ export default function DemoWidget() {
           <pre
             style={{ ...CODE_FONT, color: editorColors.text, minHeight: '11em' }}
             // eslint-disable-next-line react/no-danger
-            dangerouslySetInnerHTML={{ __html: `${highlightJS(code)}\n` }}
+            dangerouslySetInnerHTML={{ __html: `${highlightJs(code)}\n` }}
           />
         </Box>
 
