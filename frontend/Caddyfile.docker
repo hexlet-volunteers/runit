@@ -1,0 +1,28 @@
+# Caddy внутри контейнера фронтенда: раздаёт собранную статику и проксирует API.
+# Домен/TLS терминируются снаружи (на балансировщике или отдельном Caddy),
+# поэтому здесь слушаем обычный http на 80.
+
+:80 {
+	log {
+		format json
+	}
+
+	encode zstd gzip
+
+	# API бэкенда. Имя app — из docker-compose.
+	handle /trpc/* {
+		reverse_proxy app:3001
+	}
+
+	handle /health {
+		reverse_proxy app:3001
+	}
+
+	# SPA: любой неизвестный путь отдаёт index.html,
+	# иначе прямой заход на /editor/123 вернул бы 404.
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

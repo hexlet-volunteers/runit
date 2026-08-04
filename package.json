@@ -9,7 +9,7 @@
   "type": "module",
   "scripts": {
     "dev": "npm run db:setup && tsx watch src/server.ts",
-    "build": "npm run db:setup && tsc",
+    "build": "npm run db:generate && tsc && node bin/fix-esm-imports.mjs",
     "start": "node dist/server.js",
     "db:setup": "npm run db:generate && npm run db:migrate",
     "db:migrate": "drizzle-kit migrate",

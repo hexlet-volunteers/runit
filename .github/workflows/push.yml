@@ -6,29 +6,47 @@ on:
       - main
 
 jobs:
-
-  build:
+  checks:
+    name: Проверки main
     runs-on: ubuntu-latest
     steps:
-      - name: Deployment stub
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Установка зависимостей (бэкенд)
+        run: npm ci
+
+      - name: Линтер (Biome)
+        run: npm run lint
+
+      - name: Проверка типов
+        run: npx tsc --noEmit
+
+      - name: Юнит-тесты раннера
+        run: npm run test:runner
+
+      - name: Установка зависимостей (фронтенд)
+        run: npm ci
+        working-directory: frontend
+
+      - name: Сборка фронтенда
+        run: npm run build
+        working-directory: frontend
+
+  # Деплой пока не настроен: не выбрано, куда публиковать образы и где хостится
+  # приложение (см. задачи вехи «Релиз»). Как только цель появится — здесь будет
+  # build & push образов из Dockerfile и frontend/Dockerfile.
+  deploy:
+    name: Деплой (не настроен)
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Заглушка
         run: |
-          echo "🚧 Deployment is temporarily disabled"
-          echo "This is a stub to prevent job failure"
-          echo "Tag: ${{ github.ref_name }}"
-          echo "Repository: ${{ github.repository }}"
-
-# jobs:
-
-#   build:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v4
-#       - name: Install deps
-#         run: |
-#           make install
-#       - name: Run lint
-#         run: |
-#           make lint
-#       - name: Run tests
-#         run: |
-#           make test
+          echo "🚧 Деплой не настроен: не выбран реестр образов и хостинг."
+          echo "Образы собираются и проверяются в CI на каждом PR."
+          echo "Коммит: ${{ github.sha }}"

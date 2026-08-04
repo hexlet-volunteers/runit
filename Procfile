@@ -1,2 +1,8 @@
-web: cd backend && npm run start:prod
-release: cd backend && npm run typeorm -- migration:run -d src/data-source.ts
+# Запуск на PaaS (Heroku и совместимые).
+# Раньше здесь были пути от старого NestJS-стека: каталог backend/ и TypeORM —
+# ни того, ни другого в проекте нет (#797).
+#
+# Учтите: на PaaS без доступа к Docker серверный раннер кода недоступен и
+# корректно деградирует (см. README, «Серверное исполнение кода»).
+release: npm run db:migrate
+web: npm start

@@ -6,31 +6,60 @@ on:
       - main
 
 jobs:
-
-  build:
+  backend:
+    name: Бэкенд — линтер, типы, тесты
     runs-on: ubuntu-latest
     steps:
-      - name: Deployment stub
-        run: |
-          echo "🚧 Deployment is temporarily disabled"
-          echo "This is a stub to prevent job failure"
-          echo "Tag: ${{ github.ref_name }}"
-          echo "Repository: ${{ github.repository }}"
+      - uses: actions/checkout@v4
 
-# jobs:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
 
-#   build:
+      - name: Установка зависимостей
+        run: npm ci
 
-#     runs-on: ubuntu-latest
+      - name: Линтер (Biome)
+        run: npm run lint
 
-#     steps:
-#       - uses: actions/checkout@v4
-#       - name: Install deps
-#         run: |
-#           make install
-#       - name: Run lint
-#         run: |
-#           make lint
-#       - name: Run tests
-#         run: |
-#           make test
+      - name: Проверка типов
+        run: npx tsc --noEmit
+
+      - name: Юнит-тесты раннера
+        # Docker в CI не нужен: тесты проверяют сборку аргументов docker и ветки
+        # деградации через внедрение зависимостей.
+        run: npm run test:runner
+
+  frontend:
+    name: Фронтенд — сборка
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Установка зависимостей
+        run: npm ci
+        working-directory: frontend
+
+      - name: Сборка
+        run: npm run build
+        working-directory: frontend
+
+  docker:
+    name: Сборка образов
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Образ бэкенда
+        run: docker build -t runit-app:ci .
+
+      - name: Образ фронтенда
+        # Контекст — корень репозитория: фронту нужны типы из types/.
+        run: docker build -f frontend/Dockerfile -t runit-web:ci .

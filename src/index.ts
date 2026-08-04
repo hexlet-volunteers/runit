@@ -6,6 +6,7 @@ import { fastify } from 'fastify';
 
 import { runMigrations } from './db/connection';
 import { seedHomePageData } from './db/seedHomePageData';
+import { registerHealthRoute } from './health';
 import { type AppRouter, appRouter } from './router/index';
 
 // import { createContext } from './context';
@@ -48,6 +49,8 @@ const getApp = async () => {
       </html>
     `);
   });
+
+  registerHealthRoute(server);
 
   server.get('/hello', async (_request, reply) => {
     reply.type('text/plain').send('Hello world');
