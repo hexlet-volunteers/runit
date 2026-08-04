@@ -69,7 +69,7 @@ function lineColor(type: string): string {
 
 /** Живой мини-редактор для лендинга с выполнением JavaScript. */
 export default function DemoWidget() {
-  const [code, setCode] = useState(INITIAL_CODE);
+  const [code] = useState(INITIAL_CODE);
   const [result, setResult] = useState<RunResult | null>(null);
   const [running, setRunning] = useState(false);
 
@@ -129,36 +129,16 @@ export default function DemoWidget() {
           </Button>
         </Group>
 
-        {/* Тёмная область кода: подсвеченный <pre> под прозрачной textarea */}
+        {/* Тёмная область кода: только для чтения.
+            Демо на главной специально не редактируется — витрина должна всегда
+            отрабатывать предсказуемо. Полноценный редактор — по кнопке
+            «Создать сниппет». */}
         <Box p="sm" style={{ background: editorColors.bg }}>
-          <div style={{ position: 'relative' }}>
-            <pre
-              aria-hidden
-              style={{ ...CODE_FONT, color: editorColors.text, minHeight: '11em' }}
-              // eslint-disable-next-line react/no-danger
-              dangerouslySetInnerHTML={{ __html: `${highlightJS(code)}\n` }}
-            />
-            <textarea
-              value={code}
-              onChange={(e) => setCode(e.currentTarget.value)}
-              aria-label="Код demo.js"
-              spellCheck={false}
-              style={{
-                ...CODE_FONT,
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                resize: 'none',
-                color: 'transparent',
-                caretColor: editorColors.text,
-                overflow: 'hidden',
-              }}
-            />
-          </div>
+          <pre
+            style={{ ...CODE_FONT, color: editorColors.text, minHeight: '11em' }}
+            // eslint-disable-next-line react/no-danger
+            dangerouslySetInnerHTML={{ __html: `${highlightJS(code)}\n` }}
+          />
         </Box>
 
         {/* Блок результата */}
@@ -211,7 +191,7 @@ export default function DemoWidget() {
       </Paper>
 
       <Text ta="center" c="dimmed" fz="sm" mt="sm">
-        Это живой виджет — измените код и нажмите «Запустить»
+        Это живой пример — нажмите «Запустить», код выполнится по-настоящему
       </Text>
     </Box>
   );

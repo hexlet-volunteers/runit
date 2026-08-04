@@ -7,8 +7,22 @@ export type { RunnerClient, ServerRunOutput } from './server';
 export { runJavaScript } from './javascript';
 export { toRunResult } from './server';
 
-/** Языки, которые исполняет сервер (в docker). JavaScript идёт в Web Worker. */
-export const SERVER_LANGUAGES = new Set(['python', 'php', 'ruby', 'java']);
+/**
+ * Языки, которые исполняет сервер (в docker) — список должен совпадать с
+ * RUNNER_LANGUAGES на бэкенде (src/runner/types.ts).
+ * JavaScript исполняется в браузере (Web Worker), HTML/CSS — рендерятся как превью.
+ */
+export const SERVER_LANGUAGES = new Set([
+  'python',
+  'php',
+  'ruby',
+  'java',
+  'typescript',
+  'go',
+  'cpp',
+  'sql',
+  'bash',
+]);
 
 export interface RunCodeParams {
   language: string;

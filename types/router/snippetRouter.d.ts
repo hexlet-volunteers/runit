@@ -53,7 +53,7 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
         input: {
             name: string;
             userId: number;
-            language: "python" | "php" | "ruby" | "java" | "javascript" | "html";
+            language: "python" | "php" | "ruby" | "java" | "typescript" | "go" | "cpp" | "sql" | "bash" | "javascript" | "html" | "css";
             code: string;
             slug?: string | undefined;
         };
@@ -74,7 +74,7 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             id: number;
             name?: string | undefined;
             userId?: number | undefined;
-            language?: "python" | "php" | "ruby" | "java" | "javascript" | "html" | undefined;
+            language?: "python" | "php" | "ruby" | "java" | "typescript" | "go" | "cpp" | "sql" | "bash" | "javascript" | "html" | "css" | undefined;
             slug?: string | undefined;
             code?: string | undefined;
         };

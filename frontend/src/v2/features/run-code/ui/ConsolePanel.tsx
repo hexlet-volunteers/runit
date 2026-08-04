@@ -2,6 +2,8 @@ import { Box, Group, Loader, Text, Tooltip, UnstyledButton } from '@mantine/core
 import { editorColors } from '../../../shared/theme';
 import type { ConsoleLine } from '../../../shared/runner';
 import { IconTrash } from '../../../shared/ui';
+import HtmlPreview from '../../../shared/ui/HtmlPreview';
+import { isPreviewLanguage } from '../../../shared/runner/preview';
 import TabButton from './TabButton';
 import { type ConsolePanelProps } from '..'
 
@@ -21,7 +23,13 @@ export default function ConsolePanel({
   stdin,
   onStdinChange,
   onClear,
+  language,
+  code,
+  runKey,
+  runtime,
 }: ConsolePanelProps ) {
+  // Для вёрстки (HTML/CSS) результат — отрендеренная страница, а не вывод в консоль.
+  const previewMode = isPreviewLanguage(language);
   return (
     <Box
       style={{
@@ -44,17 +52,24 @@ export default function ConsolePanel({
         }}
       >
         <Group gap="lg" style={{ height: '100%' }}>
-          <TabButton
-            active={tab === 'console'}
-            label="КОНСОЛЬ"
-            onClick={() => onTabChange('console')}
-          />
-          <TabButton
-            active={tab === 'input'}
-            label="ВВОД"
-            onClick={() => onTabChange('input')}
-          />
+          {previewMode ? (
+            <TabButton active label="ПРЕВЬЮ" onClick={() => onTabChange('preview')} />
+          ) : (
+            <>
+              <TabButton
+                active={tab === 'console'}
+                label="КОНСОЛЬ"
+                onClick={() => onTabChange('console')}
+              />
+              <TabButton
+                active={tab === 'input'}
+                label="ВВОД"
+                onClick={() => onTabChange('input')}
+              />
+            </>
+          )}
         </Group>
+        {previewMode ? null : (
         <Tooltip label="Очистить консоль" withArrow>
           <UnstyledButton
             onClick={onClear}
@@ -64,9 +79,14 @@ export default function ConsolePanel({
             <IconTrash />
           </UnstyledButton>
         </Tooltip>
+        )}
       </Group>
 
-      {tab === 'console' ? (
+      {previewMode ? (
+        <Box style={{ flex: 1, minHeight: 0, background: '#fff' }}>
+          <HtmlPreview language={language} code={code} runKey={runKey} />
+        </Box>
+      ) : tab === 'console' ? (
         <Box
           p="md"
           ff="monospace"
@@ -74,7 +94,7 @@ export default function ConsolePanel({
           style={{ flex: 1, overflow: 'auto', minHeight: 0 }}
         >
           <Text ff="monospace" fz={13} c={editorColors.dim} mb={8}>
-            Runit · Node.js 20 LTS{' '}
+            Runit · {runtime}{' '}
             {lines.length === 0 && !running ? '· консоль готова' : ''}
           </Text>
           {running ? (

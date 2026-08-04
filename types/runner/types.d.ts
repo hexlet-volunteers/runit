@@ -1,4 +1,4 @@
-export declare const RUNNER_LANGUAGES: readonly ["python", "php", "ruby", "java"];
+export declare const RUNNER_LANGUAGES: readonly ["python", "php", "ruby", "java", "typescript", "go", "cpp", "sql", "bash"];
 export type RunnerLanguage = (typeof RUNNER_LANGUAGES)[number];
 export type RunStatus = 
 /** Контейнер запустился и завершился сам. exitCode может быть != 0 (ошибка в коде пользователя). */

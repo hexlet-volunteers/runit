@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { runnerConfig } from './config';
 import { buildDockerArgs } from './dockerArgs';
 import { LANGUAGE_SPECS, specFor } from './languages';
-import type { RunLimits } from './types';
+import type { RunLimits, RunnerLanguage } from './types';
 
 const limits: RunLimits = {
   timeoutMs: 10_000,
@@ -13,7 +13,7 @@ const limits: RunLimits = {
   maxOutputBytes: 65_536,
 };
 
-const argsFor = (language: 'python' | 'php' | 'ruby' | 'java') =>
+const argsFor = (language: RunnerLanguage) =>
   buildDockerArgs({
     spec: specFor(language),
     limits: { ...limits, ...specFor(language).limits },
@@ -140,12 +140,76 @@ test('имя контейнера и лейбл заданы (нужны для 
   assert.equal(pairValue(args, '--label'), 'runit-runner=1');
 });
 
-test('конфиг по умолчанию: JavaScript не исполняется на сервере', () => {
-  assert.ok(!runnerConfig.enabledLanguages.includes('javascript' as never));
+test('конфиг по умолчанию: серверные языки, без JS/HTML/CSS', () => {
+  // JavaScript исполняется в браузере, HTML/CSS показываются как превью —
+  // на сервер они не идут.
+  for (const browserOnly of ['javascript', 'html', 'css']) {
+    assert.ok(
+      !runnerConfig.enabledLanguages.includes(browserOnly as never),
+      `${browserOnly} не должен исполняться на сервере`,
+    );
+  }
   assert.deepEqual(runnerConfig.enabledLanguages, [
     'python',
     'php',
     'ruby',
     'java',
+    'typescript',
+    'go',
+    'cpp',
+    'sql',
+    'bash',
   ]);
+});
+
+test('новые языки: команды и файлы', () => {
+  assert.deepEqual(specFor('typescript').command('/app/main.ts'), [
+    'node',
+    '/app/main.ts',
+  ]);
+  assert.deepEqual(specFor('go').command('/app/main.go'), [
+    'go',
+    'run',
+    '/app/main.go',
+  ]);
+  assert.deepEqual(specFor('bash').command('/app/main.sh'), [
+    'bash',
+    '/app/main.sh',
+  ]);
+  assert.equal(specFor('cpp').fileName(''), 'main.cpp');
+  assert.equal(specFor('sql').fileName(''), 'main.sql');
+});
+
+test('компилируемые языки пишут артефакты только в /tmp', () => {
+  // rootfs монтируется read-only, поэтому вывод компилятора обязан идти в tmpfs.
+  const cppCmd = specFor('cpp').command('/app/main.cpp').join(' ');
+  assert.match(cppCmd, /-o \/tmp\//);
+  const goEnv = specFor('go').env ?? {};
+  assert.match(goEnv.GOCACHE ?? '', /^\/tmp\//);
+  assert.match(goEnv.GOPATH ?? '', /^\/tmp\//);
+});
+
+test('изоляция сохраняется для всех серверных языков', () => {
+  for (const lang of runnerConfig.enabledLanguages) {
+    const args = buildDockerArgs({
+      spec: specFor(lang),
+      limits: { ...limits, ...specFor(lang).limits },
+      containerName: 'runit-run-test',
+      hostCodeDir: '/tmp/runit-runner-abc',
+      imageTag: `runit-runner-${lang}:1`,
+      fileName: specFor(lang).fileName('class Main {}'),
+    });
+    assert.ok(args.includes('--network=none'), `${lang}: нет --network=none`);
+    assert.ok(args.includes('--cap-drop=ALL'), `${lang}: нет --cap-drop`);
+    assert.ok(args.includes('--read-only'), `${lang}: нет --read-only`);
+    assert.equal(
+      pairValue(args, '--user'),
+      '10001:10001',
+      `${lang}: не non-root`,
+    );
+    assert.ok(
+      (pairValue(args, '-v') ?? '').endsWith(':ro'),
+      `${lang}: код смонтирован не read-only`,
+    );
+  }
 });

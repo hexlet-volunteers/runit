@@ -15,6 +15,8 @@ import {
   unsupportedLanguage,
   type RunResult,
 } from '../../../shared/runner';
+import { isPreviewLanguage } from '../../../shared/runner/preview';
+import HtmlPreview from '../../../shared/ui/HtmlPreview';
 import { type Snippet, useSnippetBySlug } from '../../../entities/snippet';
 import { useTRPCClient } from '../../../shared/api';
 
@@ -28,6 +30,7 @@ const EXT: Record<string, string> = {
   ruby: 'rb',
   java: 'java',
   html: 'html',
+  css: 'css',
 };
 
 function lineColor(type: string): string {
@@ -48,6 +51,8 @@ export default function EmbedPage() {
 
   const [result, setResult] = useState<RunResult | null>(null);
   const [running, setRunning] = useState(false);
+  // Счётчик запусков превью вёрстки: инкремент форсирует перерисовку iframe.
+  const [runKey, setRunKey] = useState(0);
   const trpc = useTRPCClient();
 
   const {
@@ -73,6 +78,11 @@ export default function EmbedPage() {
         };
 
   const run = async (s: Snippet) => {
+    // html/css показываем как страницу, а не как вывод в консоль (#853).
+    if (isPreviewLanguage(s.language)) {
+      setRunKey((key) => key + 1);
+      return;
+    }
     const meta = langMeta[s.language];
     if (!meta?.runnable) {
       setResult(unsupportedLanguage(meta?.label ?? s.language));
@@ -108,6 +118,7 @@ export default function EmbedPage() {
 
   const s = snippet as Snippet;
   const meta = langMeta[s.language];
+  const isPreview = isPreviewLanguage(s.language);
   const fileName = `${s.name}.${EXT[s.language] ?? 'txt'}`;
   const shareHref = `/s/${username}/${slug}`;
 
@@ -200,8 +211,49 @@ export default function EmbedPage() {
         </pre>
       </Box>
 
-      {/* РЕЗУЛЬТАТ */}
-      {result && (
+      {/* РЕЗУЛЬТАТ — превью вёрстки, заполняет доступную высоту виджета */}
+      {isPreview && runKey > 0 && (
+        <Box
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            flex: 1,
+            minHeight: 0,
+            borderTop: `1px solid ${editorColors.border}`,
+            background: '#ffffff',
+          }}
+        >
+          <Box
+            px="md"
+            py={6}
+            style={{
+              background: editorColors.panel,
+              borderBottom: `1px solid ${editorColors.border}`,
+              flexShrink: 0,
+            }}
+          >
+            <Text
+              fz={10}
+              fw={700}
+              c={editorColors.dim}
+              style={{ letterSpacing: 1 }}
+            >
+              РЕЗУЛЬТАТ
+            </Text>
+          </Box>
+          <Box style={{ flex: 1, minHeight: 0 }}>
+            <HtmlPreview
+              language={s.language}
+              code={s.code}
+              runKey={runKey}
+              height="100%"
+            />
+          </Box>
+        </Box>
+      )}
+
+      {/* РЕЗУЛЬТАТ — консольный вывод */}
+      {!isPreview && result && (
         <Box
           px="md"
           py={8}

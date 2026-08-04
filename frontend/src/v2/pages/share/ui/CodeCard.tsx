@@ -7,6 +7,8 @@ import {
   Text,
 } from '@mantine/core';
 import { runCode, unsupportedLanguage, type RunResult } from '../../../shared/runner';
+import { isPreviewLanguage } from '../../../shared/runner/preview';
+import HtmlPreview from '../../../shared/ui/HtmlPreview';
 import { useTRPCClient } from '../../../shared/api';
 import { editorColors, langMeta } from '../../../shared/theme';
 import { type Snippet } from '../../../entities/snippet'
@@ -18,7 +20,11 @@ const EXT: Record<string, string> = {
   ruby: 'rb',
   java: 'java',
   html: 'html',
+  css: 'css',
 };
+
+/** Высота панели превью вёрстки на странице шаринга. */
+const PREVIEW_HEIGHT = 320;
 
 /** Генерирует имя файла из названия сниппета и расширения языка. */
 export function fileNameOf(snippet: Pick<Snippet, 'name' | 'language'>): string {
@@ -43,10 +49,18 @@ export default function CodeCard({
 }) {
   const [result, setResult] = useState<RunResult | null>(null);
   const [running, setRunning] = useState(false);
+  // Счётчик запусков превью: инкремент форсирует перерисовку iframe.
+  const [runKey, setRunKey] = useState(0);
   const trpc = useTRPCClient();
   const meta = langMeta[snippet.language];
+  // html/css показываем как страницу, а не как вывод в консоль (#853).
+  const isPreview = isPreviewLanguage(snippet.language);
 
   const run = async () => {
+    if (isPreview) {
+      setRunKey((key) => key + 1);
+      return;
+    }
     if (!meta?.runnable) {
       setResult(unsupportedLanguage(meta?.label ?? snippet.language));
       return;
@@ -102,7 +116,33 @@ export default function CodeCard({
         </pre>
       </Box>
 
-      {result && (
+      {isPreview && runKey > 0 && (
+        <Box
+          style={{
+            borderTop: `1px solid ${editorColors.border}`,
+            background: editorColors.panel,
+          }}
+        >
+          <Box px="lg" pt="md" pb={6}>
+            <Text
+              fz="xs"
+              fw={700}
+              c={editorColors.dim}
+              style={{ letterSpacing: 1 }}
+            >
+              РЕЗУЛЬТАТ
+            </Text>
+          </Box>
+          <HtmlPreview
+            language={snippet.language}
+            code={snippet.code}
+            runKey={runKey}
+            height={PREVIEW_HEIGHT}
+          />
+        </Box>
+      )}
+
+      {!isPreview && result && (
         <Box px="lg" py="md" style={{ borderTop: `1px solid ${editorColors.border}`, background: editorColors.panel }}>
           <Group justify="space-between" mb={6}>
             <Text fz="xs" fw={700} c={editorColors.dim} style={{ letterSpacing: 1 }}>

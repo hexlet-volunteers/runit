@@ -5,6 +5,7 @@ import {
   useState,
 } from 'react';
 import { runCode, type ConsoleLine } from '../../../shared/runner';
+import { isPreviewLanguage } from '../../../shared/runner/preview';
 import { useTRPCClient } from '../../../shared/api';
 import { type OutputTab } from '..';
 
@@ -25,6 +26,8 @@ export default function useRunner(code: string, language: string) {
   const [lines, setLines] = useState<ConsoleLine[]>([]);
   const [running, setRunning] = useState(false);
   const [tab, setTab] = useState<OutputTab>('console');
+  // Инкрементируется на каждом запуске: форсирует перерисовку превью вёрстки.
+  const [runKey, setRunKey] = useState(0);
 
   // Рефы для стабильных колбэков (хоткей, monaco-команда, debounce).
 
@@ -43,6 +46,14 @@ export default function useRunner(code: string, language: string) {
   /** Запускает код: JS — в Web Worker, Python/PHP/Ruby/Java — на сервере (#821). */
   const handleRun = useCallback(async () => {
     if (runningRef.current) return;
+
+    // Вёрстка (HTML/CSS): «запуск» — это перерисовка превью, сервер не нужен.
+    if (isPreviewLanguage(languageRef.current)) {
+      setTab('preview');
+      setRunKey((n) => n + 1);
+      return;
+    }
+
     runningRef.current = true;
     setRunning(true);
     setTab('console');
@@ -81,5 +92,5 @@ export default function useRunner(code: string, language: string) {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
-  return { running, lines, stdin, runRef, setStdin, tab, setTab, handleRun, clearLines: () => setLines([]) };
+  return { running, lines, stdin, runRef, setStdin, tab, setTab, runKey, handleRun, clearLines: () => setLines([]) };
 }

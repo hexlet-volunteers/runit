@@ -1,9 +1,22 @@
 // Контракт серверного раннера кода.
-// JavaScript сюда не входит: он исполняется в браузере (Web Worker) — см. README,
-// раздел «Серверное исполнение кода». Архивный вариант на node:vm не переносился
+// JavaScript сюда не входит: он исполняется в браузере (Web Worker) — быстро, офлайн
+// и без нагрузки на сервер. Архивный серверный вариант на node:vm не переносился
 // сознательно: vm не является границей безопасности.
+// HTML и CSS тоже не входят: их результат — превью страницы, которое рендерится
+// в браузере в sandbox-iframe (frontend/src/v2/shared/runner/preview.ts).
+// Подробнее — README, раздел «Серверное исполнение кода».
 
-export const RUNNER_LANGUAGES = ['python', 'php', 'ruby', 'java'] as const;
+export const RUNNER_LANGUAGES = [
+  'python',
+  'php',
+  'ruby',
+  'java',
+  'typescript',
+  'go',
+  'cpp',
+  'sql',
+  'bash',
+] as const;
 
 export type RunnerLanguage = (typeof RUNNER_LANGUAGES)[number];
 

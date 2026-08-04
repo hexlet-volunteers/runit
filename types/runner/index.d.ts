@@ -8,6 +8,11 @@ export declare const runInputSchema: z.ZodObject<{
         php: "php";
         ruby: "ruby";
         java: "java";
+        typescript: "typescript";
+        go: "go";
+        cpp: "cpp";
+        sql: "sql";
+        bash: "bash";
     }>;
     code: z.ZodString;
     stdin: z.ZodDefault<z.ZodString>;

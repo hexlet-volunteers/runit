@@ -14,7 +14,7 @@ export declare const runnerRouter: import("@trpc/server").TRPCBuiltRouter<{
      */
     run: import("@trpc/server").TRPCMutationProcedure<{
         input: {
-            language: "python" | "php" | "ruby" | "java";
+            language: "python" | "php" | "ruby" | "java" | "typescript" | "go" | "cpp" | "sql" | "bash";
             code: string;
             stdin?: string | undefined;
         };

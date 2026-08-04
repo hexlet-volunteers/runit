@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import MonacoEditor, { type OnMount } from '@monaco-editor/react';
 
 import { useTRPCClient } from '../../../shared/api';
-import { editorColors, langMeta } from '../../../shared/theme';
+import { editorColors, langMeta, runtimeLabel } from '../../../shared/theme';
 import { useSession } from '../../../entities/user';
 
 import { ConsolePanel } from '../../../features/run-code';
@@ -59,6 +59,7 @@ export default function EditorPage() {
     setStdin,
     tab,
     setTab,
+    runKey,
     handleRun,
     clearLines,
   } = useRunner(code, language);
@@ -272,6 +273,10 @@ export default function EditorPage() {
             stdin={stdin}
             onStdinChange={setStdin}
             onClear={clearLines}
+            language={language}
+            code={code}
+            runKey={runKey}
+            runtime={runtimeLabel(language)}
           />
         </div>
       </div>
