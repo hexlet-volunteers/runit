@@ -4,11 +4,11 @@ export { runCode, sweepOrphans } from './run';
 export type { RunnerLanguage, RunOutput, RunStatus } from './types';
 export declare const runInputSchema: z.ZodObject<{
     language: z.ZodEnum<{
+        typescript: "typescript";
         python: "python";
         php: "php";
         ruby: "ruby";
         java: "java";
-        typescript: "typescript";
         go: "go";
         cpp: "cpp";
         sql: "sql";

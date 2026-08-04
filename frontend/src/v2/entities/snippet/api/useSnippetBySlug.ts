@@ -9,6 +9,8 @@ export function useSnippetBySlug(username: string, slug: string) {
     queryKey: ['v2', 'snippet-by-slug', username, slug],
     queryFn: () =>
       trpc.snippets.getSnippetByUsernameSlug.query({ username, slug }),
+    // Не стреляем пустыми параметрами: при короткой ссылке данные берёт другой хук.
+    enabled: Boolean(username && slug),
     retry: false,
   });
 }

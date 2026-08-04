@@ -38,6 +38,19 @@ export const snippets = sqliteTable('snippets', {
   slug: text('slug', { length: 30 }),
   code: text('code').notNull(),
   language: text('language', { length: 50 }),
+  /**
+   * Короткий код для публичной ссылки вида /s/aB3xK9 — им делятся и по нему
+   * встраивают сниппет. Уникален глобально (в отличие от slug, который
+   * уникален только внутри пользователя).
+   */
+  shortCode: text('short_code', { length: 16 }).unique(),
+  /**
+   * Кто может открыть сниппет:
+   *  private — только владелец;
+   *  link    — любой, у кого есть ссылка (в поиске и профиле не показывается);
+   *  public  — виден всем, попадает в публичный профиль.
+   */
+  visibility: text('visibility', { length: 10 }).notNull().default('private'),
   userId: integer('user_id').references(() => users.id, {
     onDelete: 'cascade',
   }),

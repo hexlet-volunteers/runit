@@ -7,6 +7,7 @@ import { fastify } from 'fastify';
 import { runMigrations } from './db/connection';
 import { seedHomePageData } from './db/seedHomePageData';
 import { registerHealthRoute } from './health';
+import { registerOembedRoutes } from './oembed';
 import { type AppRouter, appRouter } from './router/index';
 
 // import { createContext } from './context';
@@ -51,6 +52,7 @@ const getApp = async () => {
   });
 
   registerHealthRoute(server);
+  registerOembedRoutes(server);
 
   server.get('/hello', async (_request, reply) => {
     reply.type('text/plain').send('Hello world');

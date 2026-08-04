@@ -5,7 +5,7 @@ export declare const runnerConfig: {
     imageTag: string;
     tmpDir: string;
     maxConcurrent: number;
-    enabledLanguages: ("python" | "php" | "ruby" | "java" | "typescript" | "go" | "cpp" | "sql" | "bash")[];
+    enabledLanguages: ("typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash")[];
     /** Базовые лимиты; на язык уточняются в languages.ts. */
     limits: {
         timeoutMs: number;

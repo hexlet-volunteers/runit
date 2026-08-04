@@ -4,29 +4,50 @@ import type { ConsoleLine, RunResult } from './types';
 // Бэкенд запускает код в изолированном docker-контейнере и возвращает stdout/stderr
 // раздельно, поэтому ошибки можно покрасить.
 
-/** Минимальный контракт ответа бэкенда (src/runner/types.ts). */
+/**
+ * Контракт ответа бэкенда (src/runner/types.ts).
+ *
+ * Поля опциональные не случайно: tRPC описывает ответ как JSON-совместимый тип,
+ * где nullable-поля становятся необязательными. Читаем их со значениями по
+ * умолчанию, чтобы неполный ответ не ломал интерфейс.
+ */
 export interface ServerRunOutput {
-  status:
+  status?:
     | 'ok'
     | 'timeout'
     | 'output_limit'
     | 'unavailable'
     | 'busy'
     | 'internal_error';
-  stdout: string;
-  stderr: string;
-  exitCode: number | null;
-  durationMs: number;
-  truncated: boolean;
-  message: string | null;
+  stdout?: string;
+  stderr?: string;
+  exitCode?: number | null;
+  durationMs?: number;
+  truncated?: boolean;
+  message?: string | null;
 }
+
+/**
+ * Языки, которые исполняет сервер. Union обязан совпадать с RUNNER_LANGUAGES
+ * на бэкенде: иначе типы tRPC-процедуры и этого клиента разъезжаются.
+ */
+export type ServerLanguage =
+  | 'python'
+  | 'php'
+  | 'ruby'
+  | 'java'
+  | 'typescript'
+  | 'go'
+  | 'cpp'
+  | 'sql'
+  | 'bash';
 
 /** Клиент передаётся аргументом, чтобы shared/ не зависел от React-хуков. */
 export interface RunnerClient {
   runner: {
     run: {
       mutate: (
-        input: { language: string; code: string; stdin?: string },
+        input: { language: ServerLanguage; code: string; stdin?: string },
         opts?: { signal?: AbortSignal },
       ) => Promise<ServerRunOutput>;
     };
@@ -44,29 +65,28 @@ const toLines = (raw: string, type: ConsoleLine['type']): ConsoleLine[] => {
 
 export function toRunResult(out: ServerRunOutput): RunResult {
   const lines: ConsoleLine[] = [];
+  const status = out.status ?? 'internal_error';
+  const stdout = out.stdout ?? '';
+  const stderr = out.stderr ?? '';
 
   // Инфраструктурные статусы: подсказку показываем первой строкой.
-  if (
-    out.status === 'unavailable' ||
-    out.status === 'busy' ||
-    out.status === 'internal_error'
-  ) {
+  if (status === 'unavailable' || status === 'busy' || status === 'internal_error') {
     lines.push({
       type: 'system',
       text: out.message ?? 'Серверное исполнение недоступно.',
     });
   }
 
-  lines.push(...toLines(out.stdout, 'log'));
-  lines.push(...toLines(out.stderr, 'error'));
+  lines.push(...toLines(stdout, 'log'));
+  lines.push(...toLines(stderr, 'error'));
 
-  if (out.status === 'timeout') {
+  if (status === 'timeout') {
     lines.push({
       type: 'error',
       text: out.message ?? 'Превышен лимит времени',
     });
   }
-  if (out.status === 'output_limit' || (out.status === 'ok' && out.truncated)) {
+  if (status === 'output_limit' || (status === 'ok' && out.truncated)) {
     lines.push({
       type: 'system',
       text: out.message ?? 'Вывод обрезан',
@@ -75,14 +95,14 @@ export function toRunResult(out: ServerRunOutput): RunResult {
 
   return {
     lines,
-    exitCode: out.exitCode ?? (out.status === 'timeout' ? 124 : 1),
-    durationMs: out.durationMs,
+    exitCode: out.exitCode ?? (status === 'timeout' ? 124 : 1),
+    durationMs: out.durationMs ?? 0,
   };
 }
 
 export async function runOnServer(
   client: RunnerClient,
-  params: { language: string; code: string; stdin?: string },
+  params: { language: ServerLanguage; code: string; stdin?: string },
   /** Клиентский таймаут с запасом над серверным (java — 20 c). */
   timeoutMs = 30_000,
 ): Promise<RunResult> {

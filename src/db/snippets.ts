@@ -34,6 +34,18 @@ export const snippetSchema = z.object({
   updatedAt: z.date(),
 });
 
+/** Уровни доступа к сниппету. */
+export const VISIBILITIES = ['private', 'link', 'public'] as const;
+export const visibilitySchema = z.enum(VISIBILITIES);
+export type Visibility = (typeof VISIBILITIES)[number];
+
+export const getSnippetByShortCodeSchema = z.string().min(4).max(16);
+
+export const setVisibilitySchema = z.object({
+  id: z.number(),
+  visibility: visibilitySchema,
+});
+
 export const createSnippetSchema = z.object({
   name: z.string().min(1).max(30),
   code: z.string().min(1),
@@ -53,6 +65,7 @@ export const createSnippetSchema = z.object({
     'css',
   ]),
   userId: z.number().positive(),
+  visibility: visibilitySchema.optional(),
 });
 
 export const updateSnippetSchema = createSnippetSchema.partial().extend({
@@ -148,6 +161,77 @@ export async function getAllSnippets(): Promise<Snippet[]> {
 }
 
 // по id юзера создание сниппета
+
+/**
+ * Короткий код для публичной ссылки (/s/aB3xK9).
+ *
+ * Алфавит без похожих символов (0/O, 1/l/I), чтобы код можно было продиктовать
+ * или перепечатать вручную. Уникальность проверяем запросом: коллизия на
+ * 6 символах маловероятна, но обязана быть исключена — по коду открывается
+ * чужой сниппет.
+ */
+const SHORT_CODE_ALPHABET =
+  'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+async function generateShortCode(length = 6): Promise<string> {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    let code = '';
+    for (let i = 0; i < length; i += 1) {
+      code +=
+        SHORT_CODE_ALPHABET[
+          Math.floor(Math.random() * SHORT_CODE_ALPHABET.length)
+        ];
+    }
+    const [taken] = await db
+      .select({ id: snippets.id })
+      .from(snippets)
+      .where(eq(snippets.shortCode, code))
+      .limit(1);
+    if (!taken) return code;
+  }
+  // Практически недостижимо; удлиняем код, вместо того чтобы падать.
+  return generateShortCode(length + 2);
+}
+
+/** Сниппет по короткой ссылке. Приватные по коду не отдаём. */
+export async function getSnippetByShortCode(
+  shortCode: string,
+): Promise<(Snippet & { authorUsername: string | null }) | undefined> {
+  try {
+    const [row] = await db
+      .select({ snippet: snippets, username: users.username })
+      .from(snippets)
+      .leftJoin(users, eq(snippets.userId, users.id))
+      .where(eq(snippets.shortCode, shortCode))
+      .limit(1);
+
+    if (!row || row.snippet.visibility === 'private') return undefined;
+    return { ...row.snippet, authorUsername: row.username ?? null };
+  } catch (error) {
+    console.error('Error in getSnippetByShortCode:', error);
+    throw new Error('Failed to get snippet by short code');
+  }
+}
+
+/** Смена уровня доступа. */
+export async function setSnippetVisibility(
+  id: number,
+  visibility: Visibility,
+): Promise<Snippet> {
+  try {
+    const [result] = await db
+      .update(snippets)
+      .set({ visibility, updatedAt: new Date() })
+      .where(eq(snippets.id, id))
+      .returning();
+    if (!result) throw new Error(`Snippet with id ${id} not found`);
+    return result;
+  } catch (error) {
+    console.error('Error in setSnippetVisibility:', error);
+    throw new Error('Failed to update snippet visibility');
+  }
+}
+
 export async function createSnippet(
   snippetData: CreateSnippetInput,
 ): Promise<Snippet> {
@@ -163,6 +247,9 @@ export async function createSnippet(
       code: snippetData.code,
       language: snippetData.language,
       slug,
+      shortCode: await generateShortCode(),
+      // По умолчанию приватный: публикация — осознанное действие автора.
+      visibility: snippetData.visibility ?? 'private',
       userId: snippetData.userId,
     };
     const [result] = await db

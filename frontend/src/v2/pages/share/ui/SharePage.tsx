@@ -30,6 +30,7 @@ import {
   type Snippet,
   createSnippet,
   useSnippetBySlug,
+  useSnippetByShortCode,
 } from '../../../entities/snippet';
 
 /** Относительная дата по-русски: «сегодня», «вчера», «N дн. назад» либо locale-дата. */
@@ -46,17 +47,20 @@ export function relativeDate(iso: string | null | undefined): string {
 
 /** Публичная страница сниппета /s/:username/:slug. Показывает код, форк, встраивание, статистику. */
 export default function SharePage() {
-  const { username = '', slug = '' } = useParams();
+  const { username = '', slug = '', shortCode } = useParams();
   const navigate = useNavigate();
   const trpc = useTRPCClient();
   const { user, isGuest } = useSession();
   const auth = useAuthModal();
 
+  // Источник данных зависит от вида ссылки: короткая /s/:code или /s/:user/:slug.
+  const byShortCode = useSnippetByShortCode(shortCode);
+  const bySlug = useSnippetBySlug(shortCode ? '' : username, shortCode ? '' : slug);
   const {
     data: snippet,
     isLoading,
     isError,
-  } = useSnippetBySlug(username, slug);
+  } = shortCode ? byShortCode : bySlug;
 
   const forkMutation = useMutation({
     mutationFn: async (s: Snippet) =>

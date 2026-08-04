@@ -14,18 +14,59 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { copyToClipboard } from '../../../shared/lib';
+import { useTRPCClient } from '../../../shared/api';
 import { type Props } from '..'
 
 /** Модальное окно со ссылкой на сниппет и кодом для встраивания на сайт. */
-export default function ShareModal({ opened, onClose, username, slug, saved }: Props) {
+export default function ShareModal({
+  opened,
+  onClose,
+  username,
+  slug,
+  saved,
+  snippetId,
+  shortCode,
+  visibility,
+}: Props) {
+  const trpc = useTRPCClient();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [height, setHeight] = useState('380');
+  // Оптимистичное состояние тумблера: сервер подтверждает мутацией.
+  const [shared, setShared] = useState((visibility ?? 'private') !== 'private');
+  const [saving, setSaving] = useState(false);
 
   const origin = window.location.origin;
-  const pagePath = `/s/${username}/${slug}`;
+  // Короткая ссылка — основная: её удобно диктовать, и по ней работает
+  // встраивание по ссылке (oEmbed). Путь с username/slug остаётся рабочим.
+  const pagePath = shortCode ? `/s/${shortCode}` : `/s/${username}/${slug}`;
   const shareUrl = `${origin}${pagePath}`;
-  const embedCode = `<iframe src="${origin}/embed/${username}/${slug}?theme=${theme}&height=${height}" width="100%" height="${height}" style="border:0;border-radius:12px" title="Runit"></iframe>`;
+  const embedSrc = shortCode
+    ? `${origin}/embed/s/${shortCode}?theme=${theme}&height=${height}`
+    : `${origin}/embed/${username}/${slug}?theme=${theme}&height=${height}`;
+  const embedCode = `<iframe src="${embedSrc}" width="100%" height="${height}" style="border:0;border-radius:12px" title="Runit"></iframe>`;
+
+  /** Публикация и снятие публикации. */
+  const toggleShared = async (next: boolean) => {
+    if (snippetId == null) return;
+    setShared(next);
+    setSaving(true);
+    try {
+      await trpc.snippets.setVisibility.mutate({
+        id: snippetId,
+        visibility: next ? 'link' : 'private',
+      });
+      notifications.show({
+        message: next ? 'Сниппет доступен по ссылке' : 'Сниппет снова приватный',
+      });
+    } catch {
+      setShared(!next);
+      notifications.show({ message: 'Не удалось изменить доступ', color: 'red' });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <Modal
@@ -41,11 +82,17 @@ export default function ShareModal({ opened, onClose, username, slug, saved }: P
           <div>
             <Text fw={600}>Доступ по ссылке</Text>
             <Text fz="sm" c="dimmed">
-              Просматривать могут все, у кого есть ссылка
+              {shared
+                ? 'Просматривать могут все, у кого есть ссылка'
+                : 'Сниппет приватный — ссылка и встраивание не работают'}
             </Text>
           </div>
-          {/* TODO(#643, #828): реальное управление приватностью — тумблер пока визуальный */}
-          <Switch defaultChecked size="md" />
+          <Switch
+            size="md"
+            checked={shared}
+            disabled={saving || snippetId == null}
+            onChange={(event) => toggleShared(event.currentTarget.checked)}
+          />
         </Group>
 
         <div>
@@ -108,6 +155,30 @@ export default function ShareModal({ opened, onClose, username, slug, saved }: P
               onClick={() => copyToClipboard(embedCode, 'Код для вставки скопирован')}
             >
               Копировать код
+            </Button>
+          </Group>
+        </div>
+
+        <Divider />
+
+        {/* Встраивание по ссылке (oEmbed) — как у YouTube: площадка сама
+            разворачивает ссылку в виджет, iframe писать не нужно. */}
+        <div>
+          <Text fz={11} fw={700} c="dimmed" mb={6} style={{ letterSpacing: '0.08em' }}>
+            ИЛИ ПРОСТО ВСТАВЬТЕ ССЫЛКУ
+          </Text>
+          <Text fz="sm" c="dimmed" mb="xs">
+            В WordPress, Notion, Discourse и мессенджерах достаточно вставить ссылку на
+            сниппет — виджет появится сам, без кода. Ссылка та же, что выше.
+          </Text>
+          <Group gap="sm" wrap="nowrap">
+            <TextInput value={shareUrl} readOnly style={{ flex: 1 }} ff="monospace" />
+            <Button
+              variant="light"
+              disabled={!shared}
+              onClick={() => copyToClipboard(shareUrl, 'Ссылка скопирована')}
+            >
+              Копировать
             </Button>
           </Group>
         </div>

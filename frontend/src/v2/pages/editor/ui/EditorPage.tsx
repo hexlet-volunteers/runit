@@ -290,6 +290,9 @@ export default function EditorPage() {
         username={shareUsername}
         slug={slug ?? 'draft'}
         saved={snippetIdRef.current != null || slug != null}
+        snippetId={snippetQuery.data?.id ?? snippetIdRef.current ?? null}
+        shortCode={snippetQuery.data?.shortCode ?? null}
+        visibility={snippetQuery.data?.visibility ?? null}
       />
       <AddPackageModal
         opened={packageOpened}

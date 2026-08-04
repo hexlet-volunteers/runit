@@ -15,6 +15,8 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             language: string | null;
             slug: string | null;
             code: string;
+            shortCode: string | null;
+            visibility: string;
         };
         meta: object;
     }>;
@@ -32,6 +34,8 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             language: string | null;
             slug: string | null;
             code: string;
+            shortCode: string | null;
+            visibility: string;
         };
         meta: object;
     }>;
@@ -46,6 +50,8 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             language: string | null;
             slug: string | null;
             code: string;
+            shortCode: string | null;
+            visibility: string;
         }[];
         meta: object;
     }>;
@@ -53,9 +59,10 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
         input: {
             name: string;
             userId: number;
-            language: "python" | "php" | "ruby" | "java" | "typescript" | "go" | "cpp" | "sql" | "bash" | "javascript" | "html" | "css";
+            language: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css";
             code: string;
             slug?: string | undefined;
+            visibility?: "link" | "private" | "public" | undefined;
         };
         output: {
             id: number;
@@ -66,6 +73,8 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             language: string | null;
             slug: string | null;
             code: string;
+            shortCode: string | null;
+            visibility: string;
         };
         meta: object;
     }>;
@@ -74,9 +83,10 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             id: number;
             name?: string | undefined;
             userId?: number | undefined;
-            language?: "python" | "php" | "ruby" | "java" | "typescript" | "go" | "cpp" | "sql" | "bash" | "javascript" | "html" | "css" | undefined;
+            language?: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css" | undefined;
             slug?: string | undefined;
             code?: string | undefined;
+            visibility?: "link" | "private" | "public" | undefined;
         };
         output: {
             id: number;
@@ -87,6 +97,8 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             language: string | null;
             slug: string | null;
             code: string;
+            shortCode: string | null;
+            visibility: string;
         };
         meta: object;
     }>;
@@ -97,6 +109,49 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
         output: {
             success: boolean;
             id: number;
+        };
+        meta: object;
+    }>;
+    /** Сниппет по короткой ссылке /s/:code. Приватные не отдаются. */
+    getSnippetByShortCode: import("@trpc/server").TRPCQueryProcedure<{
+        input: string;
+        output: {
+            id: number;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            userId: number | null;
+            language: string | null;
+            slug: string | null;
+            code: string;
+            shortCode: string | null;
+            visibility: string;
+        } & {
+            authorUsername: string | null;
+        };
+        meta: object;
+    }>;
+    /**
+     * Публикация и снятие публикации.
+     * TODO(#792): проверять, что текущий пользователь — владелец, как только
+     * появится авторизация.
+     */
+    setVisibility: import("@trpc/server").TRPCMutationProcedure<{
+        input: {
+            id: number;
+            visibility: "link" | "private" | "public";
+        };
+        output: {
+            id: number;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            userId: number | null;
+            language: string | null;
+            slug: string | null;
+            code: string;
+            shortCode: string | null;
+            visibility: string;
         };
         meta: object;
     }>;

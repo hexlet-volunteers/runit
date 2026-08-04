@@ -160,6 +160,8 @@ export declare const userRouter: import("@trpc/server").TRPCBuiltRouter<{
                 language: string | null;
                 slug: string | null;
                 code: string;
+                shortCode: string | null;
+                visibility: string;
             } & {
                 user: import("../db/schema/schema").User;
             })[];

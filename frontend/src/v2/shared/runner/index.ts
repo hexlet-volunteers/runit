@@ -1,9 +1,9 @@
 import { runJavaScript } from './javascript';
-import { type RunnerClient, runOnServer } from './server';
+import { type RunnerClient, type ServerLanguage, runOnServer } from './server';
 import type { RunResult } from './types';
 
 export type { ConsoleLine, RunResult } from './types';
-export type { RunnerClient, ServerRunOutput } from './server';
+export type { RunnerClient, ServerLanguage, ServerRunOutput } from './server';
 export { runJavaScript } from './javascript';
 export { toRunResult } from './server';
 
@@ -56,7 +56,8 @@ export async function runCode(params: RunCodeParams): Promise<RunResult> {
         durationMs: 0,
       };
     }
-    return runOnServer(client, { language, code, stdin });
+    // Принадлежность к SERVER_LANGUAGES проверена строкой выше.
+    return runOnServer(client, { language: language as ServerLanguage, code, stdin });
   }
 
   return unsupportedLanguage(language);

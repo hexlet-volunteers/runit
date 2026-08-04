@@ -18,6 +18,19 @@
 		reverse_proxy app:3001
 	}
 
+	# Встраивание по ссылке: сам oEmbed-эндпоинт и HTML с метатегами.
+	handle /oembed* {
+		reverse_proxy app:3001
+	}
+
+	# Боты (превью в мессенджерах, oEmbed-discovery площадок) должны получать
+	# HTML с Open Graph, а не SPA-оболочку без метатегов. Людям отдаём приложение.
+	@bots header_regexp User-Agent (?i)(bot|crawler|spider|facebookexternalhit|twitterbot|slackbot|telegrambot|discordbot|whatsapp|vkshare|embedly|quora link preview|redditbot|linkedinbot)
+	handle @bots {
+		rewrite /s/* /s/{http.request.uri.path.1}/meta
+		reverse_proxy app:3001
+	}
+
 	# SPA: любой неизвестный путь отдаёт index.html,
 	# иначе прямой заход на /editor/123 вернул бы 404.
 	handle {

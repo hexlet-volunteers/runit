@@ -17,7 +17,11 @@ import {
 } from '../../../shared/runner';
 import { isPreviewLanguage } from '../../../shared/runner/preview';
 import HtmlPreview from '../../../shared/ui/HtmlPreview';
-import { type Snippet, useSnippetBySlug } from '../../../entities/snippet';
+import {
+  type Snippet,
+  useSnippetBySlug,
+  useSnippetByShortCode,
+} from '../../../entities/snippet';
 import { useTRPCClient } from '../../../shared/api';
 
 // Компактный embed-виджет (без AppHeader/AppFooter — страница живёт внутри iframe).
@@ -41,7 +45,7 @@ function lineColor(type: string): string {
 }
 
 export default function EmbedPage() {
-  const { username = '', slug = '' } = useParams();
+  const { username = '', slug = '', shortCode } = useParams();
   const [searchParams] = useSearchParams();
 
   const theme = searchParams.get('theme') === 'dark' ? 'dark' : 'light';
@@ -55,11 +59,14 @@ export default function EmbedPage() {
   const [runKey, setRunKey] = useState(0);
   const trpc = useTRPCClient();
 
+  // Источник данных зависит от вида ссылки: короткая /s/:code или /s/:user/:slug.
+  const byShortCode = useSnippetByShortCode(shortCode);
+  const bySlug = useSnippetBySlug(shortCode ? '' : username, shortCode ? '' : slug);
   const {
     data: snippet,
     isLoading,
     isError,
-  } = useSnippetBySlug(username, slug);
+  } = shortCode ? byShortCode : bySlug;
 
   // Палитра «рамки» виджета: тёмная или светлая по query-параметру theme.
   const frame =

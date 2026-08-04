@@ -378,6 +378,44 @@ export declare const snippets: import("drizzle-orm/sqlite-core").SQLiteTableWith
         }, {}, {
             length: 50;
         }>;
+        shortCode: import("drizzle-orm/sqlite-core").SQLiteColumn<{
+            name: "short_code";
+            tableName: "snippets";
+            dataType: "string";
+            columnType: "SQLiteText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 16;
+        }>;
+        visibility: import("drizzle-orm/sqlite-core").SQLiteColumn<{
+            name: "visibility";
+            tableName: "snippets";
+            dataType: "string";
+            columnType: "SQLiteText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 10;
+        }>;
         userId: import("drizzle-orm/sqlite-core").SQLiteColumn<{
             name: "user_id";
             tableName: "snippets";
