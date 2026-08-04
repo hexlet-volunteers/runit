@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useSession } from '../../../entities/user';
 import { useTRPCClient } from '../../../shared/api';
 import { SNIPPETS_QUERY_KEY, getAllSnippets } from '../../../entities/snippet';
+import { parseTimestamp } from '../../../shared/lib/dates';
 
 type SortMode = 'new' | 'old' | 'name';
 
@@ -44,8 +45,8 @@ export default function useSnippetFilter() {
       sorted.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
     } else {
       sorted.sort((a, b) => {
-        const da = new Date(a.createdAt).getTime();
-        const db = new Date(b.createdAt).getTime();
+        const da = parseTimestamp(a.createdAt);
+        const db = parseTimestamp(b.createdAt);
         return sort === 'new' ? db - da : da - db;
       });
     }

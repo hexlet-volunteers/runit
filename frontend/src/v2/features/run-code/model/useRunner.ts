@@ -46,21 +46,25 @@ export default function useRunner(code: string, language: string) {
     runningRef.current = true;
     setRunning(true);
     setTab('console');
-    const result = await runCode({
-      language: languageRef.current,
-      code: codeRef.current,
-      stdin: stdinRef.current,
-      client: trpcRef.current,
-    });
-    setLines([
-      ...result.lines,
-      {
-        type: 'system',
-        text: `Процесс завершён с кодом ${result.exitCode} за ${Math.max(1, Math.round(result.durationMs))} мс`,
-      },
-    ]);
-    runningRef.current = false;
-    setRunning(false);
+    // try/finally — чтобы кнопка не залипала в «Выполняется…» при ошибке (#876).
+    try {
+      const result = await runCode({
+        language: languageRef.current,
+        code: codeRef.current,
+        stdin: stdinRef.current,
+        client: trpcRef.current,
+      });
+      setLines([
+        ...result.lines,
+        {
+          type: 'system',
+          text: `Процесс завершён с кодом ${result.exitCode} за ${Math.max(1, Math.round(result.durationMs))} мс`,
+        },
+      ]);
+    } finally {
+      runningRef.current = false;
+      setRunning(false);
+    }
   }, []);
 
   const runRef = useRef(handleRun);
