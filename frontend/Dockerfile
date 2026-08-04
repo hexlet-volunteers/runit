@@ -11,7 +11,9 @@ FROM node:24-slim AS build
 
 WORKDIR /app
 
-COPY frontend/package.json frontend/package-lock.json ./
+# .npmrc обязателен: в нём legacy-peer-deps=true, без него npm ci падает на
+# конфликте peer-зависимостей stylelint-config-prettier ↔ stylelint 17.
+COPY frontend/package.json frontend/package-lock.json frontend/.npmrc ./
 RUN npm ci
 
 # Типы бэкенда: фронт импортирует их как ../../types/... — в контейнере это /types.
