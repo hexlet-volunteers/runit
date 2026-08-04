@@ -15,7 +15,7 @@ export declare const snippetSchema: z.ZodObject<{
     createdAt: Date;
     updatedAt: Date;
     userId: number;
-    language: "ruby" | "java" | "php" | "python" | "javascript" | "html";
+    language: "python" | "php" | "ruby" | "java" | "javascript" | "html";
     slug: string | null;
     code: string;
 }, {
@@ -24,7 +24,7 @@ export declare const snippetSchema: z.ZodObject<{
     createdAt: Date;
     updatedAt: Date;
     userId: number;
-    language: "ruby" | "java" | "php" | "python" | "javascript" | "html";
+    language: "python" | "php" | "ruby" | "java" | "javascript" | "html";
     slug: string | null;
     code: string;
 }>;
@@ -37,13 +37,13 @@ export declare const createSnippetSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     name: string;
     userId: number;
-    language: "ruby" | "java" | "php" | "python" | "javascript" | "html";
+    language: "python" | "php" | "ruby" | "java" | "javascript" | "html";
     code: string;
     slug?: string | undefined;
 }, {
     name: string;
     userId: number;
-    language: "ruby" | "java" | "php" | "python" | "javascript" | "html";
+    language: "python" | "php" | "ruby" | "java" | "javascript" | "html";
     code: string;
     slug?: string | undefined;
 }>;
@@ -59,14 +59,14 @@ export declare const updateSnippetSchema: z.ZodObject<{
     id: number;
     name?: string | undefined;
     userId?: number | undefined;
-    language?: "ruby" | "java" | "php" | "python" | "javascript" | "html" | undefined;
+    language?: "python" | "php" | "ruby" | "java" | "javascript" | "html" | undefined;
     slug?: string | undefined;
     code?: string | undefined;
 }, {
     id: number;
     name?: string | undefined;
     userId?: number | undefined;
-    language?: "ruby" | "java" | "php" | "python" | "javascript" | "html" | undefined;
+    language?: "python" | "php" | "ruby" | "java" | "javascript" | "html" | undefined;
     slug?: string | undefined;
     code?: string | undefined;
 }>;

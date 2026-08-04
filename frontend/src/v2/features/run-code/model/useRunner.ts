@@ -4,7 +4,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import { runJavaScript, unsupportedLanguage, type ConsoleLine } from '../../../shared/runner';
+import { runCode, type ConsoleLine } from '../../../shared/runner';
+import { useTRPCClient } from '../../../shared/api';
 import { type OutputTab } from '..';
 
 /**
@@ -19,6 +20,7 @@ import { type OutputTab } from '..';
  * сеттеры, `handleRun`, `runRef` (для Monaco-команды), `clearLines`
  */
 export default function useRunner(code: string, language: string) {
+  const trpc = useTRPCClient();
   const [stdin, setStdin] = useState('');
   const [lines, setLines] = useState<ConsoleLine[]>([]);
   const [running, setRunning] = useState(false);
@@ -29,23 +31,27 @@ export default function useRunner(code: string, language: string) {
   const codeRef = useRef(code);
   const stdinRef = useRef(stdin);
   const languageRef = useRef(language);
+  const trpcRef = useRef(trpc);
 
   codeRef.current = code;
   stdinRef.current = stdin;
   languageRef.current = language;
+  trpcRef.current = trpc;
 
   // --- Запуск -------------------------------------------------------------
   const runningRef = useRef(false);
-  /** Запускает выполнение кода (JS — в Web Worker, остальное — заглушка). */
+  /** Запускает код: JS — в Web Worker, Python/PHP/Ruby/Java — на сервере (#821). */
   const handleRun = useCallback(async () => {
     if (runningRef.current) return;
     runningRef.current = true;
     setRunning(true);
     setTab('console');
-    const result =
-      languageRef.current === 'javascript'
-        ? await runJavaScript(codeRef.current, stdinRef.current)
-        : unsupportedLanguage(languageRef.current);
+    const result = await runCode({
+      language: languageRef.current,
+      code: codeRef.current,
+      stdin: stdinRef.current,
+      client: trpcRef.current,
+    });
     setLines([
       ...result.lines,
       {

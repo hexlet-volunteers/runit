@@ -11,11 +11,12 @@ import {
 } from '@mantine/core';
 import { editorColors, langMeta } from '../../../shared/theme';
 import {
-  runJavaScript,
+  runCode,
   unsupportedLanguage,
   type RunResult,
 } from '../../../shared/runner';
 import { type Snippet, useSnippetBySlug } from '../../../entities/snippet';
+import { useTRPCClient } from '../../../shared/api';
 
 // Компактный embed-виджет (без AppHeader/AppFooter — страница живёт внутри iframe).
 // TODO(#841): варианты оформления card/minimal/tabs (query-параметр variant).
@@ -47,6 +48,7 @@ export default function EmbedPage() {
 
   const [result, setResult] = useState<RunResult | null>(null);
   const [running, setRunning] = useState(false);
+  const trpc = useTRPCClient();
 
   const {
     data: snippet,
@@ -78,7 +80,9 @@ export default function EmbedPage() {
     }
     setRunning(true);
     try {
-      setResult(await runJavaScript(s.code));
+      setResult(
+        await runCode({ language: s.language, code: s.code, client: trpc }),
+      );
     } finally {
       setRunning(false);
     }

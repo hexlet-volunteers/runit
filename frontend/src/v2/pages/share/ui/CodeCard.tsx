@@ -6,7 +6,8 @@ import {
   Group,
   Text,
 } from '@mantine/core';
-import { runJavaScript, unsupportedLanguage, type RunResult } from '../../../shared/runner';
+import { runCode, unsupportedLanguage, type RunResult } from '../../../shared/runner';
+import { useTRPCClient } from '../../../shared/api';
 import { editorColors, langMeta } from '../../../shared/theme';
 import { type Snippet } from '../../../entities/snippet'
 
@@ -42,6 +43,7 @@ export default function CodeCard({
 }) {
   const [result, setResult] = useState<RunResult | null>(null);
   const [running, setRunning] = useState(false);
+  const trpc = useTRPCClient();
   const meta = langMeta[snippet.language];
 
   const run = async () => {
@@ -51,7 +53,13 @@ export default function CodeCard({
     }
     setRunning(true);
     try {
-      setResult(await runJavaScript(snippet.code));
+      setResult(
+        await runCode({
+          language: snippet.language,
+          code: snippet.code,
+          client: trpc,
+        }),
+      );
     } finally {
       setRunning(false);
     }

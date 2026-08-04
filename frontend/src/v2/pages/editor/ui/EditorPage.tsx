@@ -199,6 +199,7 @@ export default function EditorPage() {
         <EditorSidebar
           fileName={fileName}
           meta={meta}
+          language={language}
           setPackageOpened={setPackageOpened}
         />
 
@@ -276,7 +277,7 @@ export default function EditorPage() {
       </div>
 
       {/* ===== Статус-бар (28px) ===== */}
-      <EditorStatusBar meta={meta} cursor={cursor} />
+      <EditorStatusBar meta={meta} language={language} cursor={cursor} />
 
       <ShareModal
         opened={shareOpened}

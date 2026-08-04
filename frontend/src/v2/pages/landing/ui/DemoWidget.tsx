@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Box, Button, Group, Paper, Text } from '@mantine/core';
 import { editorColors, langMeta } from '../../../shared/theme';
-import { runJavaScript, type RunResult } from '../../../shared/runner';
+import { runCode, type RunResult } from '../../../shared/runner';
 
 /** Палитра подсветки синтаксиса (tokyo-night). */
 const HL = {
@@ -77,7 +77,8 @@ export default function DemoWidget() {
   const handleRun = async () => {
     setRunning(true);
     try {
-      const res = await runJavaScript(code);
+      // Виджет лендинга остаётся полностью клиентским: JS в Web Worker.
+      const res = await runCode({ language: 'javascript', code });
       setResult(res);
     } finally {
       setRunning(false);

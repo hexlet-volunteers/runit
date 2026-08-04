@@ -21,9 +21,11 @@
     "lint:fix": "biome check --write src/",
     "test": "playwright test",
     "test:ci": "npx start-server-and-test start-server http://localhost:3000 test",
-    "test:withDocker": "WITHOUT_DOCKER = false playwright test",
+    "test:withDocker": "WITH_DOCKER=true playwright test",
     "generate:types": "tsc --emitDeclarationOnly --outDir types",
-    "test:debug": "npm test -- --ui"
+    "test:debug": "npm test -- --ui",
+    "runner:build-images": "tsx src/runner/buildImages.ts",
+    "test:runner": "node --import tsx --test src/runner/*.test.ts"
   },
   "repository": {
     "type": "git",
