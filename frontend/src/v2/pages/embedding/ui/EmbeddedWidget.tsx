@@ -25,43 +25,20 @@ const PlayIcon = () => (
   </svg>
 );
 
-/** Редактируемый код с подсветкой: прозрачная textarea поверх <pre>. */
-function CodeArea({
-  code,
-  onChange,
-  minHeight = '9.5em',
-}: {
-  code: string;
-  onChange: (value: string) => void;
-  minHeight?: string;
-}) {
+/**
+ * Код только для чтения.
+ *
+ * Демо-виджет намеренно не редактируется: страница публичная, а каждый запуск —
+ * это исполнение кода, поэтому редактируемое поле здесь превращается в удобный
+ * вектор злоупотребления. Полноценный редактор — в самом Runit.
+ */
+function CodeArea({ code, minHeight = '9.5em' }: { code: string; minHeight?: string }) {
   return (
-    <Box style={{ background: editorColors.bg, position: 'relative' }} p="sm">
+    <Box style={{ background: editorColors.bg }} p="sm">
       <pre
-        aria-hidden
         style={{ ...CODE_FONT, color: editorColors.text, minHeight }}
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: `${highlightJs(code)}\n` }}
-      />
-      <textarea
-        value={code}
-        onChange={(event) => onChange(event.currentTarget.value)}
-        aria-label={`Код ${DEMO_FILE_NAME}`}
-        spellCheck={false}
-        style={{
-          ...CODE_FONT,
-          position: 'absolute',
-          inset: 12,
-          width: 'calc(100% - 24px)',
-          height: 'calc(100% - 24px)',
-          background: 'transparent',
-          border: 'none',
-          outline: 'none',
-          resize: 'none',
-          color: 'transparent',
-          caretColor: editorColors.text,
-          overflow: 'hidden',
-        }}
       />
     </Box>
   );
@@ -124,7 +101,7 @@ function ResultBlock({ result, compact = false }: { result: RunResult; compact?:
  * который подключается на сторонние сайты.
  */
 export default function EmbeddedWidget({ variant }: { variant: EmbedVariant }) {
-  const [code, setCode] = useState(DEMO_CODE);
+  const [code] = useState(DEMO_CODE);
   const [result, setResult] = useState<RunResult | null>(null);
   const [running, setRunning] = useState(false);
   const [tab, setTab] = useState<'code' | 'result'>('code');
@@ -159,7 +136,7 @@ export default function EmbeddedWidget({ variant }: { variant: EmbedVariant }) {
     return (
       <Paper radius="md" withBorder style={{ overflow: 'hidden' }}>
         <Box style={{ position: 'relative' }}>
-          <CodeArea code={code} onChange={setCode} minHeight="9.5em" />
+          <CodeArea code={code} />
           <Box style={{ position: 'absolute', top: 8, right: 8 }}>{runButton()}</Box>
         </Box>
         {result && <ResultBlock result={result} compact />}
@@ -200,7 +177,7 @@ export default function EmbeddedWidget({ variant }: { variant: EmbedVariant }) {
         </Group>
 
         {tab === 'code' ? (
-          <CodeArea code={code} onChange={setCode} minHeight="9.5em" />
+          <CodeArea code={code} />
         ) : result ? (
           <ResultBlock result={result} />
         ) : (
@@ -239,7 +216,7 @@ export default function EmbeddedWidget({ variant }: { variant: EmbedVariant }) {
         </Group>
       </Group>
 
-      <CodeArea code={code} onChange={setCode} />
+      <CodeArea code={code} />
 
       {result && <ResultBlock result={result} />}
 
