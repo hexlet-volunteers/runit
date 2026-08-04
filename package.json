@@ -25,7 +25,8 @@
     "generate:types": "tsc --emitDeclarationOnly --outDir types",
     "test:debug": "npm test -- --ui",
     "runner:build-images": "tsx src/runner/buildImages.ts",
-    "test:runner": "node --import tsx --test src/runner/*.test.ts"
+    "test:runner": "node --import tsx --test src/runner/*.test.ts",
+    "runner:smoke": "node bin/runner-smoke.mjs"
   },
   "repository": {
     "type": "git",
@@ -38,6 +39,8 @@
   },
   "homepage": "https://github.com/hexlet-rus/runit#readme",
   "dependencies": {
+    "@fastify/helmet": "^13.1.0",
+    "@fastify/rate-limit": "^11.2.0",
     "@trpc/server": "^11.8.0",
     "better-sqlite3": "^13.0.2",
     "dotenv": "^17.4.2",

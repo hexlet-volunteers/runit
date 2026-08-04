@@ -9,6 +9,7 @@ import { seedHomePageData } from './db/seedHomePageData';
 import { registerHealthRoute } from './health';
 import { registerOembedRoutes } from './oembed';
 import { type AppRouter, appRouter } from './router/index';
+import { registerSecurity } from './security';
 
 // import { createContext } from './context';
 
@@ -50,6 +51,9 @@ const getApp = async () => {
       </html>
     `);
   });
+
+  // Заголовки безопасности и лимиты — до объявления роутов.
+  await registerSecurity(server);
 
   registerHealthRoute(server);
   registerOembedRoutes(server);

@@ -63,3 +63,40 @@ jobs:
       - name: Образ фронтенда
         # Контекст — корень репозитория: фронту нужны типы из types/.
         run: docker build -f frontend/Dockerfile -t runit-web:ci .
+
+  runner-smoke:
+    name: Раннер — исполнение 9 языков в Docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Установка зависимостей
+        run: npm ci
+
+      - name: Сборка образов языков
+        # На раннере GitHub Actions Docker есть, поэтому happy path раннера
+        # проверяется здесь — у разработчика демон может быть выключен.
+        run: npm run runner:build-images
+
+      - name: Запуск сервера
+        run: |
+          DB_PATH=/tmp/ci.sqlite npx tsx src/server.ts &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3001/health >/dev/null && break
+            sleep 1
+          done
+          curl -sf http://localhost:3001/health
+
+      - name: Прогон языков, stdin, таймаута и изоляции сети
+        run: npm run runner:smoke
+
+      - name: Контейнеры не осиротели после таймаута
+        run: |
+          left=$(docker ps -aq --filter label=runit-runner | wc -l)
+          echo "оставшихся контейнеров раннера: $left"
+          test "$left" -eq 0
