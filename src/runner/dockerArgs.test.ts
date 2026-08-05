@@ -180,6 +180,48 @@ test('новые языки: команды и файлы', () => {
   assert.equal(specFor('sql').fileName(''), 'main.sql');
 });
 
+test('/tmp: скриптовым языкам noexec, компилируемым — место и exec', () => {
+  // CI-прогон в Docker показал ровно две поломки компилируемых языков:
+  // go упирался в 16 МБ («no space left on device»), а собранный /tmp/app в cpp
+  // не запускался из-за noexec. Тест фиксирует обе настройки и то, что
+  // послабление касается только этих языков.
+  const tmpfsOf = (lang: Parameters<typeof specFor>[0]) =>
+    pairValue(
+      buildDockerArgs({
+        spec: specFor(lang),
+        limits: { ...limits, ...specFor(lang).limits },
+        containerName: 'runit-run-test',
+        hostCodeDir: '/tmp/runit-runner-abc',
+        imageTag: `runit-runner-${lang}:1`,
+        fileName: specFor(lang).fileName('class Main {}'),
+      }),
+      '--tmpfs',
+    ) ?? '';
+
+  for (const lang of [
+    'python',
+    'ruby',
+    'php',
+    'java',
+    'bash',
+    'sql',
+  ] as const) {
+    assert.match(tmpfsOf(lang), /noexec/, `${lang}: noexec обязателен`);
+  }
+  for (const lang of ['go', 'cpp'] as const) {
+    const value = tmpfsOf(lang);
+    assert.doesNotMatch(
+      value,
+      /noexec/,
+      `${lang}: бинарник должен исполняться`,
+    );
+    // Остальные защитные опции при этом сохраняются.
+    assert.match(value, /nosuid/);
+    assert.match(value, /nodev/);
+  }
+  assert.match(tmpfsOf('go'), /size=320m/);
+});
+
 test('компилируемые языки пишут артефакты только в /tmp', () => {
   // rootfs монтируется read-only, поэтому вывод компилятора обязан идти в tmpfs.
   const cppCmd = specFor('cpp').command('/app/main.cpp').join(' ');

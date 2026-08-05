@@ -28,6 +28,18 @@ export function buildDockerArgs(params: DockerArgsParams): string[] {
   // Вторая линия обороны: если наш watchdog умрёт (например, рестарт сервера
   // ровно во время запуска), процесс всё равно будет убит ядром по CPU-секундам.
   const cpuSeconds = Math.ceil(limits.timeoutMs / 1000) + 2;
+  // noexec на /tmp — эшелон обороны, а не граница безопасности: границу держат
+  // отсутствие сети, cap-drop=ALL, no-new-privileges, read-only rootfs и
+  // непривилегированный пользователь. Для компилируемых языков исполнение
+  // собранного файла и есть смысл запуска, поэтому им noexec не ставим.
+  const tmpfs = spec.tmpfs ?? { size: '16m' };
+  const tmpfsOptions = [
+    'rw',
+    ...(tmpfs.allowExec ? [] : ['noexec']),
+    'nosuid',
+    'nodev',
+    `size=${tmpfs.size}`,
+  ].join(',');
 
   const args = [
     'run',
@@ -49,7 +61,7 @@ export function buildDockerArgs(params: DockerArgsParams): string[] {
     // Единственная writable точка (нужна JVM и tempfile): в RAM, без права
     // исполнения записанного, с ограничением размера.
     '--tmpfs',
-    '/tmp:rw,noexec,nosuid,nodev,size=16m',
+    `/tmp:${tmpfsOptions}`,
     '--memory',
     limits.memory,
     // Равный --memory-swap выключает своп: иначе лимит памяти обходится, и
@@ -64,7 +76,7 @@ export function buildDockerArgs(params: DockerArgsParams): string[] {
     '--ulimit',
     'nofile=256:256',
     '--ulimit',
-    'fsize=8388608',
+    `fsize=${limits.maxFileBytes}`,
     '--ulimit',
     `cpu=${cpuSeconds}`,
     // Иначе демон параллельно пишет весь вывод контейнера на диск хоста.

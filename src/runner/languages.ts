@@ -12,6 +12,13 @@ export interface LanguageSpec {
   command: (containerPath: string) => string[];
   /** Переопределение базовых лимитов. */
   limits?: Partial<RunLimits>;
+  /**
+   * Настройка /tmp — единственного writable места при read-only rootfs.
+   * По умолчанию 16 МБ без права исполнения. Компилируемым языкам нужно и
+   * место под кэш сборки, и право запустить собранный бинарник: у них цель
+   * запуска — именно исполнение свежескомпилированного файла.
+   */
+  tmpfs?: { size: string; allowExec?: boolean };
   /** Переменные окружения внутри контейнера. */
   env?: Record<string, string>;
 }
@@ -64,7 +71,16 @@ export const LANGUAGE_SPECS: Record<RunnerLanguage, LanguageSpec> = {
       GOPATH: '/tmp/go',
       GOFLAGS: '-buildvcs=false',
     },
-    limits: { memory: '512m', timeoutMs: 20_000, pidsLimit: 256 },
+    // Go компилирует и стандартную библиотеку: 16 МБ /tmp кончались на первом
+    // же пакете («no space left on device»), а 8 МБ на файл — на архивах.
+    limits: {
+      memory: '768m',
+      timeoutMs: 20_000,
+      pidsLimit: 256,
+      maxFileBytes: 64 * 1024 * 1024,
+    },
+    // go run складывает бинарник в кэш и запускает его оттуда.
+    tmpfs: { size: '320m', allowExec: true },
   },
   cpp: {
     id: 'cpp',
@@ -78,7 +94,15 @@ export const LANGUAGE_SPECS: Record<RunnerLanguage, LanguageSpec> = {
       '-c',
       `g++ -O0 -std=c++20 -o /tmp/app ${p} && exec /tmp/app`,
     ],
-    limits: { memory: '512m', timeoutMs: 20_000, pidsLimit: 256 },
+    limits: {
+      memory: '512m',
+      timeoutMs: 20_000,
+      pidsLimit: 256,
+      maxFileBytes: 32 * 1024 * 1024,
+    },
+    // Без права исполнения на /tmp собранный /tmp/app не запускался: exec давал
+    // «Permission denied» уже после успешной компиляции.
+    tmpfs: { size: '64m', allowExec: true },
   },
   sql: {
     id: 'sql',

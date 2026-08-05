@@ -42,6 +42,7 @@ export const runnerConfig = {
     cpus: process.env.RUNNER_CPUS || '1',
     pidsLimit: num(process.env.RUNNER_PIDS_LIMIT, 64),
     maxOutputBytes: num(process.env.RUNNER_MAX_OUTPUT_BYTES, 64 * 1024),
+    maxFileBytes: num(process.env.RUNNER_MAX_FILE_BYTES, 8 * 1024 * 1024),
   } satisfies RunLimits,
   /** Максимальные размеры входных данных (первая линия защиты, до docker). */
   maxCodeBytes: num(process.env.RUNNER_MAX_CODE_BYTES, 64 * 1024),
