@@ -23,6 +23,7 @@ import {
   useSnippetByShortCode,
 } from '../../../entities/snippet';
 import { useTRPCClient } from '../../../shared/api';
+import { snippetPath } from '../../../shared/lib';
 
 // Компактный embed-виджет (без AppHeader/AppFooter — страница живёт внутри iframe).
 // TODO(#841): варианты оформления card/minimal/tabs (query-параметр variant).
@@ -127,7 +128,13 @@ export default function EmbedPage() {
   const meta = langMeta[s.language];
   const isPreview = isPreviewLanguage(s.language);
   const fileName = `${s.name}.${EXT[s.language] ?? 'txt'}`;
-  const shareHref = `/s/${username}/${slug}`;
+  // Как и на странице шаринга: на роуте короткой ссылки username и slug пусты,
+  // поэтому путь строится из данных сниппета.
+  const shareHref = snippetPath({
+    shortCode: shortCode ?? s.shortCode,
+    authorUsername: s.authorUsername ?? username,
+    slug: s.slug ?? slug,
+  });
 
   return (
     <Box

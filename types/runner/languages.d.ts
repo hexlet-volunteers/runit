@@ -11,6 +11,16 @@ export interface LanguageSpec {
     command: (containerPath: string) => string[];
     /** Переопределение базовых лимитов. */
     limits?: Partial<RunLimits>;
+    /**
+     * Настройка /tmp — единственного writable места при read-only rootfs.
+     * По умолчанию 16 МБ без права исполнения. Компилируемым языкам нужно и
+     * место под кэш сборки, и право запустить собранный бинарник: у них цель
+     * запуска — именно исполнение свежескомпилированного файла.
+     */
+    tmpfs?: {
+        size: string;
+        allowExec?: boolean;
+    };
     /** Переменные окружения внутри контейнера. */
     env?: Record<string, string>;
 }

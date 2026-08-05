@@ -22,7 +22,7 @@ import { AppHeader } from '../../../widgets/header';
 import { initialsOf } from '../../../shared/lib';
 import { AppFooter } from '../../../widgets/footer';
 import { plural } from '../../../shared/lib';
-import { type Snippet, getAllSnippets } from '../../../entities/snippet';
+import { getPublicSnippetsByUsername } from '../../../entities/snippet';
 import NotFoundState from './NotFoundState';
 import SnippetCard from './SnippetCard';
 
@@ -70,14 +70,12 @@ export default function ProfilePage() {
 
   const profileUser = userQuery.data ?? null;
 
-  // TODO: осуществить фильтрацию сниппетов на бэке, сделать отдельный эндпоинт по пользователю,
-  //       т.к. загружать все сниппеты это избыточно.
+  // Фильтрует бэкенд: приватные сниппеты на публичный профиль не попадают.
+  // Раньше страница выкачивала getAllSnippets и отбирала по userId на клиенте —
+  // то есть любой посетитель получал все сниппеты сайта, включая чужие приватные.
   const snippetsQuery = useQuery({
-    queryKey: ['v2', 'profileSnippets', profileUser?.id],
-    queryFn: async () => {
-      const all = await getAllSnippets(trpc);
-      return all.filter((s) => s.userId === profileUser!.id);
-    },
+    queryKey: ['v2', 'profileSnippets', username],
+    queryFn: () => getPublicSnippetsByUsername(trpc, username),
     enabled: !!profileUser,
   });
 

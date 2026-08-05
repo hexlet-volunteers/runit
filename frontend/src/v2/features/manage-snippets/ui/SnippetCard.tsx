@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { ActionIcon, Anchor, Box, Checkbox, Group, Menu, Paper, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { langMeta } from '../../../shared/theme';
-import { relativeDate } from '../../../shared/lib';
+import { relativeDate, snippetUrl } from '../../../shared/lib';
 import { DotsIcon } from '../../../shared/ui';
 import { type SnippetCardProps } from '..'
 
@@ -20,9 +20,13 @@ export default function SnippetCard({
     runnable: false,
   };
 
-  /** Копирует URL `/s/:username/:slug` в буфер обмена. Показывает уведомление об успехе или ошибке. */
+  /** Копирует ссылку на сниппет в буфер обмена: короткую, если она есть. */
   const copyLink = async () => {
-    const url = `${window.location.origin}/s/${username}/${snippet.slug}`;
+    const url = snippetUrl({
+      shortCode: snippet.shortCode,
+      username,
+      slug: snippet.slug,
+    });
     try {
       await navigator.clipboard.writeText(url);
       notifications.show({ message: 'Ссылка скопирована', color: 'blue' });

@@ -22,7 +22,7 @@ import { editorColors, langMeta } from '../../../shared/theme';
 import { useSession } from '../../../entities/user';
 import { useAuthModal } from '../../../features/auth';
 import { AppHeader } from '../../../widgets/header';
-import { initialsOf } from '../../../shared/lib';
+import { embedCodeFor, initialsOf, snippetUrl } from '../../../shared/lib';
 import { AppFooter } from '../../../widgets/footer';
 import CodeCard from './CodeCard';
 import NotFoundState from './NotFoundState';
@@ -83,10 +83,19 @@ export default function SharePage() {
   };
 
   const meta = snippet ? langMeta[(snippet as Snippet).language] : null;
-  const shareUrl = `runit.hexlet.io/s/${username}/${slug}`;
 
+  // Ссылки строятся из данных сниппета, а не из URL: на роуте короткой ссылки
+  // username и slug в адресе отсутствуют, и раньше получалось «/s//».
+  const loaded = snippet as Snippet | undefined;
+  const linkSource = {
+    shortCode: shortCode ?? loaded?.shortCode,
+    authorUsername: loaded?.authorUsername ?? username,
+    slug: loaded?.slug ?? slug,
+  };
+  const author = linkSource.authorUsername ?? '';
+  const shareUrl = snippetUrl(linkSource);
   const embedCode = snippet
-    ? `<iframe src="${window.location.origin}/embed/${username}/${slug}?theme=dark&height=380" width="100%" height="380" style="border:0;border-radius:12px" title="Runit — ${(snippet as Snippet).name}"></iframe>`
+    ? embedCodeFor(linkSource, { name: (snippet as Snippet).name })
     : '';
 
   return (
@@ -120,14 +129,15 @@ export default function SharePage() {
                 <Text ff="monospace" fz="sm" c="dimmed">
                   {shareUrl}
                 </Text>
+                {/* Статус из данных сниппета, а не подпись «публичный» на все случаи. */}
                 <Badge
                   variant="light"
-                  color="green"
+                  color={loaded?.visibility === 'public' ? 'green' : 'blue'}
                   size="sm"
                   radius="sm"
                   leftSection="•"
                 >
-                  публичный
+                  {loaded?.visibility === 'public' ? 'публичный' : 'по ссылке'}
                 </Badge>
               </Group>
 
@@ -189,19 +199,19 @@ export default function SharePage() {
                 </Group>
               </Group>
 
-              {/* Автор и метрики */}
+              {/* Автор берётся из ответа API: в короткой ссылке логина нет. */}
               <Group gap="xs">
                 <Avatar color="blue" radius="xl" size="sm">
-                  {initialsOf(username)}
+                  {initialsOf(author)}
                 </Avatar>
                 <Anchor
                   component={Link}
-                  to={`/u/${username}`}
+                  to={`/u/${author}`}
                   fw={600}
                   fz="sm"
                   c="dark.9"
                 >
-                  {username}
+                  {author}
                 </Anchor>
                 <Text fz="sm" c="dimmed">
                   · {relativeDate((snippet as Snippet).updatedAt)}

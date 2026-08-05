@@ -55,6 +55,29 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
         }[];
         meta: object;
     }>;
+    /**
+     * Сниппеты пользователя для публичного профиля — без приватных.
+     * Профиль обязан ходить сюда, а не в getAllSnippets: иначе посетитель
+     * выкачивает все сниппеты сайта и видит чужие приватные.
+     */
+    getPublicSnippetsByUsername: import("@trpc/server").TRPCQueryProcedure<{
+        input: {
+            username: string;
+        };
+        output: {
+            id: number;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            userId: number | null;
+            language: string | null;
+            slug: string | null;
+            code: string;
+            shortCode: string | null;
+            visibility: string;
+        }[];
+        meta: object;
+    }>;
     createSnippet: import("@trpc/server").TRPCMutationProcedure<{
         input: {
             name: string;

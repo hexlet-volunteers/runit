@@ -5,3 +5,4 @@ export { useSnippetBySlug } from './useSnippetBySlug';
 export { useSnippetByShortCode } from './useSnippetByShortCode';
 export { generateSnippetName } from './generateSnippetName';
 export { getAllSnippets } from './getAllSnippets';
+export { getPublicSnippetsByUsername } from './getPublicSnippetsByUsername';

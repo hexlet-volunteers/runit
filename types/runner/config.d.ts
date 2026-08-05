@@ -13,6 +13,7 @@ export declare const runnerConfig: {
         cpus: string;
         pidsLimit: number;
         maxOutputBytes: number;
+        maxFileBytes: number;
     };
     /** Максимальные размеры входных данных (первая линия защиты, до docker). */
     maxCodeBytes: number;

@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, ne } from 'drizzle-orm';
 import { z } from 'zod/v3';
 import { generateUniqSlug } from '../utils/generate-uniq-slug';
 import { db } from './connection';
@@ -83,6 +83,10 @@ export const getSnippetByUsernameSlugSchema = z.object({
   slug: z.string(),
 });
 
+export const getPublicSnippetsByUsernameSchema = z.object({
+  username: z.string().min(1).max(50),
+});
+
 export type CreateSnippetInput = z.infer<typeof createSnippetSchema>;
 export type UpdateSnippetInput = z.infer<typeof updateSnippetSchema>;
 
@@ -115,7 +119,15 @@ async function generateSlug(userId: number): Promise<string> {
     return Math.random().toString(36).substring(2, 10);
   }
 }
-// по id снипетта:
+/**
+ * Сниппет по id — путь редактора, поэтому приватные здесь НЕ отсекаются:
+ * владелец обязан открывать свой приватный сниппет.
+ *
+ * Отличить владельца от постороннего пока нечем — авторизации в проекте нет
+ * (#639), а процедура публичная (#792). До появления прав по id можно прочитать
+ * чужой приватный сниппет, перебрав числа. Просмотровые пути (короткая ссылка,
+ * username+slug, профиль) приватные уже не отдают — см. ниже.
+ */
 export async function getSnippetById(id: number): Promise<Snippet | undefined> {
   try {
     const [snippet] = await db
@@ -131,6 +143,14 @@ export async function getSnippetById(id: number): Promise<Snippet | undefined> {
   }
 }
 
+/**
+ * Сниппет по паре username+slug — старый путь просмотра (/s/:username/:slug).
+ *
+ * Приватные не отдаём. Без этой проверки отмена публичности не работала:
+ * сниппет закрывали тумблером, а по ранее разосланной ссылке он продолжал
+ * открываться, потому что видимость проверялась только в
+ * getSnippetByShortCode.
+ */
 export async function getSnippetByUsernameSlug(
   username: string,
   slug: string,
@@ -143,14 +163,50 @@ export async function getSnippetByUsernameSlug(
       .where(and(eq(users.username, username), eq(snippets.slug, slug)))
       .limit(1);
 
-    return result?.snippets;
+    const snippet = result?.snippets;
+    if (!snippet || snippet.visibility === 'private') return undefined;
+    return snippet;
   } catch (error) {
     console.error('Error in getSnippetByUsernameSlug:', error);
     throw new Error('Failed to get snippet by username and slug');
   }
 }
 
-// вообще все снипетты которые есть в БД
+/**
+ * Сниппеты пользователя для его публичного профиля: без приватных.
+ *
+ * Раньше страница профиля брала getAllSnippets и фильтровала по userId на
+ * клиенте — то есть каждый посетитель выкачивал таблицу сниппетов всего сайта,
+ * включая приватные чужие, и приватные показывались на публичном профиле.
+ */
+export async function getPublicSnippetsByUsername(
+  username: string,
+): Promise<Snippet[]> {
+  try {
+    const rows = await db
+      .select({ snippet: snippets })
+      .from(snippets)
+      .innerJoin(users, eq(snippets.userId, users.id))
+      .where(
+        and(eq(users.username, username), ne(snippets.visibility, 'private')),
+      )
+      .orderBy(desc(snippets.createdAt));
+
+    return rows.map((row) => row.snippet);
+  } catch (error) {
+    console.error('Error in getPublicSnippetsByUsername:', error);
+    throw new Error('Failed to get public snippets by username');
+  }
+}
+
+/**
+ * Все сниппеты в БД, включая приватные.
+ *
+ * Служебная выборка: показывать её постороннему нельзя. Ограничить выдачу
+ * владельцем пока нечем (нет авторизации — #639, процедура публичная — #792),
+ * поэтому для публичных мест есть getPublicSnippetsByUsername, а этот путь
+ * должен уйти под права вместе с #792.
+ */
 export async function getAllSnippets(): Promise<Snippet[]> {
   try {
     return await db.select().from(snippets).orderBy(desc(snippets.createdAt));
@@ -318,10 +374,4 @@ export function generateName(): string {
   const adjective = faker.word.adjective(adjectiveLength);
   const animal = faker.animal.type();
   return `${adjective}-${animal}`;
-}
-
-// временная для тестирования:
-export async function deleteAllSnippets() {
-  const result = await db.delete(snippets);
-  return result.changes;
 }

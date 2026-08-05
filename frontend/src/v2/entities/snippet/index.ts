@@ -9,4 +9,5 @@ export {
   createSnippet,
   updateSnippet,
   getAllSnippets,
+  getPublicSnippetsByUsername,
 } from './api';

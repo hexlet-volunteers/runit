@@ -6,6 +6,8 @@ import {
   deleteSnippetSchema,
   generateName,
   getAllSnippets,
+  getPublicSnippetsByUsername,
+  getPublicSnippetsByUsernameSchema,
   getSnippetById,
   getSnippetByIdSchema,
   getSnippetByShortCode,
@@ -46,6 +48,17 @@ export const snippetRouter = router({
   getAllSnippets: publicProcedure.query(async () => {
     return await getAllSnippets();
   }),
+
+  /**
+   * Сниппеты пользователя для публичного профиля — без приватных.
+   * Профиль обязан ходить сюда, а не в getAllSnippets: иначе посетитель
+   * выкачивает все сниппеты сайта и видит чужие приватные.
+   */
+  getPublicSnippetsByUsername: publicProcedure
+    .input(getPublicSnippetsByUsernameSchema)
+    .query(async ({ input }) => {
+      return await getPublicSnippetsByUsername(input.username);
+    }),
 
   createSnippet: publicProcedure
     .input(createSnippetSchema)

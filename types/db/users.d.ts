@@ -158,4 +158,3 @@ export declare function getData({ id }: {
         user: User;
     })[];
 }>;
-export declare function deleteAllUsers(): Promise<number>;

@@ -232,6 +232,24 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
             }[];
             meta: object;
         }>;
+        getPublicSnippetsByUsername: import("@trpc/server").TRPCQueryProcedure<{
+            input: {
+                username: string;
+            };
+            output: {
+                id: number;
+                name: string;
+                createdAt: Date;
+                updatedAt: Date;
+                userId: number | null;
+                language: string | null;
+                slug: string | null;
+                code: string;
+                shortCode: string | null;
+                visibility: string;
+            }[];
+            meta: object;
+        }>;
         createSnippet: import("@trpc/server").TRPCMutationProcedure<{
             input: {
                 name: string;

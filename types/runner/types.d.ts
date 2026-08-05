@@ -33,4 +33,6 @@ export interface RunLimits {
     cpus: string;
     pidsLimit: number;
     maxOutputBytes: number;
+    /** RLIMIT_FSIZE: компилятору нужен запас больше, чем скриптовому языку. */
+    maxFileBytes: number;
 }
