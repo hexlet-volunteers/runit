@@ -29,7 +29,7 @@ export default function AppHeader() {
           </UnstyledButton>
 
           <Group gap="sm">
-            <Button variant="subtle" color="gray" component={Link} to="/#embedding">
+            <Button variant="subtle" color="gray" component={Link} to="/embedding">
               Встраивание
             </Button>
             {isGuest ? (

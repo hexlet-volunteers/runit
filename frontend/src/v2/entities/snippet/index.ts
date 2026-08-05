@@ -4,8 +4,10 @@ export { SNIPPETS_QUERY_KEY } from './lib/constants';
 export {
   useSnippetById,
   useSnippetBySlug,
+  useSnippetByShortCode,
   generateSnippetName,
   createSnippet,
   updateSnippet,
   getAllSnippets,
+  getPublicSnippetsByUsername,
 } from './api';

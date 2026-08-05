@@ -15,6 +15,8 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             language: string | null;
             slug: string | null;
             code: string;
+            shortCode: string | null;
+            visibility: string;
         };
         meta: object;
     }>;
@@ -32,6 +34,8 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             language: string | null;
             slug: string | null;
             code: string;
+            shortCode: string | null;
+            visibility: string;
         };
         meta: object;
     }>;
@@ -46,16 +50,19 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             language: string | null;
             slug: string | null;
             code: string;
+            shortCode: string | null;
+            visibility: string;
         }[];
         meta: object;
     }>;
-    createSnippet: import("@trpc/server").TRPCMutationProcedure<{
+    /**
+     * Сниппеты пользователя для публичного профиля — без приватных.
+     * Профиль обязан ходить сюда, а не в getAllSnippets: иначе посетитель
+     * выкачивает все сниппеты сайта и видит чужие приватные.
+     */
+    getPublicSnippetsByUsername: import("@trpc/server").TRPCQueryProcedure<{
         input: {
-            name: string;
-            userId: number;
-            language: "ruby" | "java" | "php" | "python" | "javascript" | "html";
-            code: string;
-            slug?: string | undefined;
+            username: string;
         };
         output: {
             id: number;
@@ -66,6 +73,31 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             language: string | null;
             slug: string | null;
             code: string;
+            shortCode: string | null;
+            visibility: string;
+        }[];
+        meta: object;
+    }>;
+    createSnippet: import("@trpc/server").TRPCMutationProcedure<{
+        input: {
+            name: string;
+            userId: number;
+            language: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css";
+            code: string;
+            slug?: string | undefined;
+            visibility?: "link" | "private" | "public" | undefined;
+        };
+        output: {
+            id: number;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            userId: number | null;
+            language: string | null;
+            slug: string | null;
+            code: string;
+            shortCode: string | null;
+            visibility: string;
         };
         meta: object;
     }>;
@@ -74,9 +106,10 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             id: number;
             name?: string | undefined;
             userId?: number | undefined;
-            language?: "ruby" | "java" | "php" | "python" | "javascript" | "html" | undefined;
+            language?: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css" | undefined;
             slug?: string | undefined;
             code?: string | undefined;
+            visibility?: "link" | "private" | "public" | undefined;
         };
         output: {
             id: number;
@@ -87,6 +120,8 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             language: string | null;
             slug: string | null;
             code: string;
+            shortCode: string | null;
+            visibility: string;
         };
         meta: object;
     }>;
@@ -97,6 +132,49 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
         output: {
             success: boolean;
             id: number;
+        };
+        meta: object;
+    }>;
+    /** Сниппет по короткой ссылке /s/:code. Приватные не отдаются. */
+    getSnippetByShortCode: import("@trpc/server").TRPCQueryProcedure<{
+        input: string;
+        output: {
+            id: number;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            userId: number | null;
+            language: string | null;
+            slug: string | null;
+            code: string;
+            shortCode: string | null;
+            visibility: string;
+        } & {
+            authorUsername: string | null;
+        };
+        meta: object;
+    }>;
+    /**
+     * Публикация и снятие публикации.
+     * TODO(#792): проверять, что текущий пользователь — владелец, как только
+     * появится авторизация.
+     */
+    setVisibility: import("@trpc/server").TRPCMutationProcedure<{
+        input: {
+            id: number;
+            visibility: "link" | "private" | "public";
+        };
+        output: {
+            id: number;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            userId: number | null;
+            language: string | null;
+            slug: string | null;
+            code: string;
+            shortCode: string | null;
+            visibility: string;
         };
         meta: object;
     }>;

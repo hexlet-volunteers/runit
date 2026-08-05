@@ -1,5 +1,5 @@
 import { z } from 'zod/v3';
-import { type User, type UserSettings } from './schema/schema';
+import { snippets, type User, type UserSettings } from './schema/schema';
 export declare const userSchema: z.ZodObject<{
     id: z.ZodNumber;
     username: z.ZodString;
@@ -52,21 +52,18 @@ export declare const updateUserSchema: z.ZodObject<{
     username: z.ZodOptional<z.ZodString>;
     email: z.ZodOptional<z.ZodString>;
     password: z.ZodOptional<z.ZodString>;
-    isAdmin: z.ZodOptional<z.ZodBoolean>;
     recoverHash: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     id: number;
     username?: string | undefined;
     email?: string | undefined;
     password?: string | undefined;
-    isAdmin?: boolean | undefined;
     recoverHash?: string | undefined;
 }, {
     id: number;
     username?: string | undefined;
     email?: string | undefined;
     password?: string | undefined;
-    isAdmin?: boolean | undefined;
     recoverHash?: string | undefined;
 }>;
 export declare const userSettingsSchema: z.ZodObject<{
@@ -148,8 +145,16 @@ export declare function updateUser(id: number, updates: Omit<UpdateUserInput, 'i
 export declare function deleteUser(id: number): Promise<boolean>;
 export declare function updateRecoverHash(email: string, recoverHash: string | null): Promise<boolean>;
 export declare function getUserSettings(userId: number): Promise<UserSettings>;
-export declare function updateUserSettings(id: number, updateData: Omit<UpdateUserSettingsInput, 'userId'>): Promise<any>;
+export declare function updateUserSettings(id: number, updateData: Omit<UpdateUserSettingsInput, 'userId'>): Promise<UserSettings>;
 export declare function getData({ id }: {
     id: number;
-}): Promise<any>;
-export declare function deleteAllUsers(): Promise<number>;
+}): Promise<{
+    currentUser: User & {
+        language: string;
+        theme: string;
+        avatarBase64: string | null;
+    };
+    snippets: (typeof snippets.$inferSelect & {
+        user: User;
+    })[];
+}>;

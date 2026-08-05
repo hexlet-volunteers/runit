@@ -2,6 +2,8 @@ import { Box, Group, Loader, Text, Tooltip, UnstyledButton } from '@mantine/core
 import { editorColors } from '../../../shared/theme';
 import type { ConsoleLine } from '../../../shared/runner';
 import { IconTrash } from '../../../shared/ui';
+import HtmlPreview from '../../../shared/ui/HtmlPreview';
+import { isPreviewLanguage } from '../../../shared/runner/preview';
 import TabButton from './TabButton';
 import { type ConsolePanelProps } from '..'
 
@@ -21,7 +23,13 @@ export default function ConsolePanel({
   stdin,
   onStdinChange,
   onClear,
+  language,
+  code,
+  runKey,
+  runtime,
 }: ConsolePanelProps ) {
+  // Для вёрстки (HTML/CSS) результат — отрендеренная страница, а не вывод в консоль.
+  const previewMode = isPreviewLanguage(language);
   return (
     <Box
       style={{
@@ -44,17 +52,25 @@ export default function ConsolePanel({
         }}
       >
         <Group gap="lg" style={{ height: '100%' }}>
-          <TabButton
-            active={tab === 'console'}
-            label="КОНСОЛЬ"
-            onClick={() => onTabChange('console')}
-          />
-          <TabButton
-            active={tab === 'input'}
-            label="ВВОД"
-            onClick={() => onTabChange('input')}
-          />
+          {previewMode ? (
+            <TabButton active label="ПРЕВЬЮ" onClick={() => onTabChange('preview')} />
+          ) : (
+            <>
+              <TabButton
+                active={tab === 'console'}
+                label="КОНСОЛЬ"
+                onClick={() => onTabChange('console')}
+              />
+              <TabButton
+                active={tab === 'input'}
+                label="ВВОД"
+            title="Данные, которые программа прочитает при запуске"
+                onClick={() => onTabChange('input')}
+              />
+            </>
+          )}
         </Group>
+        {previewMode ? null : (
         <Tooltip label="Очистить консоль" withArrow>
           <UnstyledButton
             onClick={onClear}
@@ -64,9 +80,14 @@ export default function ConsolePanel({
             <IconTrash />
           </UnstyledButton>
         </Tooltip>
+        )}
       </Group>
 
-      {tab === 'console' ? (
+      {previewMode ? (
+        <Box style={{ flex: 1, minHeight: 0, background: '#fff' }}>
+          <HtmlPreview language={language} code={code} runKey={runKey} />
+        </Box>
+      ) : tab === 'console' ? (
         <Box
           p="md"
           ff="monospace"
@@ -74,7 +95,7 @@ export default function ConsolePanel({
           style={{ flex: 1, overflow: 'auto', minHeight: 0 }}
         >
           <Text ff="monospace" fz={13} c={editorColors.dim} mb={8}>
-            Runit · Node.js 20 LTS{' '}
+            Runit · {runtime}{' '}
             {lines.length === 0 && !running ? '· консоль готова' : ''}
           </Text>
           {running ? (
@@ -108,13 +129,18 @@ export default function ConsolePanel({
         </Box>
       ) : (
         <Box p="md" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          {/* Формулировка нарочно бытовая: «stdin» ничего не объясняет тому,
+              кто не работал с терминалом. */}
           <Text fz={12} c={editorColors.dim} mb={8}>
-            Передаётся в stdin при каждом запуске
+            Что программа «прочитает с клавиатуры» при запуске: одна строка —
+            один ответ. Нужно для задач с <Text span ff="monospace" fz={12} c={editorColors.text}>input()</Text>,{' '}
+            <Text span ff="monospace" fz={12} c={editorColors.text}>gets</Text> или{' '}
+            <Text span ff="monospace" fz={12} c={editorColors.text}>readline()</Text>.
           </Text>
           <textarea
             value={stdin}
             onChange={(e) => onStdinChange(e.currentTarget.value)}
-            placeholder="Каждая строка — отдельный вызов readline()"
+            placeholder={'Например:\nМария\n25'}
             spellCheck={false}
             style={{
               flex: 1,

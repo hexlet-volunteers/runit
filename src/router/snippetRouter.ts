@@ -6,10 +6,16 @@ import {
   deleteSnippetSchema,
   generateName,
   getAllSnippets,
+  getPublicSnippetsByUsername,
+  getPublicSnippetsByUsernameSchema,
   getSnippetById,
   getSnippetByIdSchema,
+  getSnippetByShortCode,
+  getSnippetByShortCodeSchema,
   getSnippetByUsernameSlug,
   getSnippetByUsernameSlugSchema,
+  setSnippetVisibility,
+  setVisibilitySchema,
   updateSnippet,
   updateSnippetSchema,
 } from '../db/snippets';
@@ -43,6 +49,17 @@ export const snippetRouter = router({
     return await getAllSnippets();
   }),
 
+  /**
+   * Сниппеты пользователя для публичного профиля — без приватных.
+   * Профиль обязан ходить сюда, а не в getAllSnippets: иначе посетитель
+   * выкачивает все сниппеты сайта и видит чужие приватные.
+   */
+  getPublicSnippetsByUsername: publicProcedure
+    .input(getPublicSnippetsByUsernameSchema)
+    .query(async ({ input }) => {
+      return await getPublicSnippetsByUsername(input.username);
+    }),
+
   createSnippet: publicProcedure
     .input(createSnippetSchema)
     .mutation(async ({ input }) => {
@@ -73,6 +90,28 @@ export const snippetRouter = router({
 
       return { success: true, id: input.id };
     }),
+
+  /** Сниппет по короткой ссылке /s/:code. Приватные не отдаются. */
+  getSnippetByShortCode: publicProcedure
+    .input(getSnippetByShortCodeSchema)
+    .query(async ({ input }) => {
+      const snippet = await getSnippetByShortCode(input);
+      if (!snippet) {
+        throw new Error('Snippet not found');
+      }
+      return snippet;
+    }),
+
+  /**
+   * Публикация и снятие публикации.
+   * TODO(#792): проверять, что текущий пользователь — владелец, как только
+   * появится авторизация.
+   */
+  setVisibility: publicProcedure
+    .input(setVisibilitySchema)
+    .mutation(async ({ input }) =>
+      setSnippetVisibility(input.id, input.visibility),
+    ),
 
   generateSnippetName: publicProcedure.query(() => {
     return { name: generateName() };

@@ -1,47 +1,8 @@
 import { useState } from 'react';
 import { Box, Button, Group, Paper, Text } from '@mantine/core';
 import { editorColors, langMeta } from '../../../shared/theme';
-import { runJavaScript, type RunResult } from '../../../shared/runner';
-
-/** Палитра подсветки синтаксиса (tokyo-night). */
-const HL = {
-  comment: '#565f89',
-  keyword: '#bb9af7',
-  string: '#9ece6a',
-  number: '#ff9e64',
-  method: '#4dabf7',
-};
-
-/** Экранирует HTML-спецсимволы для безопасной вставки в разметку. */
-const escapeHtml = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-/** Лёгкая regex-подсветка JavaScript для демо-виджета. */
-function highlightJS(src: string): string {
-const re =
-  /(\/\/[^\n]*)|('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`)|\b(const|let|var|function|return|if|else|for|while|of|in|new|class|true|false|null|undefined)\b|\b(\d+(?:\.\d+)?)\b|\b(forEach|log|map|filter|reduce|push|pop|shift|unshift)\b/g;
-  let out = '';
-  let last = 0;
-  for (let m = re.exec(src); m; m = re.exec(src)) {
-    out += escapeHtml(src.slice(last, m.index));
-    const [full, comment, str, kw, num, method] = m;
-    const color = comment ? HL.comment : str ? HL.string : kw ? HL.keyword : num ? HL.number : method ? HL.method : HL.number;
-    out += `<span style="color:${color}">${escapeHtml(full)}</span>`;
-    last = m.index + full.length;
-  }
-  return out + escapeHtml(src.slice(last));
-}
-
-/** Стили для моноширинного отображения кода. */
-const CODE_FONT: React.CSSProperties = {
-  fontFamily: "'JetBrains Mono', ui-monospace, monospace",
-  fontSize: 14,
-  lineHeight: 1.7,
-  padding: '4px 8px',
-  margin: 0,
-  whiteSpace: 'pre-wrap',
-  wordBreak: 'break-word',
-};
+import { runCode, type RunResult } from '../../../shared/runner';
+import { CODE_FONT, highlightJs } from '../../../shared/lib';
 
 /** Начальный код для демо-виджета. */
 const INITIAL_CODE = `// Попробуйте — код выполняется по-настоящему
@@ -69,7 +30,7 @@ function lineColor(type: string): string {
 
 /** Живой мини-редактор для лендинга с выполнением JavaScript. */
 export default function DemoWidget() {
-  const [code, setCode] = useState(INITIAL_CODE);
+  const [code] = useState(INITIAL_CODE);
   const [result, setResult] = useState<RunResult | null>(null);
   const [running, setRunning] = useState(false);
 
@@ -77,7 +38,8 @@ export default function DemoWidget() {
   const handleRun = async () => {
     setRunning(true);
     try {
-      const res = await runJavaScript(code);
+      // Виджет лендинга остаётся полностью клиентским: JS в Web Worker.
+      const res = await runCode({ language: 'javascript', code });
       setResult(res);
     } finally {
       setRunning(false);
@@ -128,36 +90,16 @@ export default function DemoWidget() {
           </Button>
         </Group>
 
-        {/* Тёмная область кода: подсвеченный <pre> под прозрачной textarea */}
+        {/* Тёмная область кода: только для чтения.
+            Демо на главной специально не редактируется — витрина должна всегда
+            отрабатывать предсказуемо. Полноценный редактор — по кнопке
+            «Создать сниппет». */}
         <Box p="sm" style={{ background: editorColors.bg }}>
-          <div style={{ position: 'relative' }}>
-            <pre
-              aria-hidden
-              style={{ ...CODE_FONT, color: editorColors.text, minHeight: '11em' }}
-              // eslint-disable-next-line react/no-danger
-              dangerouslySetInnerHTML={{ __html: `${highlightJS(code)}\n` }}
-            />
-            <textarea
-              value={code}
-              onChange={(e) => setCode(e.currentTarget.value)}
-              aria-label="Код demo.js"
-              spellCheck={false}
-              style={{
-                ...CODE_FONT,
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                resize: 'none',
-                color: 'transparent',
-                caretColor: editorColors.text,
-                overflow: 'hidden',
-              }}
-            />
-          </div>
+          <pre
+            style={{ ...CODE_FONT, color: editorColors.text, minHeight: '11em' }}
+            // eslint-disable-next-line react/no-danger
+            dangerouslySetInnerHTML={{ __html: `${highlightJs(code)}\n` }}
+          />
         </Box>
 
         {/* Блок результата */}
@@ -210,7 +152,7 @@ export default function DemoWidget() {
       </Paper>
 
       <Text ta="center" c="dimmed" fz="sm" mt="sm">
-        Это живой виджет — измените код и нажмите «Запустить»
+        Это живой пример — нажмите «Запустить», код выполнится по-настоящему
       </Text>
     </Box>
   );

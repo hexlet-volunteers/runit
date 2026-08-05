@@ -92,7 +92,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 username?: string | undefined;
                 email?: string | undefined;
                 password?: string | undefined;
-                isAdmin?: boolean | undefined;
                 recoverHash?: string | undefined;
             };
             output: {
@@ -139,12 +138,40 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 language?: "ru" | "en" | "es" | "fr" | "de" | undefined;
                 avatarBase64?: string | null | undefined;
             };
-            output: any;
+            output: {
+                createdAt: Date;
+                updatedAt: Date;
+                settingsId: number;
+                userId: number;
+                theme: string;
+                language: string;
+                avatarBase64: string | null;
+            };
             meta: object;
         }>;
         getData: import("@trpc/server").TRPCQueryProcedure<{
             input: number;
-            output: any;
+            output: {
+                currentUser: import("../db/schema/schema").User & {
+                    language: string;
+                    theme: string;
+                    avatarBase64: string | null;
+                };
+                snippets: ({
+                    id: number;
+                    name: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    userId: number | null;
+                    language: string | null;
+                    slug: string | null;
+                    code: string;
+                    shortCode: string | null;
+                    visibility: string;
+                } & {
+                    user: import("../db/schema/schema").User;
+                })[];
+            };
             meta: object;
         }>;
     }>>;
@@ -165,6 +192,8 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 language: string | null;
                 slug: string | null;
                 code: string;
+                shortCode: string | null;
+                visibility: string;
             };
             meta: object;
         }>;
@@ -182,6 +211,8 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 language: string | null;
                 slug: string | null;
                 code: string;
+                shortCode: string | null;
+                visibility: string;
             };
             meta: object;
         }>;
@@ -196,16 +227,14 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 language: string | null;
                 slug: string | null;
                 code: string;
+                shortCode: string | null;
+                visibility: string;
             }[];
             meta: object;
         }>;
-        createSnippet: import("@trpc/server").TRPCMutationProcedure<{
+        getPublicSnippetsByUsername: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                name: string;
-                userId: number;
-                language: "ruby" | "java" | "php" | "python" | "javascript" | "html";
-                code: string;
-                slug?: string | undefined;
+                username: string;
             };
             output: {
                 id: number;
@@ -216,6 +245,31 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 language: string | null;
                 slug: string | null;
                 code: string;
+                shortCode: string | null;
+                visibility: string;
+            }[];
+            meta: object;
+        }>;
+        createSnippet: import("@trpc/server").TRPCMutationProcedure<{
+            input: {
+                name: string;
+                userId: number;
+                language: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css";
+                code: string;
+                slug?: string | undefined;
+                visibility?: "link" | "private" | "public" | undefined;
+            };
+            output: {
+                id: number;
+                name: string;
+                createdAt: Date;
+                updatedAt: Date;
+                userId: number | null;
+                language: string | null;
+                slug: string | null;
+                code: string;
+                shortCode: string | null;
+                visibility: string;
             };
             meta: object;
         }>;
@@ -224,9 +278,10 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 id: number;
                 name?: string | undefined;
                 userId?: number | undefined;
-                language?: "ruby" | "java" | "php" | "python" | "javascript" | "html" | undefined;
+                language?: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css" | undefined;
                 slug?: string | undefined;
                 code?: string | undefined;
+                visibility?: "link" | "private" | "public" | undefined;
             };
             output: {
                 id: number;
@@ -237,6 +292,8 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 language: string | null;
                 slug: string | null;
                 code: string;
+                shortCode: string | null;
+                visibility: string;
             };
             meta: object;
         }>;
@@ -247,6 +304,43 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
             output: {
                 success: boolean;
                 id: number;
+            };
+            meta: object;
+        }>;
+        getSnippetByShortCode: import("@trpc/server").TRPCQueryProcedure<{
+            input: string;
+            output: {
+                id: number;
+                name: string;
+                createdAt: Date;
+                updatedAt: Date;
+                userId: number | null;
+                language: string | null;
+                slug: string | null;
+                code: string;
+                shortCode: string | null;
+                visibility: string;
+            } & {
+                authorUsername: string | null;
+            };
+            meta: object;
+        }>;
+        setVisibility: import("@trpc/server").TRPCMutationProcedure<{
+            input: {
+                id: number;
+                visibility: "link" | "private" | "public";
+            };
+            output: {
+                id: number;
+                name: string;
+                createdAt: Date;
+                updatedAt: Date;
+                userId: number | null;
+                language: string | null;
+                slug: string | null;
+                code: string;
+                shortCode: string | null;
+                visibility: string;
             };
             meta: object;
         }>;
@@ -327,6 +421,27 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 createdAt?: Date | undefined;
                 updatedAt?: Date | undefined;
             };
+            meta: object;
+        }>;
+    }>>;
+    runner: import("@trpc/server").TRPCBuiltRouter<{
+        ctx: object;
+        meta: object;
+        errorShape: import("@trpc/server").TRPCDefaultErrorShape;
+        transformer: false;
+    }, import("@trpc/server").TRPCDecorateCreateRouterOptions<{
+        run: import("@trpc/server").TRPCMutationProcedure<{
+            input: {
+                language: "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash";
+                code: string;
+                stdin?: string | undefined;
+            };
+            output: import("../runner").RunOutput;
+            meta: object;
+        }>;
+        status: import("@trpc/server").TRPCQueryProcedure<{
+            input: void;
+            output: import("../runner").RunnerStatus;
             meta: object;
         }>;
     }>>;

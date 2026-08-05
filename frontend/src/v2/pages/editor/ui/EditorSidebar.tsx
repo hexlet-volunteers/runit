@@ -10,16 +10,18 @@ import SectionLabel from './SectionLabel';
 import {
   IconPlus,
 } from '../../../shared/ui';
+import { runtimeLabel } from '../../../shared/theme';
 import { type Meta } from '..'
 
 export type EditorSidebarProps = {
   meta: Meta,
+  language: string,
   fileName: string,
   setPackageOpened: (v: boolean) => void
 }
 
 export default function EditorSidebar(props: EditorSidebarProps) {
-  const {meta, fileName, setPackageOpened } = props;
+  const { meta, language, fileName, setPackageOpened } = props;
   return (
     <Box
       component="aside"
@@ -92,7 +94,7 @@ export default function EditorSidebar(props: EditorSidebarProps) {
         c="dimmed"
         style={{ borderTop: '1px solid #e9ecef' }}
       >
-        Node.js 20 LTS
+        {runtimeLabel(language)}
       </Text>
     </Box>
   )

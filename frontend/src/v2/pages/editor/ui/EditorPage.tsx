@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import MonacoEditor, { type OnMount } from '@monaco-editor/react';
 
 import { useTRPCClient } from '../../../shared/api';
-import { editorColors, langMeta } from '../../../shared/theme';
+import { editorColors, langMeta, runtimeLabel } from '../../../shared/theme';
 import { useSession } from '../../../entities/user';
 
 import { ConsolePanel } from '../../../features/run-code';
@@ -59,6 +59,7 @@ export default function EditorPage() {
     setStdin,
     tab,
     setTab,
+    runKey,
     handleRun,
     clearLines,
   } = useRunner(code, language);
@@ -199,6 +200,7 @@ export default function EditorPage() {
         <EditorSidebar
           fileName={fileName}
           meta={meta}
+          language={language}
           setPackageOpened={setPackageOpened}
         />
 
@@ -271,12 +273,16 @@ export default function EditorPage() {
             stdin={stdin}
             onStdinChange={setStdin}
             onClear={clearLines}
+            language={language}
+            code={code}
+            runKey={runKey}
+            runtime={runtimeLabel(language)}
           />
         </div>
       </div>
 
       {/* ===== Статус-бар (28px) ===== */}
-      <EditorStatusBar meta={meta} cursor={cursor} />
+      <EditorStatusBar meta={meta} language={language} cursor={cursor} />
 
       <ShareModal
         opened={shareOpened}
@@ -284,6 +290,9 @@ export default function EditorPage() {
         username={shareUsername}
         slug={slug ?? 'draft'}
         saved={snippetIdRef.current != null || slug != null}
+        snippetId={snippetQuery.data?.id ?? snippetIdRef.current ?? null}
+        shortCode={snippetQuery.data?.shortCode ?? null}
+        visibility={snippetQuery.data?.visibility ?? null}
       />
       <AddPackageModal
         opened={packageOpened}

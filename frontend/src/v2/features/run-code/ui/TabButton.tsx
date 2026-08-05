@@ -5,14 +5,18 @@ export default function TabButton({
   active,
   label,
   onClick,
+  title,
 }: {
   active: boolean;
   label: string;
   onClick: () => void;
+  /** Подсказка при наведении: объясняет назначение вкладки. */
+  title?: string;
 }) {
   return (
     <UnstyledButton
       onClick={onClick}
+      title={title}
       px={4}
       style={{
         height: '100%',

@@ -6,7 +6,12 @@ import { fastify } from 'fastify';
 
 import { runMigrations } from './db/connection';
 import { seedHomePageData } from './db/seedHomePageData';
+import { registerHealthRoute } from './health';
+import { registerOembedRoutes } from './oembed';
 import { type AppRouter, appRouter } from './router/index';
+import { runnerConfig } from './runner/config';
+import { sweepOrphans } from './runner/run';
+import { registerSecurity } from './security';
 
 // import { createContext } from './context';
 
@@ -48,6 +53,20 @@ const getApp = async () => {
       </html>
     `);
   });
+
+  // Заголовки безопасности и лимиты — до объявления роутов.
+  await registerSecurity(server);
+
+  registerHealthRoute(server);
+  registerOembedRoutes(server);
+
+  // Уборка контейнеров, переживших аварийное завершение прошлого процесса
+  // (деплой, OOM, kill -9). Без этого вызова убитый на середине запуск
+  // оставляет контейнер жить и жечь CPU: сам docker его не остановит.
+  // Работает в фоне и молча — если docker недоступен, ничего не происходит.
+  if (runnerConfig.enabled) {
+    sweepOrphans();
+  }
 
   server.get('/hello', async (_request, reply) => {
     reply.type('text/plain').send('Hello world');

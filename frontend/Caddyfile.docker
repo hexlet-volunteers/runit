@@ -1,0 +1,64 @@
+# Caddy внутри контейнера фронтенда: раздаёт собранную статику и проксирует API.
+# Домен/TLS терминируются снаружи (на балансировщике или отдельном Caddy),
+# поэтому здесь слушаем обычный http на 80.
+
+:80 {
+	log {
+		format json
+	}
+
+	encode zstd gzip
+
+	# API бэкенда. Имя app — из docker-compose.
+	handle /trpc/* {
+		reverse_proxy app:3001
+	}
+
+	handle /health {
+		reverse_proxy app:3001
+	}
+
+	# Встраивание по ссылке: сам oEmbed-эндпоинт и HTML с метатегами.
+	handle /oembed* {
+		reverse_proxy app:3001
+	}
+
+	# Боты (превью в мессенджерах, oEmbed-discovery площадок) должны получать
+	# HTML с Open Graph, а не SPA-оболочку без метатегов. Людям отдаём приложение.
+	@bots header_regexp User-Agent (?i)(bot|crawler|spider|facebookexternalhit|twitterbot|slackbot|telegrambot|discordbot|whatsapp|vkshare|embedly|quora link preview|redditbot|linkedinbot)
+	handle @bots {
+		rewrite /s/* /s/{http.request.uri.path.1}/meta
+		reverse_proxy app:3001
+	}
+
+	# --- Заголовки безопасности для страниц приложения (#856) ---
+	# Ключевая тонкость: виджет /embed/* обязан встраиваться в чужие сайты,
+	# поэтому запрет фрейминга к нему применять нельзя — только к остальному
+	# приложению, чтобы наш интерфейс не подставили в чужую страницу (clickjacking).
+	@embed path /embed/*
+	header @embed {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		# Фрейминг разрешён всем: это и есть назначение виджета.
+		-X-Frame-Options
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options SAMEORIGIN
+		Strict-Transport-Security "max-age=15552000; includeSubDomains"
+		# CSP не задаём жёстко: редактор Monaco и клиентский раннер используют
+		# Worker и динамическое исполнение, а превью вёрстки — sandbox-iframe.
+		# Политику нужно снимать с реального трафика в Report-Only, поэтому
+		# оставлено задачей #862 (XSS-аудит и CSP).
+	}
+
+	# SPA: любой неизвестный путь отдаёт index.html,
+	# иначе прямой заход на /editor/123 вернул бы 404.
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

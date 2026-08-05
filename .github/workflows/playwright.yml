@@ -1,47 +1,50 @@
 name: Playwright Tests
+
+# Запускается только вручную.
+#
+# Раньше workflow висел на каждом push и pull_request и выполнял единственный
+# echo. В интерфейсе от этого появлялась зелёная галочка «Playwright Tests»,
+# которая не запускала ни одного теста — то есть проверка врала. Отсутствующий
+# чек видно сразу, а ложно-зелёный успокаивает, поэтому триггеры сняты (#798).
+#
+# Сам набор тестов сейчас не адаптирован под интерфейс v2 (#177). Когда он
+# починен — возвращаем триггеры на push и pull_request и убираем
+# continue-on-error ниже.
 on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
-
-  build:
+  test:
+    name: E2E (Playwright)
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-      - name: Deployment stub
-        run: |
-          echo "🚧 Deployment is temporarily disabled"
-          echo "This is a stub to prevent job failure"
-          echo "Tag: ${{ github.ref_name }}"
-          echo "Repository: ${{ github.repository }}"
-          
-# jobs:
-#   test:
-#     timeout-minutes: 60
-#     runs-on: ubuntu-latest
-#     steps:
-#     - uses: actions/checkout@v4
-#     - uses: actions/setup-node@v3
-#       with:
-#         node-version: "22"
-#     - name: Install dependencies
-#       run: make setup
-#     - name: Install Playwright Browsers
-#       run: npx playwright install --with-deps
-#     - name: Build
-#       run: make build
-#     - name: Run Playwright tests
-#       run: npm run test:ci
-#     - uses: actions/upload-artifact@v4
-#       if: always()
-#       with:
-#         name: playwright-report
-#         path: playwright-report/
-#         retention-days: 30
+      - uses: actions/checkout@v4
 
-#     - uses: daun/playwright-report-summary@v3
-#       if: always()
-#       with:
-#         report-file: results.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Установка зависимостей
+        run: npm ci
+
+      - name: Установка браузеров Playwright
+        run: npx playwright install --with-deps
+
+      - name: Сборка
+        run: npm run build
+
+      - name: Прогон тестов
+        # Набор ещё не переведён на v2 (#177), поэтому падение не должно
+        # маскироваться, но и блокировать ручной запуск не обязано —
+        # результат смотрим в отчёте-артефакте.
+        run: npm run test:ci
+        continue-on-error: true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30

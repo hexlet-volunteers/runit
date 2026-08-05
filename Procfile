@@ -1,2 +1,12 @@
-web: cd backend && npm run start:prod
-release: cd backend && npm run typeorm -- migration:run -d src/data-source.ts
+# Запуск на PaaS (Heroku и совместимые).
+# Раньше здесь были пути от старого NestJS-стека: каталог backend/ и TypeORM —
+# ни того, ни другого в проекте нет (#797).
+#
+# Фазы release здесь нет намеренно. Она вызывала `npm run db:migrate`, то есть
+# drizzle-kit — а он в devDependencies, которые PaaS вырезает в проде: команда
+# падала с «command not found» и отменяла релиз целиком. Миграции и так
+# прогоняются самим приложением при старте (runMigrations в src/index.ts).
+#
+# Учтите: на PaaS без доступа к Docker серверный раннер кода недоступен и
+# корректно деградирует (см. README, «Серверное исполнение кода»).
+web: npm start

@@ -11,11 +11,19 @@ import {
 } from '@mantine/core';
 import { editorColors, langMeta } from '../../../shared/theme';
 import {
-  runJavaScript,
+  runCode,
   unsupportedLanguage,
   type RunResult,
 } from '../../../shared/runner';
-import { type Snippet, useSnippetBySlug } from '../../../entities/snippet';
+import { isPreviewLanguage } from '../../../shared/runner/preview';
+import HtmlPreview from '../../../shared/ui/HtmlPreview';
+import {
+  type Snippet,
+  useSnippetBySlug,
+  useSnippetByShortCode,
+} from '../../../entities/snippet';
+import { useTRPCClient } from '../../../shared/api';
+import { snippetPath } from '../../../shared/lib';
 
 // Компактный embed-виджет (без AppHeader/AppFooter — страница живёт внутри iframe).
 // TODO(#841): варианты оформления card/minimal/tabs (query-параметр variant).
@@ -27,6 +35,7 @@ const EXT: Record<string, string> = {
   ruby: 'rb',
   java: 'java',
   html: 'html',
+  css: 'css',
 };
 
 function lineColor(type: string): string {
@@ -37,7 +46,7 @@ function lineColor(type: string): string {
 }
 
 export default function EmbedPage() {
-  const { username = '', slug = '' } = useParams();
+  const { username = '', slug = '', shortCode } = useParams();
   const [searchParams] = useSearchParams();
 
   const theme = searchParams.get('theme') === 'dark' ? 'dark' : 'light';
@@ -47,12 +56,18 @@ export default function EmbedPage() {
 
   const [result, setResult] = useState<RunResult | null>(null);
   const [running, setRunning] = useState(false);
+  // Счётчик запусков превью вёрстки: инкремент форсирует перерисовку iframe.
+  const [runKey, setRunKey] = useState(0);
+  const trpc = useTRPCClient();
 
+  // Источник данных зависит от вида ссылки: короткая /s/:code или /s/:user/:slug.
+  const byShortCode = useSnippetByShortCode(shortCode);
+  const bySlug = useSnippetBySlug(shortCode ? '' : username, shortCode ? '' : slug);
   const {
     data: snippet,
     isLoading,
     isError,
-  } = useSnippetBySlug(username, slug);
+  } = shortCode ? byShortCode : bySlug;
 
   // Палитра «рамки» виджета: тёмная или светлая по query-параметру theme.
   const frame =
@@ -71,6 +86,11 @@ export default function EmbedPage() {
         };
 
   const run = async (s: Snippet) => {
+    // html/css показываем как страницу, а не как вывод в консоль (#853).
+    if (isPreviewLanguage(s.language)) {
+      setRunKey((key) => key + 1);
+      return;
+    }
     const meta = langMeta[s.language];
     if (!meta?.runnable) {
       setResult(unsupportedLanguage(meta?.label ?? s.language));
@@ -78,7 +98,9 @@ export default function EmbedPage() {
     }
     setRunning(true);
     try {
-      setResult(await runJavaScript(s.code));
+      setResult(
+        await runCode({ language: s.language, code: s.code, client: trpc }),
+      );
     } finally {
       setRunning(false);
     }
@@ -104,8 +126,15 @@ export default function EmbedPage() {
 
   const s = snippet as Snippet;
   const meta = langMeta[s.language];
+  const isPreview = isPreviewLanguage(s.language);
   const fileName = `${s.name}.${EXT[s.language] ?? 'txt'}`;
-  const shareHref = `/s/${username}/${slug}`;
+  // Как и на странице шаринга: на роуте короткой ссылки username и slug пусты,
+  // поэтому путь строится из данных сниппета.
+  const shareHref = snippetPath({
+    shortCode: shortCode ?? s.shortCode,
+    authorUsername: s.authorUsername ?? username,
+    slug: s.slug ?? slug,
+  });
 
   return (
     <Box
@@ -196,8 +225,49 @@ export default function EmbedPage() {
         </pre>
       </Box>
 
-      {/* РЕЗУЛЬТАТ */}
-      {result && (
+      {/* РЕЗУЛЬТАТ — превью вёрстки, заполняет доступную высоту виджета */}
+      {isPreview && runKey > 0 && (
+        <Box
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            flex: 1,
+            minHeight: 0,
+            borderTop: `1px solid ${editorColors.border}`,
+            background: '#ffffff',
+          }}
+        >
+          <Box
+            px="md"
+            py={6}
+            style={{
+              background: editorColors.panel,
+              borderBottom: `1px solid ${editorColors.border}`,
+              flexShrink: 0,
+            }}
+          >
+            <Text
+              fz={10}
+              fw={700}
+              c={editorColors.dim}
+              style={{ letterSpacing: 1 }}
+            >
+              РЕЗУЛЬТАТ
+            </Text>
+          </Box>
+          <Box style={{ flex: 1, minHeight: 0 }}>
+            <HtmlPreview
+              language={s.language}
+              code={s.code}
+              runKey={runKey}
+              height="100%"
+            />
+          </Box>
+        </Box>
+      )}
+
+      {/* РЕЗУЛЬТАТ — консольный вывод */}
+      {!isPreview && result && (
         <Box
           px="md"
           py={8}

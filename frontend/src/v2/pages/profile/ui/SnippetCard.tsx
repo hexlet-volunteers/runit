@@ -6,13 +6,13 @@ import {
   Text,
 } from '@mantine/core';
 import { langMeta } from '../../../shared/theme';
-import { relativeDate } from '../../../shared/lib';
+import { relativeDate, snippetPath } from '../../../shared/lib';
 import { type Snippet } from '../../../entities/snippet'
 
 /**
  * Карточка сниппета в профиле пользователя.
  * Отображает название, язык, дату обновления.
- * Вся карточка — ссылка на `/s/:username/:slug`.
+ * Вся карточка — ссылка на сниппет: короткая, если у него есть shortCode.
  */
 export default function SnippetCard({ snippet, username }: { snippet: Snippet; username: string }) {
   const meta = langMeta[snippet.language] ?? {
@@ -26,7 +26,7 @@ export default function SnippetCard({ snippet, username }: { snippet: Snippet; u
       radius="lg"
       p="lg"
       component={Link}
-      to={`/s/${username}/${snippet.slug}`}
+      to={snippetPath({ shortCode: snippet.shortCode, username, slug: snippet.slug })}
       style={{ textDecoration: 'none', color: 'inherit' }}
     >
       <Group justify="space-between" wrap="nowrap" mb="sm">

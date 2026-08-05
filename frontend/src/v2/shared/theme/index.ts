@@ -1,1 +1,1 @@
-export { editorColors, langMeta } from './tokens';
+export { editorColors, langMeta, runtimeLabel } from './tokens';

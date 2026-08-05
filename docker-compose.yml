@@ -1,0 +1,58 @@
+# Запуск Runit в контейнерах.
+#
+#   docker compose up --build
+#   → http://localhost:8080
+#
+# Переменные берутся из .env (см. README, раздел «Развёртывание»).
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      HOST: 0.0.0.0
+      DB_PATH: /data/database.sqlite
+      # Раннер кода: без доступа к docker он корректно деградирует —
+      # приложение работает, серверный запуск отвечает понятной подсказкой.
+      RUNNER_ENABLED: ${RUNNER_ENABLED:-true}
+      RUNNER_MAX_CONCURRENT: ${RUNNER_MAX_CONCURRENT:-4}
+    volumes:
+      # БД живёт в томе, а не в слое образа: пересборка не теряет данные.
+      - runit-data:/data
+      # ВНИМАНИЕ. Чтобы серверный раннер (Python/PHP/Ruby/Java/…) работал внутри
+      # контейнера, ему нужен доступ к docker-сокету. Доступ к сокету равносилен
+      # root на хосте, а раннер исполняет ЧУЖОЙ код — поэтому по умолчанию сокет
+      # НЕ монтируется. Для прода используйте выделенный runner-хост или
+      # rootless/удалённый демон (см. README). Раскомментируйте только локально:
+      # - /var/run/docker.sock:/var/run/docker.sock
+    expose:
+      - '3001'
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  web:
+    build:
+      # Контекст — корень репозитория: фронту нужны типы из types/.
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    ports:
+      - '${WEB_PORT:-8080}:80'
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  runit-data:

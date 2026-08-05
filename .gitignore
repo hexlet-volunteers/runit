@@ -22,6 +22,8 @@ lerna-debug.log*
 # Tests
 /coverage
 /.nyc_output
+# Отчёт прогона Playwright: артефакт запуска, в репозитории ему делать нечего (#799)
+results.json
 
 # IDEs and editors
 /.idea

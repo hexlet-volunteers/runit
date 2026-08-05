@@ -9,7 +9,7 @@
   "type": "module",
   "scripts": {
     "dev": "npm run db:setup && tsx watch src/server.ts",
-    "build": "npm run db:setup && tsc",
+    "build": "npm run db:generate && tsc && node bin/fix-esm-imports.mjs",
     "start": "node dist/server.js",
     "db:setup": "npm run db:generate && npm run db:migrate",
     "db:migrate": "drizzle-kit migrate",
@@ -21,9 +21,12 @@
     "lint:fix": "biome check --write src/",
     "test": "playwright test",
     "test:ci": "npx start-server-and-test start-server http://localhost:3000 test",
-    "test:withDocker": "WITHOUT_DOCKER = false playwright test",
+    "test:withDocker": "WITH_DOCKER=true playwright test",
     "generate:types": "tsc --emitDeclarationOnly --outDir types",
-    "test:debug": "npm test -- --ui"
+    "test:debug": "npm test -- --ui",
+    "runner:build-images": "tsx src/runner/buildImages.ts",
+    "test:runner": "node --import tsx --test src/runner/*.test.ts",
+    "runner:smoke": "node bin/runner-smoke.mjs"
   },
   "repository": {
     "type": "git",
@@ -36,8 +39,10 @@
   },
   "homepage": "https://github.com/hexlet-rus/runit#readme",
   "dependencies": {
+    "@fastify/helmet": "^13.1.0",
+    "@fastify/rate-limit": "^11.2.0",
     "@trpc/server": "^11.8.0",
-    "better-sqlite3": "^12.4.1",
+    "better-sqlite3": "^13.0.2",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.44.6",
     "fastify": "^5.8.5",

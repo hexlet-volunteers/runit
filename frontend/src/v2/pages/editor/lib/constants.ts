@@ -3,12 +3,17 @@ import { type SaveStatus } from "..";
 /** Маппинг языка на имя файла по умолчанию. */
 export const FILE_NAME_BY_LANGUAGE: Record<string, string> = {
   javascript: 'index.js',
-  typescript: 'index.ts',
+  typescript: 'main.ts',
   python: 'main.py',
   php: 'index.php',
   ruby: 'main.rb',
   java: 'Main.java',
+  go: 'main.go',
+  cpp: 'main.cpp',
+  sql: 'main.sql',
+  bash: 'main.sh',
   html: 'index.html',
+  css: 'style.css',
 };
 
 export const STARTER_CODE = `// Корзина курса: считаем итоговую стоимость

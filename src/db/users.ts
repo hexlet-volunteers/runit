@@ -344,9 +344,3 @@ export async function getData({ id }: { id: number }): Promise<{
     throw new Error('Failed to get user data');
   }
 }
-
-// временная для тестирования:
-export async function deleteAllUsers() {
-  const result = await db.delete(users);
-  return result.changes;
-}

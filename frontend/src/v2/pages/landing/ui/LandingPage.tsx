@@ -88,8 +88,7 @@ export default function LandingPage() {
               <Button size="lg" component={Link} to="/editor">
                 Создать сниппет
               </Button>
-              {/* TODO(#841): позже ведёт на демо-страницу встраивания; пока — к секции фич */}
-              <Button size="lg" variant="light" onClick={scrollToEmbedding}>
+              <Button size="lg" variant="light" component={Link} to="/embedding">
                 Как это встраивается →
               </Button>
             </Group>

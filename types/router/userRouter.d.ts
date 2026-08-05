@@ -86,7 +86,6 @@ export declare const userRouter: import("@trpc/server").TRPCBuiltRouter<{
             username?: string | undefined;
             email?: string | undefined;
             password?: string | undefined;
-            isAdmin?: boolean | undefined;
             recoverHash?: string | undefined;
         };
         output: {
@@ -133,12 +132,40 @@ export declare const userRouter: import("@trpc/server").TRPCBuiltRouter<{
             language?: "ru" | "en" | "es" | "fr" | "de" | undefined;
             avatarBase64?: string | null | undefined;
         };
-        output: any;
+        output: {
+            createdAt: Date;
+            updatedAt: Date;
+            settingsId: number;
+            userId: number;
+            theme: string;
+            language: string;
+            avatarBase64: string | null;
+        };
         meta: object;
     }>;
     getData: import("@trpc/server").TRPCQueryProcedure<{
         input: number;
-        output: any;
+        output: {
+            currentUser: import("../db/schema/schema").User & {
+                language: string;
+                theme: string;
+                avatarBase64: string | null;
+            };
+            snippets: ({
+                id: number;
+                name: string;
+                createdAt: Date;
+                updatedAt: Date;
+                userId: number | null;
+                language: string | null;
+                slug: string | null;
+                code: string;
+                shortCode: string | null;
+                visibility: string;
+            } & {
+                user: import("../db/schema/schema").User;
+            })[];
+        };
         meta: object;
     }>;
 }>>;
