@@ -64,6 +64,7 @@ export default function ConsolePanel({
               <TabButton
                 active={tab === 'input'}
                 label="ВВОД"
+            title="Данные, которые программа прочитает при запуске"
                 onClick={() => onTabChange('input')}
               />
             </>
@@ -128,13 +129,18 @@ export default function ConsolePanel({
         </Box>
       ) : (
         <Box p="md" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          {/* Формулировка нарочно бытовая: «stdin» ничего не объясняет тому,
+              кто не работал с терминалом. */}
           <Text fz={12} c={editorColors.dim} mb={8}>
-            Передаётся в stdin при каждом запуске
+            Что программа «прочитает с клавиатуры» при запуске: одна строка —
+            один ответ. Нужно для задач с <Text span ff="monospace" fz={12} c={editorColors.text}>input()</Text>,{' '}
+            <Text span ff="monospace" fz={12} c={editorColors.text}>gets</Text> или{' '}
+            <Text span ff="monospace" fz={12} c={editorColors.text}>readline()</Text>.
           </Text>
           <textarea
             value={stdin}
             onChange={(e) => onStdinChange(e.currentTarget.value)}
-            placeholder="Каждая строка — отдельный вызов readline()"
+            placeholder={'Например:\nМария\n25'}
             spellCheck={false}
             style={{
               flex: 1,
