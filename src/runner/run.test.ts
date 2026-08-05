@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { test } from 'node:test';
 import { runnerConfig } from './config';
 import type { ProcessResult } from './process';
@@ -260,4 +260,30 @@ test('файл кода пишется с ожидаемым именем (java 
     !existsSync(mounted as unknown as string),
     'каталог не убран после запуска',
   );
+});
+
+test('файл кода читаем пользователем контейнера (не 0600)', async () => {
+  // Контейнер работает под --user 10001, поэтому файл, записанный только для
+  // владельца, интерпретатор внутри не откроет: Permission denied.
+  let mode: number | null = null;
+  await runCode(
+    { language: 'python', code: 'print(1)' },
+    {
+      checkDaemon: async () => ({ ok: true }),
+      checkImage: async () => ({ ok: true }),
+      runProcess: async (opts) => {
+        const dir = opts.args[opts.args.indexOf('-v') + 1].split(':')[0];
+        mode = statSync(`${dir}/main.py`).mode & 0o777;
+        return {
+          stdout: '',
+          stderr: '',
+          exitCode: 0,
+          signal: null,
+          timedOut: false,
+          truncated: false,
+        } as ProcessResult;
+      },
+    },
+  );
+  assert.equal(mode, 0o644, 'файл кода должен быть читаем всеми');
 });

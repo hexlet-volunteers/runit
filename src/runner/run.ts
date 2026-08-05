@@ -176,8 +176,12 @@ export async function runCode(
     tmpDir = await fsp.mkdtemp(path.join(runnerConfig.tmpDir, 'runit-runner-'));
     const fileName = spec.fileName(code);
     const source = spec.prepare ? spec.prepare(code) : code;
-    await fsp.writeFile(path.join(tmpDir, fileName), source, { mode: 0o600 });
-    // Каталог монтируется :ro, но сам он должен быть читаем пользователем контейнера.
+    // Права важны: контейнер работает под другим пользователем (--user 10001),
+    // поэтому и файл, и каталог обязаны быть читаемы всеми, иначе интерпретатор
+    // получает Permission denied. Секрета в файле нет — это код самого
+    // пользователя, каталог временный и монтируется только для чтения.
+    await fsp.writeFile(path.join(tmpDir, fileName), source, { mode: 0o644 });
+    await fsp.chmod(path.join(tmpDir, fileName), 0o644);
     await fsp.chmod(tmpDir, 0o755);
 
     const args = buildDockerArgs({
