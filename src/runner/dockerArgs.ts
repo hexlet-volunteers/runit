@@ -33,9 +33,12 @@ export function buildDockerArgs(params: DockerArgsParams): string[] {
   // непривилегированный пользователь. Для компилируемых языков исполнение
   // собранного файла и есть смысл запуска, поэтому им noexec не ставим.
   const tmpfs = spec.tmpfs ?? { size: '16m' };
+  // Важно: docker ставит noexec на --tmpfs по умолчанию, поэтому мало убрать
+  // опцию — нужно перекрыть её явным exec, иначе собранный бинарник не
+  // запускается («permission denied» уже после успешной компиляции).
   const tmpfsOptions = [
     'rw',
-    ...(tmpfs.allowExec ? [] : ['noexec']),
+    tmpfs.allowExec ? 'exec' : 'noexec',
     'nosuid',
     'nodev',
     `size=${tmpfs.size}`,
