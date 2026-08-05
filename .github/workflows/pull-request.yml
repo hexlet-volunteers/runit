@@ -55,8 +55,21 @@ jobs:
         run: npm ci
         working-directory: frontend
 
+      - name: Проверка типов
+        # Стало возможным после удаления легаси: раньше tsc падал на v2-legacy,
+        # и фронтенд ехал в CI вообще без проверки типов — vite build их не
+        # смотрит. Именно так проехали четыре ошибки после сужения типа языка.
+        run: npx tsc --noEmit
+        working-directory: frontend
+
       - name: Сборка
         run: npm run build
+        working-directory: frontend
+
+      - name: Уязвимости прод-зависимостей
+        # Тот же порог, что у бэкенда. После чистки легаси и перехода на один
+        # пакет роутера дерево фронта чистое, поэтому шаг сторожит с первого дня.
+        run: npm audit --omit=dev --audit-level=high
         working-directory: frontend
 
   docker:

@@ -16,7 +16,7 @@ Runit — это среда для написания и выполнения к
 ## Технологии
 
 * **Язык:** TypeScript
-* **Фронтенд:** React, Mantine, Redux Toolkit, Vite
+* **Фронтенд:** React, Mantine, TanStack Query, Vite
 * **Бэкенд:** Fastify, tRPC, Drizzle ORM, Node.js
 
 ## Системные требования
