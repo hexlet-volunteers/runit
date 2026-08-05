@@ -88,7 +88,11 @@ jobs:
           # Миграции не в git (каталог drizzle/ в .gitignore), поэтому их нужно
           # сгенерировать из схемы — иначе сервер падает на старте.
           npm run db:generate
-          DB_PATH=/tmp/ci.sqlite npx tsx src/server.ts &
+          # Лимит запусков кода поднят только для смоука: боевые 12/мин рассчитаны
+          # на человека, а здесь один прогон делает больше десятка запусков подряд
+          # с одного адреса. Проверяем раннер, а не лимитер — его отдельно
+          # покрывают тесты src/security.ts.
+          DB_PATH=/tmp/ci.sqlite RATE_LIMIT_RUNNER=200 npx tsx src/server.ts &
           for i in $(seq 1 30); do
             curl -sf http://localhost:3001/health >/dev/null && break
             sleep 1

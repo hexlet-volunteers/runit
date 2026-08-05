@@ -74,7 +74,23 @@ const run = async (item) => {
     body: JSON.stringify({ language: item.language, code: item.code, stdin: item.stdin ?? '' }),
   });
   const json = await response.json();
+
+  // Проверяем HTTP-код до разбора тела. Иначе отказ вроде 429 (тело лимитера
+  // не содержит поля error) выглядел как «Cannot read properties of undefined»
+  // и приходилось гадать, что случилось.
+  if (!response.ok) {
+    const hint =
+      response.status === 429
+        ? ' — сработал лимит запусков; поднимите RATE_LIMIT_RUNNER для прогона'
+        : '';
+    throw new Error(
+      `HTTP ${response.status}${hint}: ${JSON.stringify(json).slice(0, 160)}`,
+    );
+  }
   if (json.error) throw new Error(`tRPC: ${JSON.stringify(json.error).slice(0, 200)}`);
+  if (!json.result?.data) {
+    throw new Error(`неожиданный ответ: ${JSON.stringify(json).slice(0, 160)}`);
+  }
   return json.result.data;
 };
 
