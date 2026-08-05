@@ -1,4 +1,4 @@
-import { z } from 'zod/v3';
+import { z } from 'zod/v4';
 import { snippets, type User, type UserSettings } from './schema/schema';
 export declare const userSchema: z.ZodObject<{
     id: z.ZodNumber;
@@ -9,127 +9,75 @@ export declare const userSchema: z.ZodObject<{
     recoverHash: z.ZodNullable<z.ZodString>;
     createdAt: z.ZodDate;
     updatedAt: z.ZodDate;
-}, "strip", z.ZodTypeAny, {
-    id: number;
-    username: string;
-    email: string;
-    password: string;
-    isAdmin: boolean;
-    recoverHash: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-}, {
-    id: number;
-    username: string;
-    email: string;
-    password: string;
-    recoverHash: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-    isAdmin?: boolean | undefined;
-}>;
+}, z.core.$strip>;
 export declare const createUserSchema: z.ZodObject<{
     username: z.ZodString;
     email: z.ZodString;
     password: z.ZodString;
     isAdmin: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
     recoverHash: z.ZodOptional<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    username: string;
-    email: string;
-    password: string;
-    isAdmin?: boolean | undefined;
-    recoverHash?: string | undefined;
-}, {
-    username: string;
-    email: string;
-    password: string;
-    isAdmin?: boolean | undefined;
-    recoverHash?: string | undefined;
-}>;
+}, z.core.$strip>;
 export declare const updateUserSchema: z.ZodObject<{
     id: z.ZodNumber;
     username: z.ZodOptional<z.ZodString>;
     email: z.ZodOptional<z.ZodString>;
     password: z.ZodOptional<z.ZodString>;
     recoverHash: z.ZodOptional<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    id: number;
-    username?: string | undefined;
-    email?: string | undefined;
-    password?: string | undefined;
-    recoverHash?: string | undefined;
-}, {
-    id: number;
-    username?: string | undefined;
-    email?: string | undefined;
-    password?: string | undefined;
-    recoverHash?: string | undefined;
-}>;
+}, z.core.$strip>;
 export declare const userSettingsSchema: z.ZodObject<{
     id: z.ZodNumber;
     userId: z.ZodNumber;
-    theme: z.ZodDefault<z.ZodEnum<["system", "light", "dark"]>>;
-    language: z.ZodDefault<z.ZodEnum<["ru", "en", "es", "fr", "de"]>>;
+    theme: z.ZodDefault<z.ZodEnum<{
+        system: "system";
+        light: "light";
+        dark: "dark";
+    }>>;
+    language: z.ZodDefault<z.ZodEnum<{
+        ru: "ru";
+        en: "en";
+        es: "es";
+        fr: "fr";
+        de: "de";
+    }>>;
     avatarBase64: z.ZodNullable<z.ZodString>;
     createdAt: z.ZodDate;
     updatedAt: z.ZodDate;
-}, "strip", z.ZodTypeAny, {
-    id: number;
-    createdAt: Date;
-    updatedAt: Date;
-    userId: number;
-    theme: "system" | "light" | "dark";
-    language: "ru" | "en" | "es" | "fr" | "de";
-    avatarBase64: string | null;
-}, {
-    id: number;
-    createdAt: Date;
-    updatedAt: Date;
-    userId: number;
-    avatarBase64: string | null;
-    theme?: "system" | "light" | "dark" | undefined;
-    language?: "ru" | "en" | "es" | "fr" | "de" | undefined;
-}>;
+}, z.core.$strip>;
 export declare const createUserSettingsSchema: z.ZodObject<{
     userId: z.ZodNumber;
-    theme: z.ZodOptional<z.ZodDefault<z.ZodEnum<["system", "light", "dark"]>>>;
-    language: z.ZodOptional<z.ZodDefault<z.ZodEnum<["ru", "en", "es", "fr", "de"]>>>;
+    theme: z.ZodOptional<z.ZodDefault<z.ZodEnum<{
+        system: "system";
+        light: "light";
+        dark: "dark";
+    }>>>;
+    language: z.ZodOptional<z.ZodDefault<z.ZodEnum<{
+        ru: "ru";
+        en: "en";
+        es: "es";
+        fr: "fr";
+        de: "de";
+    }>>>;
     avatarBase64: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-}, "strip", z.ZodTypeAny, {
-    userId: number;
-    theme?: "system" | "light" | "dark" | undefined;
-    language?: "ru" | "en" | "es" | "fr" | "de" | undefined;
-    avatarBase64?: string | null | undefined;
-}, {
-    userId: number;
-    theme?: "system" | "light" | "dark" | undefined;
-    language?: "ru" | "en" | "es" | "fr" | "de" | undefined;
-    avatarBase64?: string | null | undefined;
-}>;
+}, z.core.$strip>;
 export declare const updateUserSettingsSchema: z.ZodObject<{
     userId: z.ZodNumber;
-    theme: z.ZodOptional<z.ZodEnum<["system", "light", "dark"]>>;
-    language: z.ZodOptional<z.ZodEnum<["ru", "en", "es", "fr", "de"]>>;
+    theme: z.ZodOptional<z.ZodEnum<{
+        system: "system";
+        light: "light";
+        dark: "dark";
+    }>>;
+    language: z.ZodOptional<z.ZodEnum<{
+        ru: "ru";
+        en: "en";
+        es: "es";
+        fr: "fr";
+        de: "de";
+    }>>;
     avatarBase64: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-}, "strip", z.ZodTypeAny, {
-    userId: number;
-    theme?: "system" | "light" | "dark" | undefined;
-    language?: "ru" | "en" | "es" | "fr" | "de" | undefined;
-    avatarBase64?: string | null | undefined;
-}, {
-    userId: number;
-    theme?: "system" | "light" | "dark" | undefined;
-    language?: "ru" | "en" | "es" | "fr" | "de" | undefined;
-    avatarBase64?: string | null | undefined;
-}>;
+}, z.core.$strip>;
 export declare const deleteUserSchema: z.ZodObject<{
-    id: z.ZodNumber;
-}, "strip", z.ZodTypeAny, {
-    id: number;
-}, {
-    id: number;
-}>;
+    id: z.ZodCoercedNumber<unknown>;
+}, z.core.$strip>;
 export declare const getUserByIdSchema: z.ZodNumber;
 export declare const getUserByEmailSchema: z.ZodString;
 export declare const getUserByUsernameSchema: z.ZodString;

@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { and, desc, eq, ne } from 'drizzle-orm';
-import { z } from 'zod/v3';
+import { z } from 'zod/v4';
 import { generateUniqSlug } from '../utils/generate-uniq-slug';
 import { db } from './connection';
 import {

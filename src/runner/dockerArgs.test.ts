@@ -180,6 +180,35 @@ test('новые языки: команды и файлы', () => {
   assert.equal(specFor('sql').fileName(''), 'main.sql');
 });
 
+test('seccomp: без переменной профиль docker, с переменной — заданный файл', () => {
+  // Без RUNNER_SECCOMP_PROFILE флага быть не должно: свой файл заменяет
+  // дефолтный профиль docker целиком, поэтому пустое значение обязано означать
+  // «работает штатный аллоулист», а не «seccomp выключен».
+  const withoutProfile = argsFor('python');
+  assert.ok(
+    !withoutProfile.some((arg) => arg.includes('seccomp')),
+    'без переменной флаг seccomp не добавляется',
+  );
+  assert.ok(
+    !withoutProfile.includes('--security-opt=seccomp=unconfined'),
+    'seccomp никогда не отключается',
+  );
+
+  const withProfile = buildDockerArgs({
+    spec: specFor('python'),
+    limits,
+    containerName: 'runit-run-test',
+    hostCodeDir: '/tmp/runit-runner-abc',
+    imageTag: 'runit-runner-python:1',
+    fileName: 'main.py',
+    seccompProfile: '/etc/runit/seccomp.json',
+  });
+  assert.ok(
+    withProfile.includes('--security-opt=seccomp=/etc/runit/seccomp.json'),
+    'заданный профиль передаётся docker',
+  );
+});
+
 test('/tmp: скриптовым языкам noexec, компилируемым — место и exec', () => {
   // CI-прогон в Docker показал ровно две поломки компилируемых языков:
   // go упирался в 16 МБ («no space left on device»), а собранный /tmp/app в cpp

@@ -19,6 +19,19 @@ const LIMITS = {
   apiPerMinute: num(process.env.RATE_LIMIT_API, 300),
   /** oEmbed запрашивают площадки, ответ кэшируется на 5 минут. */
   oembedPerMinute: num(process.env.RATE_LIMIT_OEMBED, 60),
+  /**
+   * Вход и регистрация: перебор пароля общим лимитом 300/мин не остановить.
+   *
+   * Лимит стоит заранее и намеренно: процедур auth.* в main пока нет (#639,
+   * draft PR #907), и если не задать порог сейчас, при появлении авторизации
+   * он окажется 300/мин по умолчанию — то есть незамеченная дыра в самом
+   * чувствительном месте.
+   *
+   * Этого недостаточно против ботнета: лимит по IP обходится распределением
+   * запросов. Нужен ещё счётчик неудач на конкретный логин — он требует
+   * хранилища сессий из #907 и остаётся в #858.
+   */
+  authPerMinute: num(process.env.RATE_LIMIT_AUTH, 10),
 };
 
 function num(raw: string | undefined, fallback: number): number {
@@ -29,6 +42,11 @@ function num(raw: string | undefined, fallback: number): number {
 const isRunnerRun = (url: string): boolean =>
   url.startsWith('/trpc/runner.run');
 const isOembed = (url: string): boolean => url.startsWith('/oembed');
+/** Процедуры входа, регистрации и сброса пароля — цель брутфорса. */
+const isAuth = (url: string): boolean =>
+  url.startsWith('/trpc/auth.') ||
+  url.startsWith('/trpc/users.createUser') ||
+  url.startsWith('/trpc/users.getUserByEmail');
 
 export async function registerSecurity(server: FastifyInstance): Promise<void> {
   await server.register(helmet, {
@@ -66,6 +84,7 @@ export async function registerSecurity(server: FastifyInstance): Promise<void> {
     max: (request: FastifyRequest) => {
       const url = request.url;
       if (isRunnerRun(url)) return LIMITS.runnerPerMinute;
+      if (isAuth(url)) return LIMITS.authPerMinute;
       if (isOembed(url)) return LIMITS.oembedPerMinute;
       return LIMITS.apiPerMinute;
     },

@@ -1,3 +1,5 @@
+import type { SnippetLanguage } from '../../entities/snippet';
+
 /** Свойства модального окна создания сниппета. */
 export type Props = {
   opened: boolean;
@@ -8,6 +10,8 @@ export type Props = {
 export type FormData = {
   name: string;
   code: string;
-  language: 'ruby' | 'java' | 'php' | 'python' | 'javascript' | 'html';
+  // Все поддерживаемые языки, а не шесть из них: модалка предлагает выбор
+  // по langMeta, где их двенадцать.
+  language: SnippetLanguage;
   userId: number;
-}
+};

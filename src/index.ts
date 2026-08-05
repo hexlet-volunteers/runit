@@ -7,6 +7,7 @@ import { fastify } from 'fastify';
 import { runMigrations } from './db/connection';
 import { seedHomePageData } from './db/seedHomePageData';
 import { registerHealthRoute } from './health';
+import { registerMonitoring, reportError } from './monitoring';
 import { registerOembedRoutes } from './oembed';
 import { type AppRouter, appRouter } from './router/index';
 import { runnerConfig } from './runner/config';
@@ -54,6 +55,9 @@ const getApp = async () => {
     `);
   });
 
+  // Обработчик ошибок — раньше роутов, чтобы ловить сбои во всех из них.
+  registerMonitoring(server);
+
   // Заголовки безопасности и лимиты — до объявления роутов.
   await registerSecurity(server);
 
@@ -78,8 +82,8 @@ const getApp = async () => {
       trpcOptions: {
         router: appRouter,
         // createContext,
-        onError({ path, error }) {
-          console.error(`❌ tRPC Error on path '${path}':`, error.message);
+        onError({ path, error, req }) {
+          reportError(error, { where: `trpc:${path}`, requestId: req.id });
         },
       } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
     });

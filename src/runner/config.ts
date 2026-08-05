@@ -33,6 +33,12 @@ export const runnerConfig = {
   imagePrefix: process.env.RUNNER_IMAGE_PREFIX || 'runit-runner',
   imageTag: process.env.RUNNER_IMAGE_TAG || '1',
   tmpDir: process.env.RUNNER_TMP_DIR || os.tmpdir(),
+  /**
+   * Путь к seccomp-профилю (#860). Пусто — работает штатный профиль docker.
+   * Задавать имеет смысл только полный выверенный аллоулист: свой файл
+   * заменяет дефолтный профиль, а не дополняет его.
+   */
+  seccompProfile: process.env.RUNNER_SECCOMP_PROFILE || undefined,
   maxConcurrent: num(process.env.RUNNER_MAX_CONCURRENT, 4),
   enabledLanguages: languages(process.env.RUNNER_LANGUAGES),
   /** Базовые лимиты; на язык уточняются в languages.ts. */

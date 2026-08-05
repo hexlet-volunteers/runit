@@ -12,6 +12,9 @@ const Profile = lazy(() => import('../pages/profile/index'));
 const Settings = lazy(() => import('../pages/settings/index'));
 const Legal = lazy(() => import('../pages/legal/index'));
 const NotFound = lazy(() => import('../pages/not-found/index'));
+const LegacyLink = lazy(
+  () => import('../pages/share/ui/LegacyLinkRedirect'),
+);
 
 function Fallback() {
   return (
@@ -29,11 +32,18 @@ export default function AppRouter() {
               <Route path="/editor" element={<Editor />} />
               <Route path="/editor/:id" element={<Editor />} />
               <Route path="/snippets" element={<Dashboard />} />
-              {/* Короткая ссылка — основная; путь с username/slug сохранён для старых ссылок. */}
+              {/* Короткая ссылка — канонический адрес сниппета. Старые пути с
+                  username/slug продолжают работать, но переводят на короткий (#343). */}
               <Route path="/s/:shortCode" element={<Share />} />
-              <Route path="/s/:username/:slug" element={<Share />} />
+              <Route
+                path="/s/:username/:slug"
+                element={<LegacyLink target="share" />}
+              />
               <Route path="/embed/s/:shortCode" element={<Embed />} />
-              <Route path="/embed/:username/:slug" element={<Embed />} />
+              <Route
+                path="/embed/:username/:slug"
+                element={<LegacyLink target="embed" />}
+              />
               <Route path="/embedding" element={<Embedding />} />
               <Route path="/u/:username" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />

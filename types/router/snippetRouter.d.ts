@@ -5,7 +5,7 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
     transformer: false;
 }, import("@trpc/server").TRPCDecorateCreateRouterOptions<{
     getSnippetById: import("@trpc/server").TRPCQueryProcedure<{
-        input: number;
+        input: unknown;
         output: {
             id: number;
             name: string;
@@ -81,9 +81,9 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
     createSnippet: import("@trpc/server").TRPCMutationProcedure<{
         input: {
             name: string;
-            userId: number;
-            language: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css";
             code: string;
+            language: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css";
+            userId: number;
             slug?: string | undefined;
             visibility?: "link" | "private" | "public" | undefined;
         };
@@ -105,10 +105,10 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
         input: {
             id: number;
             name?: string | undefined;
-            userId?: number | undefined;
-            language?: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css" | undefined;
-            slug?: string | undefined;
             code?: string | undefined;
+            slug?: string | undefined;
+            language?: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css" | undefined;
+            userId?: number | undefined;
             visibility?: "link" | "private" | "public" | undefined;
         };
         output: {
@@ -127,7 +127,7 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
     }>;
     deleteSnippet: import("@trpc/server").TRPCMutationProcedure<{
         input: {
-            id: number;
+            id: unknown;
         };
         output: {
             success: boolean;
