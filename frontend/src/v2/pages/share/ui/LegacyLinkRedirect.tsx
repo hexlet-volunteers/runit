@@ -1,4 +1,4 @@
-import { Navigate, useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router';
 import { Center, Loader } from '@mantine/core';
 import { useSnippetBySlug } from '../../../entities/snippet';
 import { embedPath, snippetPath } from '../../../shared/lib';

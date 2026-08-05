@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router';
 import { Box, Button, Center, Loader, Stack, Text } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import MonacoEditor, { type OnMount } from '@monaco-editor/react';

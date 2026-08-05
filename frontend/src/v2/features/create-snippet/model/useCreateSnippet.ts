@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
 import { useSession } from '../../../entities/user';
@@ -9,6 +9,7 @@ import {
   sampleCode,
   generateSnippetName,
   createSnippet,
+  toSnippetLanguage,
 } from '../../../entities/snippet';
 import { type Props } from '..';
 
@@ -65,8 +66,7 @@ export default function useCreateSnippet({ opened, onClose }: Props) {
       createSnippet(trpc, {
         name: name.trim(),
         code: withExample ? (sampleCode[language] ?? '') : '',
-        // TODO: typescript есть в langMeta на фронте, но не в createSnippetSchema — добавить туда 'typescript'.
-        language,
+        language: toSnippetLanguage(language),
         userId: user!.id,
       }),
     onSuccess: (created) => {

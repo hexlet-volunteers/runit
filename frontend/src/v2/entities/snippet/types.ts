@@ -21,6 +21,23 @@ export const SNIPPET_LANGUAGES = [
 
 export type SnippetLanguage = (typeof SNIPPET_LANGUAGES)[number];
 
+export const isSnippetLanguage = (value: string): value is SnippetLanguage =>
+  (SNIPPET_LANGUAGES as readonly string[]).includes(value);
+
+/**
+ * Приводит строку к языку сниппета.
+ *
+ * Нужен на границе с данными, которые приходят строкой: язык сниппета из API
+ * объявлен как string и теоретически может оказаться чем угодно — например,
+ * старой записью с языком, который мы больше не поддерживаем. Приведение
+ * через `as` в таком месте было бы обманом: тип бы сошёлся, а на сервер уехало
+ * значение, которое он отвергнет.
+ *
+ * Неизвестное значение заменяется на javascript — язык по умолчанию в редакторе.
+ */
+export const toSnippetLanguage = (value: string): SnippetLanguage =>
+  isSnippetLanguage(value) ? value : 'javascript';
+
 export type Snippet = {
   id: number;
   name: string;

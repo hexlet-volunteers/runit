@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router';
 import { Center, Loader } from '@mantine/core';
 
 const Landing = lazy(() => import('../pages/landing/index'));
