@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { Avatar, Menu, UnstyledButton } from '@mantine/core';
 import { useSession } from '../../../entities/user';
 import { initialsOf } from '../../../shared/lib';

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Button } from '@mantine/core';
 
 /** Кнопка «Кабинет» для авторизованных пользователей на маркетинг-страницах. */

@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router';
 import { Box, Button, Container, Group, UnstyledButton } from '@mantine/core';
 import { useSession } from '../../../entities/user';
 import { useAuthModal } from '../../../features/auth';
