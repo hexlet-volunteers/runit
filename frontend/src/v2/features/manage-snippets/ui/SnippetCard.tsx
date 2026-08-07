@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { ActionIcon, Anchor, Box, Checkbox, Group, Menu, Paper, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { langMeta } from '../../../shared/theme';

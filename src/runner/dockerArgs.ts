@@ -11,6 +11,8 @@ export interface DockerArgsParams {
   imageTag: string;
   /** Имя файла внутри /app. */
   fileName: string;
+  /** Путь к seccomp-профилю на хосте. Не задан — работает профиль docker. */
+  seccompProfile?: string;
 }
 
 /**
@@ -22,8 +24,15 @@ export interface DockerArgsParams {
  * --security-opt seccomp=unconfined, --pid=host, --net=host.
  */
 export function buildDockerArgs(params: DockerArgsParams): string[] {
-  const { spec, limits, containerName, hostCodeDir, imageTag, fileName } =
-    params;
+  const {
+    spec,
+    limits,
+    containerName,
+    hostCodeDir,
+    imageTag,
+    fileName,
+    seccompProfile,
+  } = params;
   const containerPath = `/app/${fileName}`;
   // Вторая линия обороны: если наш watchdog умрёт (например, рестарт сервера
   // ровно во время запуска), процесс всё равно будет убит ядром по CPU-секундам.
@@ -58,6 +67,17 @@ export function buildDockerArgs(params: DockerArgsParams): string[] {
     '--network=none',
     '--cap-drop=ALL',
     '--security-opt=no-new-privileges',
+    // Профиль seccomp (#860). Без переменной работает штатный профиль docker —
+    // это уже аллоулист примерно на 300 сисколлов, который блокирует mount,
+    // ptrace, bpf, keyctl и прочее опасное.
+    //
+    // Важно понимать: --security-opt seccomp=<файл> ЗАМЕНЯЕТ дефолтный профиль,
+    // а не дополняет его. Поэтому «денилист» из пары опасных вызовов был бы
+    // ослаблением: default-allow снял бы защиту всего остального. Свой профиль
+    // имеет смысл только как полный аллоулист, выверенный под все языки, —
+    // отдельная работа, её ставим сюда через переменную, не выдумывая профиль
+    // задним числом.
+    ...(seccompProfile ? [`--security-opt=seccomp=${seccompProfile}`] : []),
     '--user',
     '10001:10001',
     '--read-only',

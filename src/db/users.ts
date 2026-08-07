@@ -1,5 +1,5 @@
 import { desc, eq } from 'drizzle-orm';
-import { z } from 'zod/v3';
+import { z } from 'zod/v4';
 import { db } from './connection';
 import {
   type NewUser,

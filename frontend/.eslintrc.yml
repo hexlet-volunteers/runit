@@ -2,7 +2,6 @@ root: true
 
 env:
   browser: true
-  jest: true
 
 extends:
   - airbnb

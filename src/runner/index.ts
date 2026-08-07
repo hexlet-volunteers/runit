@@ -1,7 +1,8 @@
 import { z } from 'zod/v4';
 import { checkDaemon } from './availability';
 import { runnerConfig } from './config';
-import { runCode, sweepOrphans } from './run';
+// sweepOrphans только реэкспортируется ниже: вызывает её src/index.ts при старте.
+import { runCode } from './run';
 import { RUNNER_LANGUAGES } from './types';
 
 export { runCode, sweepOrphans } from './run';

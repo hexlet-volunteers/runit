@@ -34,6 +34,37 @@ const CASES = [
     expect: 'сеть недоступна',
     label: 'изоляция сети',
   },
+  // Fork-бомба — самая дешёвая атака на хост. Гасится --pids-limit: процессы
+  // перестают создаваться, скрипт доходит до конца и печатает предел. Проверка
+  // именно фактическая: на аргументах docker это подтвердить нельзя, а без
+  // лимита хост уходит в отказ вместе со всеми остальными запусками.
+  {
+    language: 'python',
+    code: [
+      'import os',
+      'created = 0',
+      'try:',
+      '    for _ in range(10000):',
+      '        if os.fork() == 0:',
+      '            os._exit(0)',
+      '        created += 1',
+      'except OSError:',
+      "    print('fork остановлен лимитом')",
+      'else:',
+      "    print('ЛИМИТА НЕТ, создано', created)",
+    ].join('\n'),
+    expect: 'fork остановлен лимитом',
+    label: 'fork-бомба гасится pids-limit',
+  },
+  // Лимит вывода: программа печатает заметно больше разрешённого, ответ обязан
+  // прийти обрезанным, а не завалить сервер и браузер многомегабайтной строкой.
+  {
+    language: 'python',
+    code: "print('x' * 5_000_000)",
+    expectStatus: ['ok', 'output_limit'],
+    expectTruncated: true,
+    label: 'вывод обрезается по лимиту',
+  },
 ];
 
 const run = async (item) => {
@@ -43,7 +74,23 @@ const run = async (item) => {
     body: JSON.stringify({ language: item.language, code: item.code, stdin: item.stdin ?? '' }),
   });
   const json = await response.json();
+
+  // Проверяем HTTP-код до разбора тела. Иначе отказ вроде 429 (тело лимитера
+  // не содержит поля error) выглядел как «Cannot read properties of undefined»
+  // и приходилось гадать, что случилось.
+  if (!response.ok) {
+    const hint =
+      response.status === 429
+        ? ' — сработал лимит запусков; поднимите RATE_LIMIT_RUNNER для прогона'
+        : '';
+    throw new Error(
+      `HTTP ${response.status}${hint}: ${JSON.stringify(json).slice(0, 160)}`,
+    );
+  }
   if (json.error) throw new Error(`tRPC: ${JSON.stringify(json.error).slice(0, 200)}`);
+  if (!json.result?.data) {
+    throw new Error(`неожиданный ответ: ${JSON.stringify(json).slice(0, 160)}`);
+  }
   return json.result.data;
 };
 
@@ -57,8 +104,23 @@ const main = async () => {
       const output = `${out.stdout ?? ''}${out.stderr ?? ''}`;
 
       if (item.expectStatus) {
-        const ok = out.status === item.expectStatus;
-        console.log(`${ok ? '✓' : '✗'} ${label}: status=${out.status} (ожидали ${item.expectStatus})`);
+        // Допускаем несколько статусов: обрезка вывода приходит либо как ok с
+        // флагом truncated, либо как output_limit — зависит от того, успел ли
+        // процесс завершиться сам.
+        const allowed = Array.isArray(item.expectStatus)
+          ? item.expectStatus
+          : [item.expectStatus];
+        let ok = allowed.includes(out.status);
+        let extra = '';
+        if (ok && item.expectTruncated) {
+          const truncated = out.truncated === true || out.status === 'output_limit';
+          const size = (out.stdout ?? '').length;
+          ok = truncated;
+          extra = ` truncated=${out.truncated} размер вывода=${size}`;
+        }
+        console.log(
+          `${ok ? '✓' : '✗'} ${label}: status=${out.status}${extra} (ожидали ${allowed.join('|')})`,
+        );
         if (!ok) failed += 1;
         continue;
       }

@@ -1,5 +1,7 @@
 import type { TrpcClient } from '../../../shared/api';
-import { sampleCode, createSnippet } from '../../../entities/snippet';
+import { sampleCode, createSnippet,
+    toSnippetLanguage,
+} from '../../../entities/snippet';
 
 /** Создаёт сниппет-пример с указанным языком. */
 // TODO: бэкенд возвращает `id?` и `language: string`, а useMutation ожидает строгие типы.
@@ -13,6 +15,6 @@ export const createExampleSnippet = (
   createSnippet(trpc, {
     name: `example-${language}`,
     code: sampleCode[language] ?? '',
-    language,
+    language: toSnippetLanguage(language),
     userId,
   }) as Promise<{ id: number }>;

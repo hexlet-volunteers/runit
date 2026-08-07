@@ -191,6 +191,7 @@ export async function runCode(
       hostCodeDir: tmpDir,
       imageTag: imageTagFor(language),
       fileName,
+      seccompProfile: runnerConfig.seccompProfile,
     });
 
     const result = await deps.runProcess({
