@@ -102,7 +102,7 @@ export declare const userRouter: import("@trpc/server").TRPCBuiltRouter<{
     }>;
     deleteUser: import("@trpc/server").TRPCMutationProcedure<{
         input: {
-            id: number;
+            id: unknown;
         };
         output: {
             success: boolean;

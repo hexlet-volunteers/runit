@@ -11,10 +11,14 @@ export default defineConfig({
     }
   })],
   resolve: {
-    // react-router и react-router-dom должны резолвиться в единственную копию,
-    // иначе Vite пребандлит их отдельно и контекст <Router> не виден хукам,
-    // импортированным из 'react-router' (белый экран на старте). См. #811.
-    dedupe: ['react', 'react-dom', 'react-router', 'react-router-dom'],
+    // react и react-dom должны резолвиться в единственную копию, иначе Vite
+    // пребандлит их отдельно и контекст React не виден хукам.
+    //
+    // react-router здесь больше не нужен: пакет остался один. Раньше в проекте
+    // жили react-router и react-router-dom, dedupe склеивал их в одну копию и
+    // так лечил белый экран из #811 — но склеить разные мажоры он не мог, и
+    // проблема ждала повода вернуться.
+    dedupe: ['react', 'react-dom'],
   },
   server: {
     port: 3000,

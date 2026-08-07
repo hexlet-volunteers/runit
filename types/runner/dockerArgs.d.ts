@@ -10,6 +10,8 @@ export interface DockerArgsParams {
     imageTag: string;
     /** Имя файла внутри /app. */
     fileName: string;
+    /** Путь к seccomp-профилю на хосте. Не задан — работает профиль docker. */
+    seccompProfile?: string;
 }
 /**
  * Сборка argv для `docker run`. Единственное место, где живёт модель изоляции

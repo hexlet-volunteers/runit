@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { notifications } from '@mantine/notifications';
 
 import { useTRPCClient } from '../../../shared/api';
 import { useSession } from '../../../entities/user';
 import { useAuthModal } from '../../../features/auth';
-import { createSnippet, updateSnippet } from '../../../entities/snippet';
+import { createSnippet, updateSnippet,
+    toSnippetLanguage,
+} from '../../../entities/snippet';
 import { type SaveStatus } from '../types';
 
 /** Хук сохранения сниппета: создаёт новый или обновляет существующий, управляет статусом и автосохранением. */
@@ -43,7 +45,7 @@ export default function useSnippetSave(
         const created = await createSnippet(trpc, {
           name: nameRef.current,
           code: codeRef.current,
-          language: languageRef.current,
+          language: toSnippetLanguage(languageRef.current),
           userId: user.id,
         });
         setSlug(created.slug);
@@ -54,7 +56,7 @@ export default function useSnippetSave(
           id: snippetIdRef.current,
           name: nameRef.current,
           code: codeRef.current,
-          language: languageRef.current,
+          language: toSnippetLanguage(languageRef.current),
         });
         setSaveStatus('saved');
       }

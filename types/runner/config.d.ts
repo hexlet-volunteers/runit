@@ -4,6 +4,12 @@ export declare const runnerConfig: {
     imagePrefix: string;
     imageTag: string;
     tmpDir: string;
+    /**
+     * Путь к seccomp-профилю (#860). Пусто — работает штатный профиль docker.
+     * Задавать имеет смысл только полный выверенный аллоулист: свой файл
+     * заменяет дефолтный профиль, а не дополняет его.
+     */
+    seccompProfile: string | undefined;
     maxConcurrent: number;
     enabledLanguages: ("typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash")[];
     /** Базовые лимиты; на язык уточняются в languages.ts. */

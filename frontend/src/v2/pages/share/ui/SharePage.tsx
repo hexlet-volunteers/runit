@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router';
 import {
   Anchor,
   Avatar,
@@ -31,6 +31,7 @@ import {
   createSnippet,
   useSnippetBySlug,
   useSnippetByShortCode,
+  toSnippetLanguage,
 } from '../../../entities/snippet';
 
 /** Относительная дата по-русски: «сегодня», «вчера», «N дн. назад» либо locale-дата. */
@@ -67,7 +68,7 @@ export default function SharePage() {
       createSnippet(trpc, {
         name: `${s.name}-fork`,
         code: s.code,
-        language: s.language,
+        language: toSnippetLanguage(s.language),
         userId: user!.id,
       }),
     onSuccess: (created: { id: number }) => navigate(`/editor/${created.id}`),

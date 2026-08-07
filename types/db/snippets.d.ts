@@ -1,121 +1,107 @@
-import { z } from 'zod/v3';
+import { z } from 'zod/v4';
 import { type Snippet } from './schema/schema';
 export declare const snippetSchema: z.ZodObject<{
     id: z.ZodNumber;
     name: z.ZodString;
     slug: z.ZodNullable<z.ZodString>;
     code: z.ZodString;
-    language: z.ZodEnum<["javascript", "typescript", "python", "php", "ruby", "java", "go", "cpp", "sql", "bash", "html", "css"]>;
+    language: z.ZodEnum<{
+        javascript: "javascript";
+        typescript: "typescript";
+        python: "python";
+        php: "php";
+        ruby: "ruby";
+        java: "java";
+        go: "go";
+        cpp: "cpp";
+        sql: "sql";
+        bash: "bash";
+        html: "html";
+        css: "css";
+    }>;
     userId: z.ZodNumber;
     createdAt: z.ZodDate;
     updatedAt: z.ZodDate;
-}, "strip", z.ZodTypeAny, {
-    id: number;
-    name: string;
-    createdAt: Date;
-    updatedAt: Date;
-    userId: number;
-    language: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css";
-    slug: string | null;
-    code: string;
-}, {
-    id: number;
-    name: string;
-    createdAt: Date;
-    updatedAt: Date;
-    userId: number;
-    language: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css";
-    slug: string | null;
-    code: string;
-}>;
+}, z.core.$strip>;
 /** Уровни доступа к сниппету. */
 export declare const VISIBILITIES: readonly ["private", "link", "public"];
-export declare const visibilitySchema: z.ZodEnum<["private", "link", "public"]>;
+export declare const visibilitySchema: z.ZodEnum<{
+    link: "link";
+    private: "private";
+    public: "public";
+}>;
 export type Visibility = (typeof VISIBILITIES)[number];
 export declare const getSnippetByShortCodeSchema: z.ZodString;
 export declare const setVisibilitySchema: z.ZodObject<{
     id: z.ZodNumber;
-    visibility: z.ZodEnum<["private", "link", "public"]>;
-}, "strip", z.ZodTypeAny, {
-    id: number;
-    visibility: "link" | "private" | "public";
-}, {
-    id: number;
-    visibility: "link" | "private" | "public";
-}>;
+    visibility: z.ZodEnum<{
+        link: "link";
+        private: "private";
+        public: "public";
+    }>;
+}, z.core.$strip>;
 export declare const createSnippetSchema: z.ZodObject<{
     name: z.ZodString;
     code: z.ZodString;
     slug: z.ZodOptional<z.ZodString>;
-    language: z.ZodEnum<["javascript", "typescript", "python", "php", "ruby", "java", "go", "cpp", "sql", "bash", "html", "css"]>;
+    language: z.ZodEnum<{
+        javascript: "javascript";
+        typescript: "typescript";
+        python: "python";
+        php: "php";
+        ruby: "ruby";
+        java: "java";
+        go: "go";
+        cpp: "cpp";
+        sql: "sql";
+        bash: "bash";
+        html: "html";
+        css: "css";
+    }>;
     userId: z.ZodNumber;
-    visibility: z.ZodOptional<z.ZodEnum<["private", "link", "public"]>>;
-}, "strip", z.ZodTypeAny, {
-    name: string;
-    userId: number;
-    language: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css";
-    code: string;
-    slug?: string | undefined;
-    visibility?: "link" | "private" | "public" | undefined;
-}, {
-    name: string;
-    userId: number;
-    language: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css";
-    code: string;
-    slug?: string | undefined;
-    visibility?: "link" | "private" | "public" | undefined;
-}>;
+    visibility: z.ZodOptional<z.ZodEnum<{
+        link: "link";
+        private: "private";
+        public: "public";
+    }>>;
+}, z.core.$strip>;
 export declare const updateSnippetSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
     code: z.ZodOptional<z.ZodString>;
     slug: z.ZodOptional<z.ZodOptional<z.ZodString>>;
-    language: z.ZodOptional<z.ZodEnum<["javascript", "typescript", "python", "php", "ruby", "java", "go", "cpp", "sql", "bash", "html", "css"]>>;
+    language: z.ZodOptional<z.ZodEnum<{
+        javascript: "javascript";
+        typescript: "typescript";
+        python: "python";
+        php: "php";
+        ruby: "ruby";
+        java: "java";
+        go: "go";
+        cpp: "cpp";
+        sql: "sql";
+        bash: "bash";
+        html: "html";
+        css: "css";
+    }>>;
     userId: z.ZodOptional<z.ZodNumber>;
-    visibility: z.ZodOptional<z.ZodOptional<z.ZodEnum<["private", "link", "public"]>>>;
-} & {
+    visibility: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
+        link: "link";
+        private: "private";
+        public: "public";
+    }>>>;
     id: z.ZodNumber;
-}, "strip", z.ZodTypeAny, {
-    id: number;
-    name?: string | undefined;
-    userId?: number | undefined;
-    language?: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css" | undefined;
-    slug?: string | undefined;
-    code?: string | undefined;
-    visibility?: "link" | "private" | "public" | undefined;
-}, {
-    id: number;
-    name?: string | undefined;
-    userId?: number | undefined;
-    language?: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css" | undefined;
-    slug?: string | undefined;
-    code?: string | undefined;
-    visibility?: "link" | "private" | "public" | undefined;
-}>;
-export declare const getSnippetByIdSchema: z.ZodNumber;
+}, z.core.$strip>;
+export declare const getSnippetByIdSchema: z.ZodCoercedNumber<unknown>;
 export declare const deleteSnippetSchema: z.ZodObject<{
-    id: z.ZodNumber;
-}, "strip", z.ZodTypeAny, {
-    id: number;
-}, {
-    id: number;
-}>;
+    id: z.ZodCoercedNumber<unknown>;
+}, z.core.$strip>;
 export declare const getSnippetByUsernameSlugSchema: z.ZodObject<{
     username: z.ZodString;
     slug: z.ZodString;
-}, "strip", z.ZodTypeAny, {
-    username: string;
-    slug: string;
-}, {
-    username: string;
-    slug: string;
-}>;
+}, z.core.$strip>;
 export declare const getPublicSnippetsByUsernameSchema: z.ZodObject<{
     username: z.ZodString;
-}, "strip", z.ZodTypeAny, {
-    username: string;
-}, {
-    username: string;
-}>;
+}, z.core.$strip>;
 export type CreateSnippetInput = z.infer<typeof createSnippetSchema>;
 export type UpdateSnippetInput = z.infer<typeof updateSnippetSchema>;
 /**

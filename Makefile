@@ -17,8 +17,10 @@ lint-backend:
 lint-fix-backend:
 	npm run lint:fix
 
+# Живые тесты: юниты раннера. Набор e2e в tests/ смотрел на удалённый
+# легаси-интерфейс, поэтому его переписывание — это #177.
 test:
-	npm test
+	npm run test:runner
 
 db-setup:
 	npm run db:setup

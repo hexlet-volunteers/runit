@@ -31,6 +31,14 @@ jobs:
         # деградации через внедрение зависимостей.
         run: npm run test:runner
 
+      - name: Уязвимости прод-зависимостей
+        # Только прод-дерево (--omit=dev) и только high и выше. Причина: сборочные
+        # и линтерские пакеты на прод не попадают, и падение сборки из-за
+        # уязвимости в devDependency приучает пропускать красный CI — после чего
+        # незамеченной проезжает уже настоящая. Порог осмысленный: сейчас
+        # прод-дерево бэкенда чистое, поэтому шаг реально сторожит, а не украшает.
+        run: npm audit --omit=dev --audit-level=high
+
   frontend:
     name: Фронтенд — сборка
     runs-on: ubuntu-latest
@@ -47,8 +55,21 @@ jobs:
         run: npm ci
         working-directory: frontend
 
+      - name: Проверка типов
+        # Стало возможным после удаления легаси: раньше tsc падал на v2-legacy,
+        # и фронтенд ехал в CI вообще без проверки типов — vite build их не
+        # смотрит. Именно так проехали четыре ошибки после сужения типа языка.
+        run: npx tsc --noEmit
+        working-directory: frontend
+
       - name: Сборка
         run: npm run build
+        working-directory: frontend
+
+      - name: Уязвимости прод-зависимостей
+        # Тот же порог, что у бэкенда. После чистки легаси и перехода на один
+        # пакет роутера дерево фронта чистое, поэтому шаг сторожит с первого дня.
+        run: npm audit --omit=dev --audit-level=high
         working-directory: frontend
 
   docker:
@@ -88,7 +109,11 @@ jobs:
           # Миграции не в git (каталог drizzle/ в .gitignore), поэтому их нужно
           # сгенерировать из схемы — иначе сервер падает на старте.
           npm run db:generate
-          DB_PATH=/tmp/ci.sqlite npx tsx src/server.ts &
+          # Лимит запусков кода поднят только для смоука: боевые 12/мин рассчитаны
+          # на человека, а здесь один прогон делает больше десятка запусков подряд
+          # с одного адреса. Проверяем раннер, а не лимитер — его отдельно
+          # покрывают тесты src/security.ts.
+          DB_PATH=/tmp/ci.sqlite RATE_LIMIT_RUNNER=200 npx tsx src/server.ts &
           for i in $(seq 1 30); do
             curl -sf http://localhost:3001/health >/dev/null && break
             sleep 1

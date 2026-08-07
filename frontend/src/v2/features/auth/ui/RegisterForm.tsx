@@ -10,7 +10,7 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useAuthModal, validateEmail, validatePassword, validateUsername, titles } from '..';
 import { useSession } from '../../../entities/user';
 import FormHeader from './FormHeader';

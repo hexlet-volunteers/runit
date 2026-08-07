@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Anchor, Box, Container, Group, Text } from '@mantine/core';
 import { RunitLogo } from '../../shared/ui';
 
