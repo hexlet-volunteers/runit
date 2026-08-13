@@ -16,6 +16,22 @@ services:
       PORT: 3001
       HOST: 0.0.0.0
       DB_PATH: /data/database.sqlite
+      # Секреты подписи токенов. Синтаксис с `:?` останавливает compose с этим
+      # сообщением, если переменной нет — иначе приложение просто не поднялось
+      # бы, и причину пришлось бы искать в логах контейнера.
+      # Сгенерировать:
+      #   node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?задайте JWT_ACCESS_SECRET в .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?задайте JWT_REFRESH_SECRET в .env}
+      # Интерфейс и API отдаёт один и тот же Caddy (сервис web), поэтому запросы
+      # к /trpc идут с того же origin и CORS не участвует. Переменная остаётся
+      # для схем, где фронт вынесен на отдельный домен.
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
+      # ВНИМАНИЕ. Compose поднимает прод-сборку по http://localhost:8080, а
+      # браузер не отправляет Secure-cookie по http — с включённым флагом вход
+      # не работал бы. Для боевого стенда за TLS переменную не задавайте:
+      # по умолчанию в production Secure включён.
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
       # Раннер кода: без доступа к docker он корректно деградирует —
       # приложение работает, серверный запуск отвечает понятной подсказкой.
       RUNNER_ENABLED: ${RUNNER_ENABLED:-true}

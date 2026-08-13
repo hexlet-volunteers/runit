@@ -27,8 +27,10 @@ export async function registerAuthPlugins(
   // браузер отправит их сам при кросс-сайтовом запросе, если не проверять токен.
   await server.register(fastifyCsrf, {
     cookieOpts: {
-      httpOnly: false, // фронт должен прочитать токен, чтобы положить его в заголовок
-      secure: env.NODE_ENV === 'production',
+      // httpOnly не нужен: здесь лежит секрет для проверки токена, а сам токен
+      // клиент получает из ответа auth.* и хранит в памяти вкладки.
+      httpOnly: true,
+      secure: env.COOKIE_SECURE,
       sameSite: 'lax',
       path: '/',
     },

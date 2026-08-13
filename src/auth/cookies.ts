@@ -7,7 +7,9 @@ const ACCESS_TOKEN_TTL_MS = 15 * 60 * 1000;
 
 const baseCookieOptions: CookieSerializeOptions = {
   httpOnly: true,
-  secure: env.NODE_ENV === 'production',
+  // См. COOKIE_SECURE в config/env.ts: по умолчанию включено в production,
+  // отключается только для запуска без TLS.
+  secure: env.COOKIE_SECURE,
   sameSite: 'lax',
   path: '/',
 };

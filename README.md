@@ -189,11 +189,25 @@ CPU, числа процессов, времени выполнения и ра�
 
 ### В контейнерах (рекомендуется)
 
+Compose поднимает прод-сборку, а она требует боевых секретов, поэтому сначала
+нужен `.env` с двумя ключами:
+
+```bash
+cp .env.example .env
+node -e "const c=require('crypto');console.log('JWT_ACCESS_SECRET='+c.randomBytes(32).toString('base64'));console.log('JWT_REFRESH_SECRET='+c.randomBytes(32).toString('base64'))" >> .env
+```
+
 ```bash
 docker compose up --build
 ```
 
 Приложение поднимется на <http://localhost:8080> (порт меняется переменной `WEB_PORT`).
+
+Без ключей compose остановится с сообщением, какую переменную задать — так
+понятнее, чем контейнер, падающий на старте. Обратите внимание: локально
+compose отдаёт сайт по `http`, поэтому там выставлен `COOKIE_SECURE=false` —
+браузер не отправляет `Secure`-cookie по `http`, и вход бы не работал. На
+боевом стенде за TLS переменную задавать не нужно.
 
 Состав:
 
@@ -271,6 +285,7 @@ Docker на PaaS обычно недоступен, поэтому сервер�
 | `LOG_LEVEL` | по `NODE_ENV` | Уровень pino: прод — `info`, разработка — `debug`, тесты — `silent` |
 | `JWT_ACCESS_SECRET` | дев-значение вне прода | Ключ подписи access-токена, **обязателен в production** |
 | `JWT_REFRESH_SECRET` | дев-значение вне прода | Ключ подписи refresh-токена, **обязателен в production** |
+| `COOKIE_SECURE` | `true` в проде | Флаг `Secure` у cookie сессии; выключать только там, где нет TLS |
 | `CORS_ORIGIN` | `http://localhost:3000` | Origin(ы) фронтенда, которым разрешены запросы с cookie |
 | `RATE_LIMIT_AUTH` | `10` | Запросов в минуту на `auth.*` (антибрутфорс) |
 
