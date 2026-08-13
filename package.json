@@ -26,7 +26,7 @@
     "test:debug": "npm test -- --ui",
     "runner:build-images": "tsx src/runner/buildImages.ts",
     "test:runner": "node --import tsx --test src/runner/*.test.ts",
-    "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:unit": "npm run db:generate && NODE_OPTIONS=--experimental-vm-modules jest",
     "runner:smoke": "node bin/runner-smoke.mjs"
   },
   "repository": {
