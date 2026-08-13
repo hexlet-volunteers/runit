@@ -1,5 +1,3 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router';
 import {
   Box,
   Container,
@@ -7,24 +5,17 @@ import {
   Title,
 } from '@mantine/core';
 
-import { useSession } from '../../../entities/user';
 import { AppHeader } from '../../../widgets/header';
 import { AppFooter } from '../../../widgets/footer';
 import ProfileTab from './ProfileTab';
 import EditorTab from './EditorTab';
 import AccountTab from './AccountTab';
 
-/** Страница настроек /settings. Три вкладки: Профиль, Редактор, Аккаунт. Редиректит гостей на /. */
+/**
+ * Страница настроек /settings. Три вкладки: Профиль, Редактор, Аккаунт.
+ * Гостей не пускает RequireAuth в роутере — здесь пользователь уже есть.
+ */
 export default function SettingsPage() {
-  const { isGuest } = useSession();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (isGuest) navigate('/', { replace: true });
-  }, [isGuest, navigate]);
-
-  if (isGuest) return null;
-
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <AppHeader />

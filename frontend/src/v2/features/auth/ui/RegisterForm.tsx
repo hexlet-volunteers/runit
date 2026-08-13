@@ -42,8 +42,14 @@ export default function RegisterForm() {
         message: `Добро пожаловать, ${user.username}!`,
         color: 'green',
       });
-    } catch {
-      setError('Не удалось создать аккаунт. Возможно, email уже занят.');
+    } catch (err: unknown) {
+      // Сервер отвечает конкретно: занятый email, занятое имя, слабый пароль.
+      // Общая фраза «возможно, email уже занят» заставляла бы угадывать причину.
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Не удалось создать аккаунт. Попробуйте позже.',
+      );
     } finally {
       setLoading(false);
     }

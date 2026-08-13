@@ -4,6 +4,10 @@ export {
   useUserById,
   useUserByUsername,
   deleteUser,
-  getUserByEmail,
-  createUser,
+  login,
+  logout,
+  register,
+  me,
+  changePassword,
+  fetchCsrfToken,
 } from './api';

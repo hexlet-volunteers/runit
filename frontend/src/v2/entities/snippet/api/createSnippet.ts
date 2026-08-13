@@ -9,6 +9,9 @@ import type { SnippetLanguage } from '../types';
  * (6 языков) с бэкендом и раннером (12) и мешал бы заметить следующее такое
  * расхождение — компилятор молчал бы.
  *
+ * userId не передаётся: владельца сервер берёт из сессии. Пока поле шло из
+ * браузера, сниппет можно было создать от имени чужого аккаунта (#792).
+ *
  * Приведение результата остаётся: бэкенд объявляет id как необязательный,
  * а вызывающему коду нужен точный тип для редиректа в редактор.
  */
@@ -18,12 +21,10 @@ export const createSnippet = (
     name: string;
     code: string;
     language: SnippetLanguage;
-    userId: number;
   },
 ) =>
   trpc.snippets.createSnippet.mutate({
     name: params.name,
     code: params.code,
     language: params.language,
-    userId: params.userId,
   }) as Promise<{ id: number; slug: string }>;

@@ -4,8 +4,9 @@ import { AppHeader } from '../../../widgets/header';
 import { AppFooter } from '../../../widgets/footer';
 import TerminalCard from './TerminalCard';
 
-// TODO(#845): логировать 404-переходы и предлагать похожие публичные сниппеты
-// (поиск по slug через trpc.snippets.getAllSnippets + fuzzy-match).
+// TODO(#845): логировать 404-переходы и предлагать похожие публичные сниппеты.
+// Искать придётся новой публичной процедурой: getAllSnippets теперь admin-only
+// (отдаёт и чужие приватные), а страница 404 открыта гостям.
 
 /** Страница 404 с визуализацией ошибки в стиле терминала. */
 export default function NotFoundPage() {

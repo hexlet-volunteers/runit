@@ -67,7 +67,6 @@ export default function useCreateSnippet({ opened, onClose }: Props) {
         name: name.trim(),
         code: withExample ? (sampleCode[language] ?? '') : '',
         language: toSnippetLanguage(language),
-        userId: user!.id,
       }),
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: SNIPPETS_QUERY_KEY });

@@ -7,8 +7,13 @@ import { useTRPCClient } from '../../../shared/api';
 import { deleteSnippet, createExampleSnippet } from '..';
 import { SNIPPETS_QUERY_KEY } from '../../../entities/snippet';
 
-/** Хук управления выделением, удалением и созданием сниппетов через пример. */
-export default function useManageSnippets(userId: number) {
+/**
+ * Хук управления выделением, удалением и созданием сниппетов через пример.
+ *
+ * Идентификатор пользователя не нужен: владельца созданного сниппета
+ * определяет сервер по сессии.
+ */
+export default function useManageSnippets() {
   const navigate = useNavigate();
   const trpc = useTRPCClient();
   const queryClient = useQueryClient();
@@ -28,7 +33,7 @@ export default function useManageSnippets(userId: number) {
   });
 
   const createExampleMutation = useMutation({
-    mutationFn: (language: string) => createExampleSnippet(trpc, language, userId),
+    mutationFn: (language: string) => createExampleSnippet(trpc, language),
     onSuccess: (created: { id: number }) => {
       queryClient.invalidateQueries({ queryKey: SNIPPETS_QUERY_KEY });
       navigate(`/editor/${created.id}`);

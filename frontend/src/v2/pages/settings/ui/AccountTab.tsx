@@ -14,6 +14,7 @@ import { useTRPCClient } from '../../../shared/api';
 import { notifications } from '@mantine/notifications';
 import { useMutation } from '@tanstack/react-query';
 import { useSession, deleteUser } from '../../../entities/user';
+import ChangePasswordModal from './ChangePasswordModal';
 
 /** Вкладка «Аккаунт»: email, пароль, активные сессии, удаление аккаунта. */
 export default function AccountTab() {
@@ -21,6 +22,7 @@ export default function AccountTab() {
   const trpc = useTRPCClient();
   const navigate = useNavigate();
   const [confirmOpened, setConfirmOpened] = useState(false);
+  const [passwordOpened, setPasswordOpened] = useState(false);
 
   /** Мутация удаления аккаунта и всех сниппетов. TODO(#834): каскадная очистка. */
   const deleteMutation = useMutation({
@@ -72,16 +74,9 @@ export default function AccountTab() {
           <Text c="dimmed" fz="sm">
             Регулярная смена пароля повышает безопасность аккаунта.
           </Text>
-          {/* TODO(#770, #640): смена пароля через бэкенд */}
-          <Tooltip label="В разработке (#770/#640)">
-            <Button
-              variant="default"
-              data-disabled
-              onClick={(e) => e.preventDefault()}
-            >
-              Сменить пароль
-            </Button>
-          </Tooltip>
+          <Button variant="default" onClick={() => setPasswordOpened(true)}>
+            Сменить пароль
+          </Button>
         </Group>
       </Card>
 
@@ -124,6 +119,11 @@ export default function AccountTab() {
           </Button>
         </Group>
       </Card>
+
+      <ChangePasswordModal
+        opened={passwordOpened}
+        onClose={() => setPasswordOpened(false)}
+      />
 
       <Modal
         opened={confirmOpened}

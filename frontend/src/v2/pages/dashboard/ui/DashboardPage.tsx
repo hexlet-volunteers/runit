@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useState } from 'react';
 import {
   Badge,
   Box,
@@ -24,15 +23,10 @@ import { SearchIcon } from '../../../shared/ui';
 
 type SortMode = 'new' | 'old' | 'name';
 
+/** Гостей на этот маршрут не пускает RequireAuth — user здесь всегда есть. */
 export default function DashboardPage() {
-  const { user, isGuest } = useSession();
-  const navigate = useNavigate();
+  const { user } = useSession();
   const [modalOpened, setModalOpened] = useState(false);
-
-  // Гостям кабинет недоступен — уводим на лендинг.
-  useEffect(() => {
-    if (isGuest) navigate('/', { replace: true });
-  }, [isGuest, navigate]);
 
   const {
     hasAny,
@@ -53,7 +47,7 @@ export default function DashboardPage() {
     selectedIds,
     clearSelection,
     toggleSelect,
-  } = useManageSnippets(user!.id)
+  } = useManageSnippets();
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>

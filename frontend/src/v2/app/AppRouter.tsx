@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { Route, Routes } from 'react-router';
 import { Center, Loader } from '@mantine/core';
+import RequireAuth from './RequireAuth';
 
 const Landing = lazy(() => import('../pages/landing/index'));
 const Editor = lazy(() => import('../pages/editor/index'));
@@ -31,7 +32,14 @@ export default function AppRouter() {
               <Route index element={<Landing />} />
               <Route path="/editor" element={<Editor />} />
               <Route path="/editor/:id" element={<Editor />} />
-              <Route path="/snippets" element={<Dashboard />} />
+              <Route
+                path="/snippets"
+                element={
+                  <RequireAuth>
+                    <Dashboard />
+                  </RequireAuth>
+                }
+              />
               {/* Короткая ссылка — канонический адрес сниппета. Старые пути с
                   username/slug продолжают работать, но переводят на короткий (#343). */}
               <Route path="/s/:shortCode" element={<Share />} />
@@ -46,7 +54,14 @@ export default function AppRouter() {
               />
               <Route path="/embedding" element={<Embedding />} />
               <Route path="/u/:username" element={<Profile />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route
+                path="/settings"
+                element={
+                  <RequireAuth>
+                    <Settings />
+                  </RequireAuth>
+                }
+              />
               <Route path="/legal" element={<Legal />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

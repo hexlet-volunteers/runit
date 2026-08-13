@@ -69,7 +69,6 @@ export default function SharePage() {
         name: `${s.name}-fork`,
         code: s.code,
         language: toSnippetLanguage(s.language),
-        userId: user!.id,
       }),
     onSuccess: (created: { id: number }) => navigate(`/editor/${created.id}`),
   });

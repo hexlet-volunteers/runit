@@ -46,7 +46,6 @@ export default function useSnippetSave(
           name: nameRef.current,
           code: codeRef.current,
           language: toSnippetLanguage(languageRef.current),
-          userId: user.id,
         });
         setSlug(created.slug);
         setSaveStatus('saved');

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { useSession } from '../../../entities/user';
 import { useTRPCClient } from '../../../shared/api';
-import { SNIPPETS_QUERY_KEY, getAllSnippets } from '../../../entities/snippet';
+import { SNIPPETS_QUERY_KEY, getMySnippets } from '../../../entities/snippet';
 import { parseTimestamp } from '../../../shared/lib/dates';
 
 type SortMode = 'new' | 'old' | 'name';
@@ -14,24 +14,23 @@ type SortMode = 'new' | 'old' | 'name';
  * @returns стейты поиска/фильтра/сортировки, отфильтрованный список и флаг загрузки
  */
 export default function useSnippetFilter() {
-  const { user, isGuest } = useSession();
+  const { isGuest } = useSession();
   const trpc = useTRPCClient();
 
   const [search, setSearch] = useState('');
   const [langFilter, setLangFilter] = useState<string>('all');
   const [sort, setSort] = useState<SortMode>('new');
 
-  const { data: allSnippets, isLoading } = useQuery({
+  /**
+   * Выборка приходит с сервера уже суженной до своих сниппетов. Раньше здесь
+   * запрашивался весь список и фильтровался по userId на клиенте — то есть
+   * каждый пользователь получал в браузер чужие сниппеты, включая приватные.
+   */
+  const { data: mySnippets = [], isLoading } = useQuery({
     queryKey: SNIPPETS_QUERY_KEY,
-    queryFn: () => getAllSnippets(trpc),
+    queryFn: () => getMySnippets(trpc),
     enabled: !isGuest,
   });
-
-  // TODO(#828): серверная выборка «мои сниппеты» вместо фильтрации всего списка на клиенте.
-  const mySnippets = useMemo(
-    () => (allSnippets ?? []).filter((s) => s.userId === user?.id),
-    [allSnippets, user?.id],
-  );
 
   const visibleSnippets = useMemo(() => {
     const query = search.trim().toLowerCase();

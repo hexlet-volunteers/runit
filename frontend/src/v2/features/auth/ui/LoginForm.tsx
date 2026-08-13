@@ -40,8 +40,11 @@ export default function LoginForm() {
         message: `Вы вошли как ${user.username}`,
         color: 'green',
       });
-    } catch {
-      setError('Пользователь не найден');
+    } catch (err: unknown) {
+      // Текст берём с сервера: он намеренно не различает неверный email и
+      // неверный пароль, иначе форма превращается в проверку существования
+      // адреса. Прежнее «Пользователь не найден» как раз это и выдавало.
+      setError(err instanceof Error ? err.message : 'Не удалось войти');
     } finally {
       setLoading(false);
     }

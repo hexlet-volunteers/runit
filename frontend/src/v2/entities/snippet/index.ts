@@ -9,6 +9,6 @@ export {
   generateSnippetName,
   createSnippet,
   updateSnippet,
-  getAllSnippets,
+  getMySnippets,
   getPublicSnippetsByUsername,
 } from './api';
