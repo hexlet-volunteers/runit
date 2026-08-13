@@ -109,7 +109,15 @@ export declare function getUserById(id: number): Promise<SafeUser | undefined>;
 export declare function getUserByEmail(email: string): Promise<SafeUser | undefined>;
 export declare function getUserByUsername(username: string): Promise<SafeUser | undefined>;
 export declare function getAllUsers(): Promise<SafeUser[]>;
-export declare function createUser(userData: CreateUserInput): Promise<SafeUser>;
+/**
+ * Данные для создания пользователя. Версия согласия приходит отдельно от
+ * пользовательского ввода: её проверяет и подставляет auth.register (#866),
+ * а не клиент.
+ */
+export type CreateUserData = CreateUserInput & {
+    consentVersion?: string;
+};
+export declare function createUser(userData: CreateUserData): Promise<SafeUser>;
 export declare function updateUser(id: number, updates: Omit<UpdateUserInput, 'id'>): Promise<SafeUser | null>;
 /**
  * Записывает уже готовый bcrypt-хеш. Отделено от updateUser сознательно:

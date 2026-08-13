@@ -25,8 +25,16 @@ export default function AppFooter() {
             <Anchor component={Link} to="/legal" c="dimmed" fz="sm">
               Условия использования
             </Anchor>
+            {/*
+              Ссылка на Политику обязана быть доступна с любой страницы без
+              регистрации: оператор обеспечивает к ней неограниченный доступ
+              (152-ФЗ, ст. 18.1 ч. 2). Подвал есть на всех страницах.
+            */}
             <Anchor component={Link} to="/legal?tab=privacy" c="dimmed" fz="sm">
-              Конфиденциальность
+              Персональные данные
+            </Anchor>
+            <Anchor component={Link} to="/legal?tab=consent" c="dimmed" fz="sm">
+              Согласие на обработку
             </Anchor>
           </Group>
         </Group>

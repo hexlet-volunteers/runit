@@ -15,6 +15,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 username: string;
                 email: string;
                 password: string;
+                consentVersion: string;
             };
             output: {
                 user: import("../auth/publicUser").PublicUser;

@@ -39,9 +39,19 @@ export const login = async (
   return { user: toSessionUser(result.user), csrfToken: result.csrfToken };
 };
 
+/**
+ * Регистрация. Вместе с ней уходит версия согласия на обработку персональных
+ * данных, которую пользователь видел на экране (#866): сервер фиксирует
+ * версию и дату, иначе подтвердить правомерность обработки нечем.
+ */
 export const register = async (
   trpc: TrpcClient,
-  params: { username: string; email: string; password: string },
+  params: {
+    username: string;
+    email: string;
+    password: string;
+    consentVersion: string;
+  },
 ) => {
   const result = await trpc.auth.register.mutate(params);
   return { user: toSessionUser(result.user), csrfToken: result.csrfToken };

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { TRPCError } from '@trpc/server';
 import type { FastifyReply } from 'fastify';
 import { z } from 'zod/v4';
+import { isAcceptedConsentVersion } from '../auth/consent';
 import { clearAuthCookies, setAuthCookies } from '../auth/cookies';
 import { emailSchema } from '../auth/email';
 import {
@@ -35,6 +36,12 @@ const registerInputSchema = z.object({
   username: z.string().min(3).max(20),
   email: emailSchema,
   password: z.string(),
+  /**
+   * Версия согласия на обработку персональных данных, которую видел
+   * пользователь (#866). Обязательна: регистрация без согласия означала бы
+   * обработку данных без правового основания.
+   */
+  consentVersion: z.string().min(1).max(20),
 });
 
 const loginInputSchema = z.object({
@@ -78,6 +85,20 @@ export const authRouter = router({
   register: publicProcedure
     .input(registerInputSchema)
     .mutation(async ({ input, ctx }) => {
+      /**
+       * Версия согласия проверяется по списку известных серверу: иначе в записи
+       * о согласии попадёт произвольная строка от клиента, и она перестанет
+       * что-либо подтверждать. Несовпадение означает открытую вкладку со старой
+       * версией документа — пользователю нужно перечитать актуальную редакцию.
+       */
+      if (!isAcceptedConsentVersion(input.consentVersion)) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message:
+            'Текст согласия на обработку персональных данных обновился — обновите страницу и ознакомьтесь с новой редакцией',
+        });
+      }
+
       const passwordCheck = validatePasswordPolicy(input.password);
       if (!passwordCheck.ok) {
         throw new TRPCError({
@@ -102,6 +123,7 @@ export const authRouter = router({
           username: input.username,
           email: input.email,
           password: passwordHash,
+          consentVersion: input.consentVersion,
         });
       } catch (error) {
         /**

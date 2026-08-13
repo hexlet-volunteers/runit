@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { setCsrfToken, useTRPCClient } from '../../shared/api';
+import { CONSENT_VERSION } from '../../pages/legal/content';
 import {
   SessionContext,
   fetchCsrfToken,
@@ -88,6 +89,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         username,
         email,
         password,
+        // Версия документа, который пользователь видел, отмечая согласие.
+        // Берётся из самого документа, а не задаётся здесь: иначе при правке
+        // текста версия осталась бы прежней (#866).
+        consentVersion: CONSENT_VERSION,
       });
       setCsrfToken(result.csrfToken);
       setUser(result.user);

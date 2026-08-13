@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import {
+  Anchor,
   Badge,
   Button,
   Card,
@@ -108,7 +109,16 @@ export default function AccountTab() {
         <Group justify="space-between" wrap="nowrap" align="center">
           <Text c="dimmed" fz="sm">
             Аккаунт и все сниппеты будут удалены безвозвратно. Это действие
-            нельзя отменить.
+            нельзя отменить. Удаление аккаунта равнозначно{' '}
+            {/*
+              Ссылка обязательна по смыслу: способ отзыва согласия должен быть
+              указан в самом согласии (152-ФЗ, ст. 9 ч. 4 п. 8), а пользователь
+              должен видеть его там, где отзыв фактически происходит.
+            */}
+            <Anchor component={Link} to="/legal?tab=consent" fz="sm">
+              отзыву согласия на обработку персональных данных
+            </Anchor>
+            .
           </Text>
           <Button
             color="red"

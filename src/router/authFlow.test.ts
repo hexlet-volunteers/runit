@@ -27,10 +27,13 @@ process.env.RUNNER_ENABLED = 'false';
 const { default: getApp } = await import('../index');
 const { closeDbConnection } = await import('../db/connection');
 
+const { CURRENT_CONSENT_VERSION } = await import('../auth/consent');
+
 const CREDENTIALS = {
   username: 'flowuser',
   email: 'flow@example.com',
   password: 'Str0ng-flow!',
+  consentVersion: CURRENT_CONSENT_VERSION,
 };
 
 const NEW_PASSWORD = 'Even-str0nger!';
@@ -186,6 +189,59 @@ describe('регистрация, вход и сессия', () => {
     });
 
     expect(response.json().error.data.code).toBe('CONFLICT');
+  });
+
+  /**
+   * Согласие на обработку персональных данных (#866). Без него обработка не
+   * имеет правового основания, поэтому регистрация обязана отклоняться — и
+   * версия документа обязана попадать в БД: иначе непонятно, на какую редакцию
+   * пользователь согласился.
+   */
+  test('регистрация без согласия отклоняется', async () => {
+    const { consentVersion: _omitted, ...withoutConsent } = CREDENTIALS;
+    const response = await app.inject({
+      method: 'POST',
+      url: '/trpc/auth.register',
+      payload: {
+        ...withoutConsent,
+        username: 'noconsent',
+        email: 'noconsent@example.com',
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  test('регистрация с неизвестной версией согласия отклоняется', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/trpc/auth.register',
+      payload: {
+        ...CREDENTIALS,
+        username: 'oldconsent',
+        email: 'oldconsent@example.com',
+        consentVersion: '0.1',
+      },
+    });
+
+    expect(response.json().error.data.code).toBe('BAD_REQUEST');
+  });
+
+  test('версия и дата согласия сохраняются', async () => {
+    const { db } = await import('../db/connection');
+    const { users } = await import('../db/schema/schema');
+    const { eq } = await import('drizzle-orm');
+
+    const [row] = await db
+      .select({
+        version: users.consentVersion,
+        givenAt: users.consentGivenAt,
+      })
+      .from(users)
+      .where(eq(users.email, CREDENTIALS.email));
+
+    expect(row.version).toBe(CURRENT_CONSENT_VERSION);
+    expect(row.givenAt).toBeInstanceOf(Date);
   });
 
   test('смена пароля обесценивает старый', async () => {

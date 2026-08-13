@@ -181,13 +181,26 @@ export async function getAllUsers(): Promise<SafeUser[]> {
   }
 }
 
-export async function createUser(userData: CreateUserInput): Promise<SafeUser> {
+/**
+ * Данные для создания пользователя. Версия согласия приходит отдельно от
+ * пользовательского ввода: её проверяет и подставляет auth.register (#866),
+ * а не клиент.
+ */
+export type CreateUserData = CreateUserInput & {
+  consentVersion?: string;
+};
+
+export async function createUser(userData: CreateUserData): Promise<SafeUser> {
   try {
     const newUser: NewUser = {
       username: userData.username,
       email: userData.email,
       password: userData.password,
       recoverHash: userData.recoverHash || null,
+      // Дата согласия ставится здесь же: версия без даты не отвечает на вопрос
+      // «когда получено согласие», который и задаёт проверяющий.
+      consentVersion: userData.consentVersion ?? null,
+      consentGivenAt: userData.consentVersion ? new Date() : null,
     };
 
     const result = await db

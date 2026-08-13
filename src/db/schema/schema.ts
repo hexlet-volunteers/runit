@@ -59,6 +59,15 @@ export const users = pgTable('users', {
   password: varchar('password', { length: 60 }).notNull(),
   isAdmin: boolean('is_admin').notNull().default(false),
   recoverHash: varchar('recover_hash', { length: 64 }),
+  /**
+   * Версия и дата согласия на обработку персональных данных (#866).
+   *
+   * Nullable, потому что у записей, созданных до появления этих полей, согласия
+   * не зафиксировано — и притворяться, что оно есть, нельзя. Пустое значение
+   * означает «согласие не подтверждено», а не «согласие версии 1.0».
+   */
+  consentVersion: varchar('consent_version', { length: 20 }),
+  consentGivenAt: timestamp('consent_given_at', { withTimezone: true }),
   ...timestamps,
 });
 
