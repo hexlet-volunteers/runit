@@ -116,6 +116,63 @@ describe('регистрация, вход и сессия', () => {
     expect(response.json().result.data.user.email).toBe(CREDENTIALS.email);
   });
 
+  /**
+   * Продление сессии (#628). Access-токен живёт 15 минут, refresh — 30 дней:
+   * без работающего продления пользователь выглядел бы разлогиненным через
+   * четверть часа, хотя его сессия действительна ещё месяц.
+   *
+   * Ротация обязательна: использованный refresh-токен должен переставать
+   * работать, иначе перехваченный токен годится месяц независимо от того,
+   * что настоящий владелец продолжает пользоваться сервисом.
+   */
+  test('refresh выдаёт новую сессию и отзывает использованный токен', async () => {
+    const usedRefreshToken = jar.get('refreshToken');
+    expect(usedRefreshToken).toBeDefined();
+
+    const refreshed = await app.inject({
+      method: 'POST',
+      url: '/trpc/auth.refresh',
+      headers: {
+        cookie: cookieHeader(),
+        'content-type': 'application/json',
+      },
+      payload: {},
+    });
+
+    expect(refreshed.statusCode).toBe(200);
+    expect(typeof refreshed.json().result.data.csrfToken).toBe('string');
+
+    const names = refreshed.cookies.map((cookie) => String(cookie.name));
+    expect(names).toContain('accessToken');
+    expect(names).toContain('refreshToken');
+
+    // Повторное использование того же токена — отказ.
+    const reused = await app.inject({
+      method: 'POST',
+      url: '/trpc/auth.refresh',
+      headers: {
+        cookie: `refreshToken=${usedRefreshToken}`,
+        'content-type': 'application/json',
+      },
+      payload: {},
+    });
+    expect(reused.json().error.data.code).toBe('UNAUTHORIZED');
+
+    rememberCookies(refreshed);
+    csrfToken = refreshed.json().result.data.csrfToken;
+  });
+
+  test('гость не может продлить сессию', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/trpc/auth.refresh',
+      headers: { 'content-type': 'application/json' },
+      payload: {},
+    });
+
+    expect(response.json().error.data.code).toBe('UNAUTHORIZED');
+  });
+
   test('мутация без CSRF-токена отклоняется', async () => {
     const response = await app.inject({
       method: 'POST',

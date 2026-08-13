@@ -19,18 +19,18 @@ describe('validatePasswordPolicy', () => {
     const result = validatePasswordPolicy('abcdefgh123');
 
     expect(result.ok).toBe(false);
-    expect(
-      result.errors.some((e) => e.includes('минимум трёх видов')),
-    ).toBe(true);
+    expect(result.errors.some((e) => e.includes('минимум трёх видов'))).toBe(
+      true,
+    );
   });
 
   test('отклоняет пароль из списка распространённых', () => {
     const result = validatePasswordPolicy('password');
 
     expect(result.ok).toBe(false);
-    expect(
-      result.errors.some((e) => e.includes('слишком распространён')),
-    ).toBe(true);
+    expect(result.errors.some((e) => e.includes('слишком распространён'))).toBe(
+      true,
+    );
   });
 
   test('собирает все нарушения одновременно', () => {
