@@ -30,7 +30,7 @@ const getApp = async () => {
 
   const server = fastify({
     logger: {
-      level: env.NODE_ENV === 'production' ? 'info' : 'debug',
+      level: env.LOG_LEVEL,
     },
     routerOptions: {
       maxParamLength: 1000,
