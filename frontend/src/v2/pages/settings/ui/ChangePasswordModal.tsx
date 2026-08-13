@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Box,
   Button,
   Group,
   Modal,
@@ -11,6 +12,7 @@ import { notifications } from '@mantine/notifications';
 import { useMutation } from '@tanstack/react-query';
 import { setCsrfToken, useTRPCClient } from '../../../shared/api';
 import { changePassword } from '../../../entities/user';
+import { PasswordRequirements } from '../../../features/auth';
 
 /**
  * Смена пароля (#770).
@@ -83,13 +85,17 @@ export default function ChangePasswordModal({
           onChange={(e) => setCurrentPassword(e.currentTarget.value)}
           autoComplete="current-password"
         />
-        <PasswordInput
-          label="Новый пароль"
-          description="Не короче 8 символов, минимум три группы: строчные, заглавные, цифры, символы"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.currentTarget.value)}
-          autoComplete="new-password"
-        />
+        <Box>
+          <PasswordInput
+            label="Новый пароль"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.currentTarget.value)}
+            autoComplete="new-password"
+          />
+          {/* Тот же список требований, что и при регистрации: правила должны
+              выглядеть одинаково в обоих местах, где задаётся пароль. */}
+          <PasswordRequirements value={newPassword} />
+        </Box>
         <PasswordInput
           label="Повторите новый пароль"
           value={repeat}

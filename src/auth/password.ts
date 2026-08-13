@@ -2,9 +2,22 @@ import bcrypt from 'bcrypt';
 import { z } from 'zod/v4';
 import { commonPasswords } from './common-passwords';
 
+/**
+ * Пароли: хеширование и проверка политики.
+ *
+ * Сообщения на русском: они доходят до пользователя как есть — форма показывает
+ * текст ответа сервера. Английские формулировки в интерфейсе на русском языке
+ * читались как сбой, а не как подсказка (#621).
+ *
+ * Правила намеренно простые и перечислимые: их дублирует подсказка в форме
+ * (frontend/src/v2/features/auth/lib/passwordPolicy.ts), чтобы пользователь
+ * видел требования до отправки, а не после отказа. Источник истины — этот
+ * модуль: сервер проверяет всегда, независимо от того, что показал клиент.
+ */
+
 const BCRYPT_COST_FACTOR = 12;
-const MIN_PASSWORD_LENGTH = 8;
-const MIN_CHARACTER_CATEGORIES = 3;
+export const MIN_PASSWORD_LENGTH = 8;
+export const MIN_CHARACTER_CATEGORIES = 3;
 export const PASSWORD_HISTORY_LIMIT = 5;
 
 function countCharacterCategories(password: string): number {
@@ -16,30 +29,29 @@ function countCharacterCategories(password: string): number {
   ].filter(Boolean).length;
 }
 
-export const buildPasswordPolicySchema = (
-  minLength: number = MIN_PASSWORD_LENGTH,
-) =>
-  z
-    .string()
-    .min(minLength, `Password must be at least ${minLength} characters long`)
-    .superRefine((password, ctx) => {
-      if (countCharacterCategories(password) < MIN_CHARACTER_CATEGORIES) {
-        ctx.addIssue({
-          code: 'custom',
-          message:
-            'Password must contain at least 3 of the following: lowercase letters, uppercase letters, digits, special characters',
-        });
-      }
+export const passwordPolicySchema = z
+  .string()
+  .min(
+    MIN_PASSWORD_LENGTH,
+    `Пароль должен быть не короче ${MIN_PASSWORD_LENGTH} символов`,
+  )
+  .superRefine((password, ctx) => {
+    if (countCharacterCategories(password) < MIN_CHARACTER_CATEGORIES) {
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          'Пароль должен содержать символы минимум трёх видов из четырёх: строчные буквы, заглавные буквы, цифры, специальные символы',
+      });
+    }
 
-      if (commonPasswords.has(password.toLowerCase())) {
-        ctx.addIssue({
-          code: 'custom',
-          message: 'Password is too common, please choose a different one',
-        });
-      }
-    });
-
-export const passwordPolicySchema = buildPasswordPolicySchema();
+    if (commonPasswords.has(password.toLowerCase())) {
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          'Этот пароль слишком распространён и подбирается за секунды — придумайте другой',
+      });
+    }
+  });
 
 export interface PasswordValidationResult {
   ok: boolean;
@@ -48,13 +60,8 @@ export interface PasswordValidationResult {
 
 export function validatePasswordPolicy(
   password: string,
-  minLength: number = MIN_PASSWORD_LENGTH,
 ): PasswordValidationResult {
-  const schema =
-    minLength === MIN_PASSWORD_LENGTH
-      ? passwordPolicySchema
-      : buildPasswordPolicySchema(minLength);
-  const result = schema.safeParse(password);
+  const result = passwordPolicySchema.safeParse(password);
 
   if (result.success) {
     return { ok: true, errors: [] };

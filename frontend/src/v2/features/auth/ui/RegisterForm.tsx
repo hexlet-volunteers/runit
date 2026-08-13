@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   Alert,
   Anchor,
+  Box,
   Button,
   Checkbox,
   PasswordInput,
@@ -12,7 +13,14 @@ import {
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { Link } from 'react-router';
-import { useAuthModal, validateEmail, validatePassword, validateUsername, titles } from '..';
+import {
+  PasswordRequirements,
+  titles,
+  useAuthModal,
+  validateEmail,
+  validatePassword,
+  validateUsername,
+} from '..';
 import { useSession } from '../../../entities/user';
 import FormHeader from './FormHeader';
 
@@ -85,12 +93,17 @@ export default function RegisterForm() {
           autoComplete="email"
           {...form.getInputProps('email')}
         />
-        <PasswordInput
-          label="Пароль"
-          placeholder="Минимум 8 символов"
-          autoComplete="new-password"
-          {...form.getInputProps('password')}
-        />
+        <Box>
+          <PasswordInput
+            label="Пароль"
+            placeholder="Придумайте пароль"
+            autoComplete="new-password"
+            {...form.getInputProps('password')}
+          />
+          {/* Требования видны сразу и отмечаются по ходу ввода, а не только
+              в ошибке после отправки (#621). */}
+          <PasswordRequirements value={form.values.password} />
+        </Box>
         {/*
           Отдельная отметка именно на согласие: закон требует, чтобы согласие
           было оформлено отдельно от иных документов, которые подписывает

@@ -10,7 +10,7 @@ describe('validatePasswordPolicy', () => {
     const result = validatePasswordPolicy('Ab1!xy');
 
     expect(result.ok).toBe(false);
-    expect(result.errors.some((e) => e.includes('at least 8 characters'))).toBe(
+    expect(result.errors.some((e) => e.includes('не короче 8 символов'))).toBe(
       true,
     );
   });
@@ -20,7 +20,7 @@ describe('validatePasswordPolicy', () => {
 
     expect(result.ok).toBe(false);
     expect(
-      result.errors.some((e) => e.includes('at least 3 of the following')),
+      result.errors.some((e) => e.includes('минимум трёх видов')),
     ).toBe(true);
   });
 
@@ -28,7 +28,9 @@ describe('validatePasswordPolicy', () => {
     const result = validatePasswordPolicy('password');
 
     expect(result.ok).toBe(false);
-    expect(result.errors.some((e) => e.includes('too common'))).toBe(true);
+    expect(
+      result.errors.some((e) => e.includes('слишком распространён')),
+    ).toBe(true);
   });
 
   test('собирает все нарушения одновременно', () => {
@@ -45,13 +47,14 @@ describe('validatePasswordPolicy', () => {
     });
   });
 
-  test('учитывает переданную минимальную длину (для секретов)', () => {
-    const result = validatePasswordPolicy('Str0ng!Pass', 32);
+  test('сообщения на русском — они попадают в интерфейс как есть', () => {
+    const result = validatePasswordPolicy('pass');
 
-    expect(result.ok).toBe(false);
-    expect(
-      result.errors.some((e) => e.includes('at least 32 characters')),
-    ).toBe(true);
+    // Английский текст в форме на русском языке читается как сбой, а не как
+    // подсказка, что делать с паролем (#621).
+    for (const message of result.errors) {
+      expect(message).toMatch(/[а-яё]/i);
+    }
   });
 });
 

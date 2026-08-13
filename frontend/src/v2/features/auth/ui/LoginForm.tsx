@@ -11,7 +11,7 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useAuthModal, validateEmail, validatePassword, titles } from '..';
+import { titles, useAuthModal, validateEmail } from '..';
 import { useSession } from '../../../entities/user';
 import FormHeader from './FormHeader';
 
@@ -25,7 +25,13 @@ export default function LoginForm() {
     initialValues: { email: '', password: '' },
     validate: {
       email: validateEmail,
-      password: validatePassword,
+      /**
+       * На входе проверяется только непустота. Политика сложности здесь не
+       * применяется намеренно: пароль пользователя уже существует, и требование
+       * «минимум три вида символов» не давало бы даже попытаться войти тем, у
+       * кого пароль был задан до появления политики.
+       */
+      password: (value: string) => (value.length > 0 ? null : 'Введите пароль'),
     },
   });
 
