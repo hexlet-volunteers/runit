@@ -64,7 +64,6 @@ export const createSnippetSchema = z.object({
     'html',
     'css',
   ]),
-  userId: z.number().positive(),
   visibility: visibilitySchema.optional(),
 });
 
@@ -89,6 +88,13 @@ export const getPublicSnippetsByUsernameSchema = z.object({
 
 export type CreateSnippetInput = z.infer<typeof createSnippetSchema>;
 export type UpdateSnippetInput = z.infer<typeof updateSnippetSchema>;
+
+/**
+ * userId нет в createSnippetSchema намеренно: владелец берётся из сессии
+ * (ctx.user.id), а не из тела запроса. Пока поле принималось от клиента, любой
+ * мог создать сниппет от имени чужого аккаунта (#792).
+ */
+export type CreateSnippetData = CreateSnippetInput & { userId: number };
 
 async function verifyUserExists(userId: number): Promise<void> {
   const [user] = await db
@@ -123,10 +129,10 @@ async function generateSlug(userId: number): Promise<string> {
  * Сниппет по id — путь редактора, поэтому приватные здесь НЕ отсекаются:
  * владелец обязан открывать свой приватный сниппет.
  *
- * Отличить владельца от постороннего пока нечем — авторизации в проекте нет
- * (#639), а процедура публичная (#792). До появления прав по id можно прочитать
- * чужой приватный сниппет, перебрав числа. Просмотровые пути (короткая ссылка,
- * username+slug, профиль) приватные уже не отдают — см. ниже.
+ * Владельца от постороннего отличает вызывающий: снаружи это
+ * snippets.getSnippetById, где приватный сниппет отдаётся только владельцу или
+ * админу (#792, #346). Внутри БД-слоя фильтра нет намеренно — иначе владелец
+ * не сможет открыть свой черновик.
  */
 export async function getSnippetById(id: number): Promise<Snippet | undefined> {
   try {
@@ -154,6 +160,7 @@ export async function getSnippetById(id: number): Promise<Snippet | undefined> {
 export async function getSnippetByUsernameSlug(
   username: string,
   slug: string,
+  viewerId?: number,
 ): Promise<Snippet | undefined> {
   try {
     const [result] = await db
@@ -164,7 +171,11 @@ export async function getSnippetByUsernameSlug(
       .limit(1);
 
     const snippet = result?.snippets;
-    if (!snippet || snippet.visibility === 'private') return undefined;
+    if (!snippet) return undefined;
+    // Владелец видит и свой приватный: этот путь открывает редактор.
+    if (snippet.visibility === 'private' && snippet.userId !== viewerId) {
+      return undefined;
+    }
     return snippet;
   } catch (error) {
     console.error('Error in getSnippetByUsernameSlug:', error);
@@ -202,10 +213,9 @@ export async function getPublicSnippetsByUsername(
 /**
  * Все сниппеты в БД, включая приватные.
  *
- * Служебная выборка: показывать её постороннему нельзя. Ограничить выдачу
- * владельцем пока нечем (нет авторизации — #639, процедура публичная — #792),
- * поэтому для публичных мест есть getPublicSnippetsByUsername, а этот путь
- * должен уйти под права вместе с #792.
+ * Служебная выборка: снаружи доступна только админам
+ * (snippets.getAllSnippets). Дашборд пользователя ходит в
+ * getSnippetsByUserId, публичный профиль — в getPublicSnippetsByUsername.
  */
 export async function getAllSnippets(): Promise<Snippet[]> {
   try {
@@ -213,6 +223,42 @@ export async function getAllSnippets(): Promise<Snippet[]> {
   } catch (error) {
     console.error('Error in getAllSnippets:', error);
     throw new Error('Failed to get all snippets');
+  }
+}
+
+/** Свои сниппеты, включая приватные — выборка дашборда. */
+export async function getSnippetsByUserId(userId: number): Promise<Snippet[]> {
+  try {
+    return await db
+      .select()
+      .from(snippets)
+      .where(eq(snippets.userId, userId))
+      .orderBy(desc(snippets.createdAt));
+  } catch (error) {
+    console.error('Error in getSnippetsByUserId:', error);
+    throw new Error('Failed to get user snippets');
+  }
+}
+
+/**
+ * Владелец сниппета — для проверки прав перед изменением. Отдельный запрос
+ * вместо полного getSnippetById: проверке нужен только userId, а тащить код
+ * сниппета ради неё незачем.
+ */
+export async function getSnippetOwnerId(
+  id: number,
+): Promise<number | null | undefined> {
+  try {
+    const [row] = await db
+      .select({ userId: snippets.userId })
+      .from(snippets)
+      .where(eq(snippets.id, id))
+      .limit(1);
+
+    return row ? row.userId : undefined;
+  } catch (error) {
+    console.error('Error in getSnippetOwnerId:', error);
+    throw new Error('Failed to get snippet owner');
   }
 }
 
@@ -289,7 +335,7 @@ export async function setSnippetVisibility(
 }
 
 export async function createSnippet(
-  snippetData: CreateSnippetInput,
+  snippetData: CreateSnippetData,
 ): Promise<Snippet> {
   try {
     await verifyUserExists(snippetData.userId);

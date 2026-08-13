@@ -1,6 +1,13 @@
 import { TRPCError } from '@trpc/server';
 import { hashPassword, validatePasswordPolicy } from '../auth/password';
-import { adminProcedure, publicProcedure, router } from '../context';
+import { toPublicProfile, toPublicUser } from '../auth/publicUser';
+import {
+  type AuthenticatedUser,
+  adminProcedure,
+  protectedProcedure,
+  publicProcedure,
+  router,
+} from '../context';
 
 import {
   createUser,
@@ -24,39 +31,66 @@ import {
   updateUserSettingsSchema,
 } from '../db/users';
 
+/**
+ * Доступ к данным конкретного пользователя: только он сам либо админ (#792).
+ *
+ * Без этой проверки процедуры вида «отдай/измени пользователя по id»
+ * равносильны захвату любого аккаунта: id — последовательное число, и его не
+ * надо угадывать.
+ */
+function assertSelfOrAdmin(viewer: AuthenticatedUser, targetId: number): void {
+  if (viewer.id === targetId || viewer.isAdmin) {
+    return;
+  }
+
+  throw new TRPCError({ code: 'FORBIDDEN' });
+}
+
 export const userRouter = router({
+  /**
+   * Публичная карточка пользователя (подпись автора у сниппета, страница
+   * профиля). Отдаёт только id/username/createdAt — см. toPublicProfile.
+   * Свои полные данные пользователь получает через auth.me.
+   */
   getUserById: publicProcedure
     .input(getUserByIdSchema)
     .query(async ({ input }) => {
       const user = await getUserById(input);
       if (!user) {
-        throw new Error('User not found');
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
       }
-      return user;
+      return toPublicProfile(user);
     }),
 
-  getUserByEmail: publicProcedure
-    .input(getUserByEmailSchema)
-    .query(async ({ input }) => {
-      const user = await getUserByEmail(input);
-      if (!user) {
-        throw new Error('User not found');
-      }
-      return user;
-    }),
-
+  /** См. getUserById — та же публичная проекция, поиск по имени. */
   getUserByUsername: publicProcedure
     .input(getUserByUsernameSchema)
     .query(async ({ input }) => {
       const user = await getUserByUsername(input);
       if (!user) {
-        throw new Error('User not found');
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
       }
-      return user;
+      return toPublicProfile(user);
     }),
 
-  // Легаси-маршрут, отдающий всех пользователей (включая password-хеши) —
-  // ограничен админами до переезда на profile-агрегаты (#717/#718).
+  /**
+   * Поиск по email — только для админов. Публичный маршрут здесь работал как
+   * оракул «есть ли такой email в базе»: по нему проверяют утёкшие адреса и
+   * подбирают цели для брутфорса. Вход выдаёт одинаковую ошибку для неверного
+   * email и неверного пароля именно чтобы такого оракула не было (auth.login).
+   */
+  getUserByEmail: adminProcedure
+    .input(getUserByEmailSchema)
+    .query(async ({ input }) => {
+      const user = await getUserByEmail(input);
+      if (!user) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+      }
+      return toPublicUser(user);
+    }),
+
+  // Легаси-маршрут, отдающий всех пользователей — ограничен админами до
+  // переезда на profile-агрегаты (#717/#718).
   getAllUsers: adminProcedure.query(async () => {
     return await getAllUsers();
   }),
@@ -80,11 +114,22 @@ export const userRouter = router({
       return await createUser({ ...input, password: passwordHash });
     }),
 
-  updateUser: publicProcedure
+  /**
+   * Изменение своего профиля (имя, email). Пароль сюда не входит — он меняется
+   * через auth.changePassword, где проверяется текущий пароль.
+   */
+  updateUser: protectedProcedure
     .input(updateUserSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { id, ...updates } = input;
-      return await updateUser(id, updates);
+      assertSelfOrAdmin(ctx.user, id);
+
+      const user = await updateUser(id, updates);
+      if (!user) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+      }
+
+      return user;
     }),
 
   // isAdmin исключён из updateUserSchema намеренно — смена роли идёт только
@@ -107,34 +152,49 @@ export const userRouter = router({
       return user;
     }),
 
-  deleteUser: publicProcedure
+  /**
+   * Удаление аккаунта — своего или, для админа, любого. Каскад по сниппетам,
+   * настройкам и токенам обеспечен onDelete: 'cascade' в схеме (#834).
+   */
+  deleteUser: protectedProcedure
     .input(deleteUserSchema)
-    .mutation(async ({ input }) => {
-      const success = await deleteUser(input.id);
+    .mutation(async ({ input, ctx }) => {
+      assertSelfOrAdmin(ctx.user, input.id);
 
+      const success = await deleteUser(input.id);
       if (!success) {
-        throw new Error('User not found');
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
       }
 
-      return { success: true, id: input };
+      return { success: true, id: input.id };
     }),
 
-  // получить настройки пользователя - profile?
-  getUserSettings: publicProcedure
+  getUserSettings: protectedProcedure
     .input(getUserByIdSchema)
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      assertSelfOrAdmin(ctx.user, input);
+
       return await getUserSettings(input);
     }),
 
-  updateUserSettings: publicProcedure
+  updateUserSettings: protectedProcedure
     .input(updateUserSettingsSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { userId, ...settings } = input;
+      assertSelfOrAdmin(ctx.user, userId);
+
       return await updateUserSettings(userId, settings);
     }),
 
-  // или это - profile? настройки И сниппеты
-  getData: publicProcedure.input(getUserByIdSchema).query(async ({ input }) => {
-    return await getData({ id: input });
-  }),
+  /**
+   * Настройки вместе со сниппетами — включая приватные, поэтому только свои.
+   * Публичный список сниппетов профиля живёт в snippets.getPublicSnippetsByUsername.
+   */
+  getData: protectedProcedure
+    .input(getUserByIdSchema)
+    .query(async ({ input, ctx }) => {
+      assertSelfOrAdmin(ctx.user, input);
+
+      return await getData({ id: input });
+    }),
 });

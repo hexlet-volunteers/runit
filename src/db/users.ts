@@ -58,13 +58,21 @@ export const createUserSchema = z.object({
   recoverHash: z.string().max(50).optional(),
 });
 
+/**
+ * Обновление профиля. Ни password, ни recoverHash здесь нет намеренно:
+ *  - пароль меняется только через auth.changePassword — там проверяется текущий
+ *    пароль, политика и повторное использование, и результат хешируется. Пока
+ *    поле было в этой схеме, любое обновление профиля могло записать пароль
+ *    в открытом виде (#791);
+ *  - recoverHash — внутреннее поле восстановления доступа, клиент не должен
+ *    иметь возможности задать его сам (иначе выпишет себе токен сброса).
+ *
+ * isAdmin тоже исключён — роль меняется только через admin-only setUserRole.
+ */
 export const updateUserSchema = z.object({
   id: z.number(),
   username: z.string().min(3).max(20).optional(),
   email: emailSchema.optional(),
-  password: z.string().min(6).max(60).optional(),
-  recoverHash: z.string().max(50).optional(),
-  // isAdmin is intentionally excluded — role changes require a separate admin-only procedure (add when auth is implemented)
 });
 
 export const userSettingsSchema = z.object({
@@ -212,6 +220,7 @@ export async function updateUser(
   try {
     const updateData: Partial<NewUser> = {
       ...updates,
+      updatedAt: new Date(),
     };
 
     const result = await db
@@ -236,6 +245,27 @@ export async function updateUser(
       }
     }
     throw new Error('Failed to update user');
+  }
+}
+
+/**
+ * Записывает уже готовый bcrypt-хеш. Отделено от updateUser сознательно:
+ * там принимаются данные прямо из ввода клиента, здесь — значение, которое
+ * обязано быть посчитано hashPassword(). Единственный вызывающий —
+ * auth.changePassword.
+ */
+export async function updateUserPasswordHash(
+  id: number,
+  passwordHash: string,
+): Promise<void> {
+  try {
+    await db
+      .update(users)
+      .set({ password: passwordHash, updatedAt: new Date() })
+      .where(eq(users.id, id));
+  } catch (error) {
+    console.error('Error updating password:', error);
+    throw new Error('Failed to update password');
   }
 }
 
