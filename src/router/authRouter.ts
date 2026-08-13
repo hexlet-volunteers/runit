@@ -12,6 +12,8 @@ import {
 } from '../auth/jwt';
 import {
   hashPassword,
+  isPasswordReused,
+  PASSWORD_HISTORY_LIMIT,
   validatePasswordPolicy,
   verifyPassword,
 } from '../auth/password';
@@ -20,12 +22,14 @@ import { protectedProcedure, publicProcedure, router } from '../context';
 import {
   addPasswordHistoryEntry,
   findActiveRefreshToken,
+  getRecentPasswordHashes,
   getUserByEmailWithCredentials,
   getUserByIdWithCredentials,
+  revokeAllRefreshTokensForUser,
   revokeRefreshToken,
   storeRefreshToken,
 } from '../db/auth';
-import { createUser } from '../db/users';
+import { createUser, updateUserPasswordHash } from '../db/users';
 
 const registerInputSchema = z.object({
   username: z.string().min(3).max(20),
@@ -36,6 +40,11 @@ const registerInputSchema = z.object({
 const loginInputSchema = z.object({
   email: emailSchema,
   password: z.string(),
+});
+
+const changePasswordInputSchema = z.object({
+  currentPassword: z.string(),
+  newPassword: z.string(),
 });
 
 async function issueSession(
@@ -81,17 +90,38 @@ export const authRouter = router({
       if (existingByEmail) {
         throw new TRPCError({
           code: 'CONFLICT',
-          message: 'Email already exists',
+          message: 'Этот email уже занят',
         });
       }
 
       const passwordHash = await hashPassword(input.password);
 
-      const user = await createUser({
-        username: input.username,
-        email: input.email,
-        password: passwordHash,
-      });
+      let user: Awaited<ReturnType<typeof createUser>>;
+      try {
+        user = await createUser({
+          username: input.username,
+          email: input.email,
+          password: passwordHash,
+        });
+      } catch (error) {
+        /**
+         * Занятое имя ловится здесь, а не отдельным запросом «есть ли такой
+         * username»: между проверкой и вставкой успевает вклиниться другая
+         * регистрация, а UNIQUE в схеме — единственная надёжная защита.
+         * Без этой ветки конфликт уезжал наружу как 500, и форма показывала
+         * пользователю «внутренняя ошибка» вместо «имя занято».
+         */
+        const message = error instanceof Error ? error.message : '';
+        if (message.includes('already exists')) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: message.includes('Username')
+              ? 'Это имя уже занято'
+              : 'Этот email уже занят',
+          });
+        }
+        throw error;
+      }
 
       await addPasswordHistoryEntry(user.id, passwordHash);
       const csrfToken = await issueSession(ctx.res, user);
@@ -104,7 +134,7 @@ export const authRouter = router({
     .mutation(async ({ input, ctx }) => {
       const genericError = new TRPCError({
         code: 'UNAUTHORIZED',
-        message: 'Wrong email or password',
+        message: 'Неверный email или пароль',
       });
 
       const user = await getUserByEmailWithCredentials(input.email);
@@ -163,6 +193,83 @@ export const authRouter = router({
     const csrfToken = await issueSession(ctx.res, user);
 
     return { success: true, csrfToken };
+  }),
+
+  /**
+   * Смена пароля из настроек (#770).
+   *
+   * Текущий пароль спрашиваем даже при живой сессии: иначе угнанная вкладка
+   * или XSS дают злоумышленнику сменить пароль и отобрать аккаунт целиком.
+   * После смены все сессии, кроме текущей, гасим — старый пароль перестаёт
+   * давать доступ, в том числе тому, кто уже вошёл с ним раньше.
+   */
+  changePassword: protectedProcedure
+    .input(changePasswordInputSchema)
+    .mutation(async ({ input, ctx }) => {
+      const user = await getUserByIdWithCredentials(ctx.user.id);
+      if (!user) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' });
+      }
+
+      const currentMatches = await verifyPassword(
+        input.currentPassword,
+        user.password,
+      );
+      if (!currentMatches) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Текущий пароль неверен',
+        });
+      }
+
+      const passwordCheck = validatePasswordPolicy(input.newPassword);
+      if (!passwordCheck.ok) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: passwordCheck.errors.join(', '),
+        });
+      }
+
+      const previousHashes = await getRecentPasswordHashes(
+        ctx.user.id,
+        PASSWORD_HISTORY_LIMIT,
+      );
+      if (await isPasswordReused(input.newPassword, previousHashes)) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Этот пароль уже использовался — выберите другой',
+        });
+      }
+
+      const passwordHash = await hashPassword(input.newPassword);
+      await updateUserPasswordHash(ctx.user.id, passwordHash);
+      await addPasswordHistoryEntry(ctx.user.id, passwordHash);
+
+      // Сначала гасим всё, затем выдаём новую сессию — иначе свежий токен
+      // текущего клиента попал бы под тот же сброс.
+      await revokeAllRefreshTokensForUser(ctx.user.id);
+      const csrfToken = await issueSession(ctx.res, user);
+
+      return { success: true, csrfToken };
+    }),
+
+  /**
+   * Свежий CSRF-токен для уже существующей сессии.
+   *
+   * Нужен из-за перезагрузки страницы: сессия живёт в cookie и переживает
+   * перезагрузку, а токен — нет. Он намеренно хранится в памяти вкладки (а не в
+   * localStorage, иначе его прочитал бы любой скрипт), и после F5 у клиента
+   * оказывалась рабочая сессия без токена — первая же мутация получала 403.
+   *
+   * Вывести токен из cookie на клиенте нельзя: в cookie лежит секрет, а токен
+   * — производная от него, и считает её только сервер.
+   *
+   * Это query (GET), поэтому сама она под проверку CSRF не попадает; выдавать
+   * токен безопасно — прочитать ответ с чужого origin мешает CORS, а без
+   * cookie сессии токен ничего не открывает.
+   */
+  csrfToken: protectedProcedure.query(async ({ ctx }) => {
+    return { csrfToken: await ctx.res.generateCsrf() };
   }),
 
   me: protectedProcedure.query(async ({ ctx }) => {

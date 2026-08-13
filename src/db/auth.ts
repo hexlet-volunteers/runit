@@ -81,6 +81,22 @@ export async function revokeRefreshToken(token: string): Promise<void> {
     .where(eq(refreshTokens.tokenHash, hashToken(token)));
 }
 
+/**
+ * Гасит все живые refresh-токены пользователя — то есть выкидывает его со всех
+ * устройств. Нужно при смене пароля: смысл смены в том, что тот, кто знал
+ * старый пароль, доступ теряет, а без этого его сессия живёт ещё 30 дней.
+ */
+export async function revokeAllRefreshTokensForUser(
+  userId: number,
+): Promise<void> {
+  await db
+    .update(refreshTokens)
+    .set({ revokedAt: new Date() })
+    .where(
+      and(eq(refreshTokens.userId, userId), isNull(refreshTokens.revokedAt)),
+    );
+}
+
 export async function getRecentPasswordHashes(
   userId: number,
   limit: number,
