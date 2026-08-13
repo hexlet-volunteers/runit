@@ -1,0 +1,96 @@
+name: Публикация образов
+
+# Собирает и публикует образы бэкенда и фронтенда в GitHub Container Registry.
+#
+# Зачем реестр отдельным шагом от деплоя: образ, который поедет на боевой стенд,
+# должен быть тем самым, что прошёл проверки, а не собранным заново на сервере.
+# Сборка на хосте требует там тулчейна (better-sqlite3 компилируется node-gyp),
+# занимает минуты и может дать другой результат при плавающих зависимостях.
+#
+# GHCR выбран потому, что не требует ни отдельного аккаунта, ни секретов:
+# авторизация идёт встроенным GITHUB_TOKEN. Хостинг при этом любой — образы из
+# GHCR тянет и российский провайдер, и свой сервер. Если позже понадобится
+# реестр площадки, добавится второй тег в этом же шаге.
+#
+# Теги:
+#   main            → edge      (последнее состояние main)
+#   v1.2.3          → 1.2.3, 1.2, latest
+#   ручной запуск   → edge
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - v*
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  publish:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    # Публикуем только из основного репозитория: форк не должен писать в его реестр.
+    if: github.repository == 'hexlet-volunteers/runit'
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      # Один упавший образ не должен отменять сборку второго: понятнее видеть,
+      # который из двух сломан.
+      fail-fast: false
+      matrix:
+        include:
+          - name: Бэкенд
+            image: runit-app
+            dockerfile: Dockerfile
+          - name: Фронтенд
+            image: runit-web
+            # Контекст — корень репозитория: фронту нужны типы из types/.
+            dockerfile: frontend/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Вход в реестр
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Теги и метки
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=edge,branch=main
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+          # latest ставим только на тег версии (строка выше): иначе он уезжал бы
+          # на каждый коммит в main, и «latest» перестал бы означать выпущенную
+          # версию.
+          flavor: latest=false
+          labels: |
+            org.opencontainers.image.title=${{ matrix.image }}
+
+      - name: Сборка и публикация
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Кэш слоёв в самом реестре: без него каждая сборка заново
+          # компилирует better-sqlite3 через node-gyp.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Опубликованные теги
+        run: echo "${{ steps.meta.outputs.tags }}"

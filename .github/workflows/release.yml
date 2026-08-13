@@ -1,34 +1,46 @@
-name: On Release
+name: Релиз
+
+# Выпуск версии по тегу vX.Y.Z.
+#
+# Раньше здесь стояла заглушка с `echo «Deployment is temporarily disabled»`.
+# Она была вредна дважды: изображала зелёный деплой, которого не существует,
+# и условие `if: github.repository == 'hexlet-rus/runit'` не совпадало с
+# текущим репозиторием — то есть job не запускался вообще.
+#
+# Сейчас на тег происходит два независимых действия:
+#   * publish.yml собирает и публикует образы бэкенда и фронтенда в GHCR;
+#   * этот workflow создаёт запись в GitHub Releases.
+#
+# Раскатки на стенд здесь пока нет намеренно: она появится вместе с
+# docker-compose.prod.yml после переезда на PostgreSQL (#895) — раскатывать
+# сборку на SQLite на боевой стенд смысла нет.
 
 on:
   push:
     tags:
       - v*
+  workflow_dispatch:
 
 jobs:
-  build:
-    if: github.repository == 'hexlet-rus/runit'
+  release:
+    name: Запись в GitHub Releases
     runs-on: ubuntu-latest
+    if: github.repository == 'hexlet-volunteers/runit'
+    permissions:
+      contents: write
     steps:
-      - name: Deployment stub
+      - uses: actions/checkout@v4
+        with:
+          # Полная история нужна для автоматических примечаний к релизу.
+          fetch-depth: 0
+
+      - name: Создать релиз
+        # --verify-tag: без него команда создала бы релиз на несуществующий тег
+        # при ручном запуске из ветки.
         run: |
-          echo "🚧 Deployment is temporarily disabled"
-          echo "This is a stub to prevent job failure"
-          echo "Tag: ${{ github.ref_name }}"
-          echo "Repository: ${{ github.repository }}"
-
-# jobs:
-
-#   build:
-#     if: github.repository == 'hexlet-rus/runit'
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v4
-#       - name: Install Heroku CLI
-#         run: |
-#           curl https://cli-assets.heroku.com/install.sh | sh
-#       - uses: akhileshns/heroku-deploy@v3.14.15 # This is the action
-#         with:
-#           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-#           heroku_app_name: hexlet-editor
-#           heroku_email: ${{secrets.HEROKU_EMAIL}}
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            --verify-tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
