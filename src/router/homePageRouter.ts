@@ -1,5 +1,6 @@
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod/v4';
-import { publicProcedure, router } from '../context';
+import { adminProcedure, publicProcedure, router } from '../context';
 import {
   createSection,
   createSectionSchema,
@@ -9,6 +10,20 @@ import {
   updateSectionSchema,
 } from '../db/homePage';
 
+/**
+ * Секции главной страницы.
+ *
+ * Мутации назывались admin*, но были объявлены publicProcedure с TODO «добавить
+ * проверку прав» — то есть содержимое лендинга мог менять любой посетитель.
+ * Это остаток #792: тогда закрыли процедуры пользователей и сниппетов, а этот
+ * роутер пропустили, потому что фронтенд его не вызывает.
+ *
+ * Чтение остаётся публичным: лендинг открыт всем.
+ *
+ * Замечание на будущее: интерфейс эти данные не использует — главная страница
+ * собрана в React статически. Либо появится редактор секций, либо роутер вместе
+ * с таблицей sections стоит удалить; решать это отдельно от закрытия дыры.
+ */
 export const homePageRouter = router({
   getHomePageData: publicProcedure.query(async () => {
     const components = await getHomePageData();
@@ -22,24 +37,23 @@ export const homePageRouter = router({
     .query(async ({ input }) => {
       const component = await getSectionById(input);
       if (!component) {
-        throw new Error('Component not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Component not found',
+        });
       }
       return component;
     }),
 
-  adminCreateComponent: publicProcedure
+  adminCreateComponent: adminProcedure
     .input(createSectionSchema)
     .mutation(async ({ input }) => {
-      // TODO: Добавить проверку аутентификации для проверки прав админа
-      const component = await createSection(input);
-      return component;
+      return await createSection(input);
     }),
 
-  adminUpdateComponent: publicProcedure
+  adminUpdateComponent: adminProcedure
     .input(updateSectionSchema)
     .mutation(async ({ input }) => {
-      // TODO: Добавить проверку аутентификации для проверки прав админа
-      const component = await updateSection(input);
-      return component;
+      return await updateSection(input);
     }),
 });

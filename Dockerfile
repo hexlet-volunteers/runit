@@ -24,13 +24,12 @@ COPY package.json package-lock.json ./
 # npm ci нужен полный (в т.ч. dev): tsc и drizzle-kit — devDependencies.
 RUN npm ci
 
-COPY tsconfig.json drizzle.config.ts ./
+COPY tsconfig.json ./
 COPY src ./src
 COPY bin ./bin
 
-# Сборка: генерация миграций из схемы, компиляция и добавление расширений в
-# ESM-импорты (bin/fix-esm-imports.mjs — без него node dist/server.js падает).
-# Прогон миграций — при старте контейнера, в build-стадии боевой БД нет.
+# Сборка: компиляция и добавление расширений в ESM-импорты
+# (bin/fix-esm-imports.mjs — без него node dist/server.js падает).
 RUN npm run build
 
 # ---------- Рантайм ----------
@@ -42,7 +41,11 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/drizzle ./drizzle
+# Миграции берутся из репозитория, а не из стадии сборки: они версионируются
+# вместе с кодом. Раньше их генерировал `npm run build`, и в образ попадала
+# свежая «нулевая» миграция — на втором деплое журнал в боевой БД считал бы её
+# уже применённой, и изменения схемы молча не доехали бы.
+COPY drizzle ./drizzle
 
 ENV PORT=3001
 ENV HOST=0.0.0.0

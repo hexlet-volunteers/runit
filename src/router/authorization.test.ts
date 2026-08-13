@@ -20,7 +20,7 @@ process.env.DATABASE_URL = await createTestDatabase(TEST_DATABASE);
 const { db, runMigrations, closeDbConnection } = await import(
   '../db/connection'
 );
-const { users, snippets } = await import('../db/schema/schema');
+const { users, snippets, userSettings } = await import('../db/schema/schema');
 const { appRouter } = await import('./index');
 const { hashPassword, verifyPassword } = await import('../auth/password');
 const { eq } = await import('drizzle-orm');
@@ -317,6 +317,51 @@ describe('пользователи', () => {
     await expect(
       stranger.users.updateUserSettings({ userId: ownerId, theme: 'dark' }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  /**
+   * Раньше сохранение настроек было чистым UPDATE: у пользователя, который не
+   * открывал настройки, строки не было, UPDATE менял ноль записей и процедура
+   * отвечала ошибкой. То есть первое сохранение настроек падало всегда.
+   */
+  test('настройки сохраняются с первого раза, без предварительного чтения', async () => {
+    const saved = await stranger.users.updateUserSettings({
+      userId: strangerId,
+      theme: 'dark',
+    });
+
+    expect(saved.theme).toBe('dark');
+    expect(saved.userId).toBe(strangerId);
+  });
+
+  test('частичное сохранение не сбрасывает остальные настройки', async () => {
+    await stranger.users.updateUserSettings({
+      userId: strangerId,
+      language: 'en',
+    });
+
+    const settings = await stranger.users.getUserSettings(strangerId);
+    expect(settings.language).toBe('en');
+    // Тема была задана предыдущим тестом и не должна вернуться к значению
+    // по умолчанию.
+    expect(settings.theme).toBe('dark');
+  });
+
+  test('у пользователя не появляется вторая строка настроек', async () => {
+    // Одновременные обращения — две открытые вкладки: раньше оба видели пустой
+    // результат и оба вставляли строку.
+    await Promise.all([
+      owner.users.getUserSettings(ownerId),
+      owner.users.getUserSettings(ownerId),
+      owner.users.updateUserSettings({ userId: ownerId, theme: 'light' }),
+    ]);
+
+    const rows = await db
+      .select({ id: userSettings.settingsId })
+      .from(userSettings)
+      .where(eq(userSettings.userId, ownerId));
+
+    expect(rows).toHaveLength(1);
   });
 
   test('роль не меняется через обновление профиля', async () => {

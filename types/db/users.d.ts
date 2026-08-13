@@ -8,16 +8,6 @@ export type SafeUser = {
     createdAt: Date;
     updatedAt: Date;
 };
-export declare const userSchema: z.ZodObject<{
-    id: z.ZodNumber;
-    username: z.ZodString;
-    email: z.ZodPipe<z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>, z.ZodString>;
-    password: z.ZodString;
-    isAdmin: z.ZodDefault<z.ZodBoolean>;
-    recoverHash: z.ZodNullable<z.ZodString>;
-    createdAt: z.ZodDate;
-    updatedAt: z.ZodDate;
-}, z.core.$strip>;
 export declare const createUserSchema: z.ZodObject<{
     username: z.ZodString;
     email: z.ZodPipe<z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>, z.ZodString>;
@@ -40,41 +30,6 @@ export declare const updateUserSchema: z.ZodObject<{
     id: z.ZodNumber;
     username: z.ZodOptional<z.ZodString>;
     email: z.ZodOptional<z.ZodPipe<z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>, z.ZodString>>;
-}, z.core.$strip>;
-export declare const userSettingsSchema: z.ZodObject<{
-    id: z.ZodNumber;
-    userId: z.ZodNumber;
-    theme: z.ZodDefault<z.ZodEnum<{
-        system: "system";
-        light: "light";
-        dark: "dark";
-    }>>;
-    language: z.ZodDefault<z.ZodEnum<{
-        ru: "ru";
-        en: "en";
-        es: "es";
-        fr: "fr";
-        de: "de";
-    }>>;
-    avatarBase64: z.ZodNullable<z.ZodString>;
-    createdAt: z.ZodDate;
-    updatedAt: z.ZodDate;
-}, z.core.$strip>;
-export declare const createUserSettingsSchema: z.ZodObject<{
-    userId: z.ZodNumber;
-    theme: z.ZodOptional<z.ZodDefault<z.ZodEnum<{
-        system: "system";
-        light: "light";
-        dark: "dark";
-    }>>>;
-    language: z.ZodOptional<z.ZodDefault<z.ZodEnum<{
-        ru: "ru";
-        en: "en";
-        es: "es";
-        fr: "fr";
-        de: "de";
-    }>>>;
-    avatarBase64: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, z.core.$strip>;
 export declare const updateUserSettingsSchema: z.ZodObject<{
     userId: z.ZodNumber;
@@ -135,8 +90,30 @@ export declare function setUserRole(id: number, isAdmin: boolean): Promise<SafeU
  * отвечало бы «не найден».
  */
 export declare function deleteUser(id: number): Promise<boolean>;
-export declare function updateRecoverHash(email: string, recoverHash: string | null): Promise<boolean>;
+/**
+ * Настройки пользователя; при первом обращении создаются со значениями по
+ * умолчанию.
+ *
+ * Вставка сделана идемпотентной (`onConflictDoNothing` + повторное чтение), а не
+ * «проверил и вставил»: два одновременных запроса — например, две открытые
+ * вкладки — оба видели пустой результат и оба пытались вставить строку. Раньше
+ * это давало вторую строку настроек, теперь бы упиралось в уникальность
+ * user_id и роняло запрос.
+ */
 export declare function getUserSettings(userId: number): Promise<UserSettings>;
+/**
+ * Сохраняет настройки, создавая их при первом обращении.
+ *
+ * Раньше это был просто UPDATE, и при отсутствии строки он менял ноль записей,
+ * после чего функция бросала «Failed to update user settings». Строка же
+ * появлялась только как побочный эффект чтения (getUserSettings), поэтому
+ * первое сохранение настроек у пользователя, который их ещё не открывал,
+ * гарантированно падало. Ошибка ждала того, кто подключит форму настроек
+ * (#832/#885).
+ *
+ * Upsert опирается на уникальность user_id — она добавлена в схему тем же
+ * изменением.
+ */
 export declare function updateUserSettings(id: number, updateData: Omit<UpdateUserSettingsInput, 'userId'>): Promise<UserSettings>;
 export declare function getData({ id }: {
     id: number;

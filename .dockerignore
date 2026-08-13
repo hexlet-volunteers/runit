@@ -3,7 +3,8 @@ frontend/node_modules
 build
 dist
 frontend/dist
-drizzle
+# drizzle/ намеренно НЕ исключён: миграции версионируются и копируются в образ
+# из репозитория (см. Dockerfile).
 database.sqlite
 *.sqlite
 *.sqlite-*
@@ -11,9 +12,6 @@ database.sqlite
 .github
 .claude
 docs
-tests
-test-results
-playwright-report
 results.json
 *.log
 .env

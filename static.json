@@ -1,7 +1,0 @@
-{
-  "root": "frontend/dist/",
-  "routes": {
-    "/**": "index.html"
-  },
-  "https_only": true
-}

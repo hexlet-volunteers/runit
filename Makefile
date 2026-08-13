@@ -17,18 +17,20 @@ lint-backend:
 lint-fix-backend:
 	npm run lint:fix
 
-# Живые тесты: юниты раннера. Набор e2e в tests/ смотрел на удалённый
-# легаси-интерфейс, поэтому его переписывание — это #177.
+# Юниты раннера и тесты авторизации/политики паролей. Последним нужна
+# запущенная PostgreSQL — поднимается через `docker compose up -d db`.
 test:
-	npm run test:runner
+	npm test
 
-db-setup:
-	npm run db:setup
+# Применить миграции к базе (сами миграции лежат в drizzle/ и версионируются).
+db-migrate:
+	npm run db:migrate
 
-db-reset:
-	npm run db:reset
+# Сгенерировать миграцию после правки схемы — результат нужно закоммитить.
+db-generate:
+	npm run db:generate
 
 db-studio:
 	npm run db:studio
 
-.PHONY: install dev dev-frontend build lint-backend lint-fix-backend test db-setup db-reset db-studio
+.PHONY: install dev dev-frontend build lint-backend lint-fix-backend test db-migrate db-generate db-studio

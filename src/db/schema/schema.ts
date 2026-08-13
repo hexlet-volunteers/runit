@@ -73,8 +73,16 @@ export const users = pgTable('users', {
 
 export const userSettings = pgTable('user_settings', {
   settingsId: serial('id').primaryKey(),
+  /**
+   * Уникален: связь с пользователем объявлена как «один к одному» (см.
+   * usersRelations ниже), но в БД это ничем не подкреплялось. Две строки
+   * настроек на одного пользователя ломались бы молча — чтение берёт первую
+   * (`limit(1)`), и часть сохранённых значений просто терялась бы. Ограничение
+   * заодно делает возможным upsert в updateUserSettings.
+   */
   userId: integer('user_id')
     .notNull()
+    .unique()
     .references(() => users.id, { onDelete: 'cascade' }),
   theme: varchar('theme', { length: 20 }).notNull().default('system'),
   language: varchar('language', { length: 10 }).notNull().default('ru'),

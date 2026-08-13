@@ -12,11 +12,6 @@ import {
   users,
 } from './schema/schema';
 
-// to do:
-// 1) дописать сброс пароля resetPassword
-// 2) recover  - подключить sentry
-// 3) checkHash
-
 /**
  * Столбцы, безопасные для возврата клиенту — никогда не включают password
  * и recoverHash. Использовать во всех select/.returning(), результат которых
@@ -39,17 +34,6 @@ export type SafeUser = {
   createdAt: Date;
   updatedAt: Date;
 };
-
-export const userSchema = z.object({
-  id: z.number(),
-  username: z.string().min(3).max(20),
-  email: emailSchema,
-  password: z.string().min(6).max(60),
-  isAdmin: z.boolean().default(false),
-  recoverHash: z.string().max(50).nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
 
 export const createUserSchema = z.object({
   username: z.string().min(3).max(20),
@@ -74,23 +58,6 @@ export const updateUserSchema = z.object({
   id: z.number(),
   username: z.string().min(3).max(20).optional(),
   email: emailSchema.optional(),
-});
-
-export const userSettingsSchema = z.object({
-  id: z.number(),
-  userId: z.number(),
-  theme: z.enum(['system', 'light', 'dark']).default('system'),
-  language: z.enum(['ru', 'en', 'es', 'fr', 'de']).default('ru'),
-  avatarBase64: z.string().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
-export const createUserSettingsSchema = z.object({
-  userId: z.number(),
-  theme: z.enum(['system', 'light', 'dark']).default('system').optional(),
-  language: z.enum(['ru', 'en', 'es', 'fr', 'de']).default('ru').optional(),
-  avatarBase64: z.string().nullable().optional(),
 });
 
 export const updateUserSettingsSchema = z.object({
@@ -166,7 +133,6 @@ export async function getUserByUsername(
   }
 }
 
-// выяснить, для чего нужен этот маршрут
 export async function getAllUsers(): Promise<SafeUser[]> {
   try {
     const allUsers = await db
@@ -318,50 +284,58 @@ export async function deleteUser(id: number): Promise<boolean> {
   }
 }
 
-export async function updateRecoverHash(
-  email: string,
-  recoverHash: string | null,
-): Promise<boolean> {
-  try {
-    const updated = await db
-      .update(users)
-      .set({ recoverHash })
-      .where(eq(users.email, email))
-      .returning({ id: users.id });
-
-    return updated.length > 0;
-  } catch (error) {
-    console.error('Error updating recover hash:', error);
-    throw new Error('Failed to update recover hash');
-  }
-}
-
 // получить настройки пользователя отдельно:
+/**
+ * Настройки пользователя; при первом обращении создаются со значениями по
+ * умолчанию.
+ *
+ * Вставка сделана идемпотентной (`onConflictDoNothing` + повторное чтение), а не
+ * «проверил и вставил»: два одновременных запроса — например, две открытые
+ * вкладки — оба видели пустой результат и оба пытались вставить строку. Раньше
+ * это давало вторую строку настроек, теперь бы упиралось в уникальность
+ * user_id и роняло запрос.
+ */
 export async function getUserSettings(userId: number): Promise<UserSettings> {
   try {
-    let settingsUser = await db
+    const existing = await db
       .select()
       .from(userSettings)
       .where(eq(userSettings.userId, userId))
       .limit(1);
 
-    if (settingsUser.length === 0) {
-      const newSettings: NewUserSettings = {
-        userId: userId,
-        theme: 'system',
-        language: 'ru',
-        avatarBase64: null,
-      };
-
-      const createdSettings = await db
-        .insert(userSettings)
-        .values(newSettings)
-        .returning();
-
-      settingsUser = createdSettings;
+    if (existing[0]) {
+      return existing[0];
     }
 
-    return settingsUser[0];
+    const newSettings: NewUserSettings = {
+      userId,
+      theme: 'system',
+      language: 'ru',
+      avatarBase64: null,
+    };
+
+    const [created] = await db
+      .insert(userSettings)
+      .values(newSettings)
+      .onConflictDoNothing({ target: userSettings.userId })
+      .returning();
+
+    if (created) {
+      return created;
+    }
+
+    // Строку успел создать параллельный запрос — читаем её.
+    const [concurrent] = await db
+      .select()
+      .from(userSettings)
+      .where(eq(userSettings.userId, userId))
+      .limit(1);
+
+    if (!concurrent) {
+      throw new Error('Settings row disappeared right after insert');
+    }
+
+    return concurrent;
   } catch (error) {
     console.error('Error getting user settings:', error);
     throw new Error('Failed to get user settings');
@@ -369,30 +343,51 @@ export async function getUserSettings(userId: number): Promise<UserSettings> {
 }
 
 // обновить настройки пользователя
+/**
+ * Сохраняет настройки, создавая их при первом обращении.
+ *
+ * Раньше это был просто UPDATE, и при отсутствии строки он менял ноль записей,
+ * после чего функция бросала «Failed to update user settings». Строка же
+ * появлялась только как побочный эффект чтения (getUserSettings), поэтому
+ * первое сохранение настроек у пользователя, который их ещё не открывал,
+ * гарантированно падало. Ошибка ждала того, кто подключит форму настроек
+ * (#832/#885).
+ *
+ * Upsert опирается на уникальность user_id — она добавлена в схему тем же
+ * изменением.
+ */
 export async function updateUserSettings(
   id: number,
-  updateData: Omit<UpdateUserSettingsInput, 'userId'>, // ← исключаем userId
+  updateData: Omit<UpdateUserSettingsInput, 'userId'>,
 ): Promise<UserSettings> {
   try {
-    // Валидация теперь не нужна, т.к. тип уже правильный
-
-    const updatedSettings = await db
-      .update(userSettings)
-      .set({
-        // Явно указываем только нужные поля (как в updateSnippet)
+    const [saved] = await db
+      .insert(userSettings)
+      .values({
+        userId: id,
         theme: updateData.theme,
         language: updateData.language,
         avatarBase64: updateData.avatarBase64,
-        updatedAt: new Date(),
       })
-      .where(eq(userSettings.userId, id))
+      .onConflictDoUpdate({
+        target: userSettings.userId,
+        // Только переданные поля: undefined в set означает «не менять»,
+        // поэтому частичное обновление (например, одна тема) не сбрасывает
+        // остальные значения на значения по умолчанию.
+        set: {
+          theme: updateData.theme,
+          language: updateData.language,
+          avatarBase64: updateData.avatarBase64,
+          updatedAt: new Date(),
+        },
+      })
       .returning();
 
-    if (updatedSettings.length === 0) {
+    if (!saved) {
       throw new Error('Failed to update user settings');
     }
 
-    return updatedSettings[0];
+    return saved;
   } catch (error) {
     console.error('Error updating user settings:', error);
     throw new Error('Failed to update user settings');
