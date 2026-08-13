@@ -11,14 +11,11 @@
  * никак не проявлялось — они не доходили до записи в новые таблицы.
  */
 
-import { mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { createTestDatabase, dropTestDatabase } from '../db/testDatabase';
 
-process.env.DB_PATH = join(
-  mkdtempSync(join(tmpdir(), 'runit-authflow-')),
-  'test.sqlite',
-);
+// Своя база под файл — см. пояснение в db/testDatabase.ts.
+const TEST_DATABASE = 'runit_test_authflow';
+process.env.DATABASE_URL = await createTestDatabase(TEST_DATABASE);
 // Лимит на auth рассчитан на человека (10/мин), а тест делает больше запросов
 // подряд с одного адреса. Проверяется цикл авторизации, а не лимитер — его
 // покрывают отдельные проверки.
@@ -28,6 +25,7 @@ process.env.RATE_LIMIT_AUTH = '500';
 process.env.RUNNER_ENABLED = 'false';
 
 const { default: getApp } = await import('../index');
+const { closeDbConnection } = await import('../db/connection');
 
 const CREDENTIALS = {
   username: 'flowuser',
@@ -66,6 +64,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await app.close();
+  await closeDbConnection();
+  await dropTestDatabase(TEST_DATABASE);
 });
 
 describe('регистрация, вход и сессия', () => {

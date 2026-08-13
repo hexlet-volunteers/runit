@@ -129,13 +129,13 @@ export declare const userRouter: import("@trpc/server").TRPCBuiltRouter<{
                 id: number;
                 code: string;
                 name: string;
+                visibility: "link" | "private" | "public";
                 createdAt: Date;
                 updatedAt: Date;
                 userId: number | null;
                 language: string | null;
                 slug: string | null;
                 shortCode: string | null;
-                visibility: string;
             } & {
                 user: import("../db/users").SafeUser;
             })[];

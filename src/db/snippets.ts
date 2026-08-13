@@ -402,11 +402,15 @@ export async function updateSnippet(
   }
 }
 
+/** См. deleteUser в db/users.ts — почему RETURNING, а не `changes`. */
 export async function deleteSnippet(id: number): Promise<boolean> {
   try {
-    const result = await db.delete(snippets).where(eq(snippets.id, id));
+    const deleted = await db
+      .delete(snippets)
+      .where(eq(snippets.id, id))
+      .returning({ id: snippets.id });
 
-    return result.changes > 0;
+    return deleted.length > 0;
   } catch (error) {
     console.error('Error in deleteSnippet:', error);
     throw new Error(

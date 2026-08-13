@@ -1,103 +1,129 @@
-import { relations, sql } from 'drizzle-orm';
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+/**
+ * Схема на PostgreSQL (#895).
+ *
+ * Переезд с SQLite: боевой стенд — managed PostgreSQL, и держать два диалекта
+ * в drizzle нельзя иначе как двумя копиями схемы, которые обязательно разойдутся.
+ * Локально и в тестах поднимается тот же PostgreSQL (docker compose или
+ * системный), поэтому расхождений «работало локально, упало в проде» не будет.
+ *
+ * Что изменилось по сравнению со sqlite-версией, помимо конструкторов таблиц:
+ *  * времена — `timestamp with time zone` вместо целого числа секунд. В SQLite
+ *    даты хранились как unixepoch, то есть с точностью до секунды и без зоны;
+ *  * `varchar(n)` там, где раньше был `text` с декоративной длиной: в SQLite
+ *    `text('x', { length: 20 })` не ограничивает ничего, это подсказка для
+ *    читателя. В PostgreSQL ограничение настоящее, поэтому длины подобраны с
+ *    запасом и совпадают с zod-схемами ввода;
+ *  * `visibility` — enum на уровне БД: значений три, они перечислены в коде, и
+ *    опечатка в миграции или ручной правке данных должна отвергаться базой.
+ */
 
-export const users = sqliteTable('users', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  username: text('username', { length: 20 }).notNull().unique(),
-  email: text('email', { length: 254 }).notNull().unique(),
-  password: text('password', { length: 60 }).notNull(),
-  isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
-  recoverHash: text('recover_hash', { length: 50 }),
-  createdAt: integer('created_at', { mode: 'timestamp' })
+import { relations } from 'drizzle-orm';
+import {
+  boolean,
+  integer,
+  pgEnum,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core';
+
+/** Метки времени создания и изменения — одинаковые во всех таблицах. */
+const timestamps = {
+  createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
-    .default(sql`(unixepoch())`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
     .notNull()
-    .default(sql`(unixepoch())`),
+    .defaultNow(),
+};
+
+/**
+ * Кто может открыть сниппет:
+ *  private — только владелец;
+ *  link    — любой, у кого есть ссылка (в поиске и профиле не показывается);
+ *  public  — виден всем, попадает в публичный профиль.
+ */
+export const visibilityEnum = pgEnum('visibility', [
+  'private',
+  'link',
+  'public',
+]);
+
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  username: varchar('username', { length: 20 }).notNull().unique(),
+  email: varchar('email', { length: 254 }).notNull().unique(),
+  // bcrypt-хеш всегда 60 символов; открытых паролей здесь не бывает.
+  password: varchar('password', { length: 60 }).notNull(),
+  isAdmin: boolean('is_admin').notNull().default(false),
+  recoverHash: varchar('recover_hash', { length: 64 }),
+  ...timestamps,
 });
 
-export const userSettings = sqliteTable('user_settings', {
-  settingsId: integer('id').primaryKey({ autoIncrement: true }),
+export const userSettings = pgTable('user_settings', {
+  settingsId: serial('id').primaryKey(),
   userId: integer('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
-  theme: text('theme', { length: 20 }).notNull().default('system'),
-  language: text('language', { length: 10 }).notNull().default('ru'),
+  theme: varchar('theme', { length: 20 }).notNull().default('system'),
+  language: varchar('language', { length: 10 }).notNull().default('ru'),
   avatarBase64: text('avatar_base64'),
-  createdAt: integer('created_at', { mode: 'timestamp' })
-    .notNull()
-    .default(sql`(unixepoch())`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' })
-    .notNull()
-    .default(sql`(unixepoch())`),
+  ...timestamps,
 });
 
-export const snippets = sqliteTable('snippets', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name', { length: 30 }).notNull(),
-  slug: text('slug', { length: 30 }),
+export const snippets = pgTable('snippets', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 30 }).notNull(),
+  slug: varchar('slug', { length: 30 }),
   code: text('code').notNull(),
-  language: text('language', { length: 50 }),
+  language: varchar('language', { length: 50 }),
   /**
    * Короткий код для публичной ссылки вида /s/aB3xK9 — им делятся и по нему
    * встраивают сниппет. Уникален глобально (в отличие от slug, который
    * уникален только внутри пользователя).
    */
-  shortCode: text('short_code', { length: 16 }).unique(),
-  /**
-   * Кто может открыть сниппет:
-   *  private — только владелец;
-   *  link    — любой, у кого есть ссылка (в поиске и профиле не показывается);
-   *  public  — виден всем, попадает в публичный профиль.
-   */
-  visibility: text('visibility', { length: 10 }).notNull().default('private'),
+  shortCode: varchar('short_code', { length: 16 }).unique(),
+  visibility: visibilityEnum('visibility').notNull().default('private'),
   userId: integer('user_id').references(() => users.id, {
     onDelete: 'cascade',
   }),
-  createdAt: integer('created_at', { mode: 'timestamp' })
-    .notNull()
-    .default(sql`(unixepoch())`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' })
-    .notNull()
-    .default(sql`(unixepoch())`),
+  ...timestamps,
 });
 
-export const refreshTokens = sqliteTable('refresh_tokens', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const refreshTokens = pgTable('refresh_tokens', {
+  id: serial('id').primaryKey(),
   userId: integer('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
-  tokenHash: text('token_hash').notNull().unique(),
-  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
-  revokedAt: integer('revoked_at', { mode: 'timestamp' }),
-  createdAt: integer('created_at', { mode: 'timestamp' })
+  // sha256 в hex — 64 символа.
+  tokenHash: varchar('token_hash', { length: 64 }).notNull().unique(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
-    .default(sql`(unixepoch())`),
+    .defaultNow(),
 });
 
-export const passwordHistory = sqliteTable('password_history', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const passwordHistory = pgTable('password_history', {
+  id: serial('id').primaryKey(),
   userId: integer('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
-  passwordHash: text('password_hash').notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp' })
+  passwordHash: varchar('password_hash', { length: 60 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
-    .default(sql`(unixepoch())`),
+    .defaultNow(),
 });
 
-export const sections = sqliteTable('sections', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const sections = pgTable('sections', {
+  id: serial('id').primaryKey(),
   title: text('title').notNull(),
   description: text('description').notNull(),
   content: text('content').notNull(),
   componentType: text('component_type').notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp' })
-    .notNull()
-    .default(sql`(unixepoch())`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' })
-    .notNull()
-    .default(sql`(unixepoch())`),
+  ...timestamps,
 });
 
 export const usersRelations = relations(users, ({ many, one }) => ({

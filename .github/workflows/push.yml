@@ -9,6 +9,23 @@ jobs:
   checks:
     name: Проверки main
     runs-on: ubuntu-latest
+    # Тесты работают с настоящим PostgreSQL — см. пояснение в pull-request.yml.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: runit
+          POSTGRES_PASSWORD: runit
+          POSTGRES_DB: runit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U runit"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://runit:runit@localhost:5432/runit
     steps:
       - uses: actions/checkout@v4
 

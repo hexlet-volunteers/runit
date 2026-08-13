@@ -1,21 +1,45 @@
-# Запуск Runit в контейнерах.
+# Локальный запуск Runit в контейнерах.
 #
+#   cp .env.example .env   # и задать JWT-секреты, см. README
 #   docker compose up --build
 #   → http://localhost:8080
 #
-# Переменные берутся из .env (см. README, раздел «Развёртывание»).
+# Это способ проверить прод-сборку на своей машине. Боевой стенд поднимается
+# из docker-compose.prod.yml: там образы берутся из реестра, а PostgreSQL —
+# managed, а не контейнером рядом.
 
 services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-runit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-runit}
+      POSTGRES_DB: ${POSTGRES_DB:-runit}
+    volumes:
+      # Данные в томе, а не в слое: пересборка не теряет базу.
+      - runit-db:/var/lib/postgresql/data
+    healthcheck:
+      # Без этой проверки приложение стартует раньше базы, падает на миграциях
+      # и уходит в цикл перезапусков.
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-runit} -d ${POSTGRES_DB:-runit}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   app:
     build:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: 3001
       HOST: 0.0.0.0
-      DB_PATH: /data/database.sqlite
+      DATABASE_URL: postgres://${POSTGRES_USER:-runit}:${POSTGRES_PASSWORD:-runit}@db:5432/${POSTGRES_DB:-runit}
       # Секреты подписи токенов. Синтаксис с `:?` останавливает compose с этим
       # сообщением, если переменной нет — иначе приложение просто не поднялось
       # бы, и причину пришлось бы искать в логах контейнера.
@@ -36,15 +60,13 @@ services:
       # приложение работает, серверный запуск отвечает понятной подсказкой.
       RUNNER_ENABLED: ${RUNNER_ENABLED:-true}
       RUNNER_MAX_CONCURRENT: ${RUNNER_MAX_CONCURRENT:-4}
-    volumes:
-      # БД живёт в томе, а не в слое образа: пересборка не теряет данные.
-      - runit-data:/data
-      # ВНИМАНИЕ. Чтобы серверный раннер (Python/PHP/Ruby/Java/…) работал внутри
-      # контейнера, ему нужен доступ к docker-сокету. Доступ к сокету равносилен
-      # root на хосте, а раннер исполняет ЧУЖОЙ код — поэтому по умолчанию сокет
-      # НЕ монтируется. Для прода используйте выделенный runner-хост или
-      # rootless/удалённый демон (см. README). Раскомментируйте только локально:
-      # - /var/run/docker.sock:/var/run/docker.sock
+    # ВНИМАНИЕ. Чтобы серверный раннер (Python/PHP/Ruby/Java/…) работал внутри
+    # контейнера, ему нужен доступ к docker-сокету. Доступ к сокету равносилен
+    # root на хосте, а раннер исполняет ЧУЖОЙ код — поэтому по умолчанию сокет
+    # НЕ монтируется. Для прода используйте выделенный runner-хост или
+    # rootless/удалённый демон (см. README). Раскомментируйте только локально:
+    # volumes:
+    #   - /var/run/docker.sock:/var/run/docker.sock
     expose:
       - '3001'
     healthcheck:
@@ -71,4 +93,4 @@ services:
         condition: service_healthy
 
 volumes:
-  runit-data:
+  runit-db:

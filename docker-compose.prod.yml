@@ -1,0 +1,70 @@
+# Боевой стенд Runit.
+#
+#   RUNIT_VERSION=v1.2.3 docker compose -f docker-compose.prod.yml up -d --wait
+#
+# Отличия от docker-compose.yml (тот — для локальной проверки сборки):
+#
+#  * образы берутся из реестра по тегу, а не собираются на месте. На стенде
+#    нет тулчейна, сборка занимала бы минуты, и раскатывался бы не тот образ,
+#    что прошёл проверки в CI;
+#  * PostgreSQL не поднимается контейнером рядом. Он managed у провайдера:
+#    резервные копии, обновления версий и восстановление на момент времени —
+#    задачи, которые контейнер с томом не решает, а для ПДн они обязательны
+#    (#868). Адрес приходит в DATABASE_URL;
+#  * секреты берутся из .env рядом с этим файлом — он создаётся на сервере
+#    и не хранится в репозитории.
+#
+# Требуемые переменные (в .env на сервере):
+#   RUNIT_VERSION       тег образов, например v1.2.3
+#   DATABASE_URL        строка подключения к managed PostgreSQL
+#   JWT_ACCESS_SECRET   секрет подписи access-токена
+#   JWT_REFRESH_SECRET  секрет подписи refresh-токена
+#   PUBLIC_ORIGIN       публичный адрес сайта, например https://runit.hexlet.io
+
+services:
+  app:
+    image: ghcr.io/hexlet-volunteers/runit-app:${RUNIT_VERSION:?задайте RUNIT_VERSION}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      HOST: 0.0.0.0
+      DATABASE_URL: ${DATABASE_URL:?задайте DATABASE_URL}
+      # Managed-база ограничивает число соединений, и делить лимит между
+      # инстансами приходится вручную: по умолчанию каждый взял бы по 10.
+      DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-10}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?задайте JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?задайте JWT_REFRESH_SECRET}
+      CORS_ORIGIN: ${PUBLIC_ORIGIN:?задайте PUBLIC_ORIGIN}
+      # COOKIE_SECURE не задаётся: в production он включён по умолчанию, и
+      # стенд обязан работать за TLS.
+      #
+      # Раннер выключен: исполнять чужой код на том же хосте, где живёт
+      # приложение, можно только через доступ к docker-сокету, а это root на
+      # хосте. Включается отдельным runner-хостом — RUNNER_ENABLED=true и
+      # DOCKER_HOST на него (см. README).
+      RUNNER_ENABLED: ${RUNNER_ENABLED:-false}
+      DOCKER_HOST: ${DOCKER_HOST:-}
+    expose:
+      - '3001'
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  web:
+    image: ghcr.io/hexlet-volunteers/runit-web:${RUNIT_VERSION:?задайте RUNIT_VERSION}
+    restart: unless-stopped
+    ports:
+      # TLS терминируется внешним прокси провайдера (балансировщик или Caddy на
+      # хосте): внутрь отдаём http на 80.
+      - '${WEB_PORT:-8080}:80'
+    depends_on:
+      app:
+        condition: service_healthy

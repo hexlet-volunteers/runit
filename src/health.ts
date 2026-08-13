@@ -14,7 +14,10 @@ export function registerHealthRoute(server: FastifyInstance): void {
   server.get('/health', async (_request, reply) => {
     const startedAt = performance.now();
     try {
-      db.get(sql`select 1`);
+      // await обязателен: у SQLite запрос был синхронным, у PostgreSQL это
+      // сетевой вызов — без await ошибка соединения возникла бы уже после
+      // отправки ответа, и недоступная база отдавала бы 200.
+      await db.execute(sql`select 1`);
       return reply.send({
         status: 'ok',
         db: 'ok',

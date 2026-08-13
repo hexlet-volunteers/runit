@@ -10,19 +10,16 @@
  * забыть middleware в новой процедуре легко, и снаружи это никак не видно.
  */
 
-import { mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { createTestDatabase, dropTestDatabase } from '../db/testDatabase';
 
-// DB_PATH обязан быть задан до импорта connection.ts: соединение создаётся на
-// уровне модуля, и подменить путь позже уже нельзя.
-process.env.DB_PATH = join(
-  mkdtempSync(join(tmpdir(), 'runit-authz-')),
-  'test.sqlite',
+// Своя база под этот файл, и создать её нужно до импорта connection.ts:
+// соединение открывается на уровне модуля, и подменить адрес позже нельзя.
+const TEST_DATABASE = 'runit_test_authz';
+process.env.DATABASE_URL = await createTestDatabase(TEST_DATABASE);
+
+const { db, runMigrations, closeDbConnection } = await import(
+  '../db/connection'
 );
-
-const { db } = await import('../db/connection');
-const { runMigrations } = await import('../db/connection');
 const { users, snippets } = await import('../db/schema/schema');
 const { appRouter } = await import('./index');
 const { hashPassword, verifyPassword } = await import('../auth/password');
@@ -122,6 +119,12 @@ beforeAll(async () => {
 
   privateSnippetId = snippetIdByName('secret');
   publicSnippetId = snippetIdByName('shared');
+});
+
+afterAll(async () => {
+  // Без закрытия пула jest висит: соединения с PostgreSQL держат процесс.
+  await closeDbConnection();
+  await dropTestDatabase(TEST_DATABASE);
 });
 
 describe('чтение сниппетов', () => {

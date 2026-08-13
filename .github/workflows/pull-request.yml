@@ -12,6 +12,26 @@ jobs:
   backend:
     name: Бэкенд — линтер, типы, тесты
     runs-on: ubuntu-latest
+    # Тесты работают с настоящим PostgreSQL, а не с заменителем: диалект — то
+    # самое место, где заменитель расходится с боевой базой. Пример из этого же
+    # переезда: распознавание конфликта уникальности опиралось на текст ошибки
+    # SQLite и молча перестало работать.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: runit
+          POSTGRES_PASSWORD: runit
+          POSTGRES_DB: runit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U runit"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://runit:runit@localhost:5432/runit
     steps:
       - uses: actions/checkout@v4
 
@@ -107,6 +127,24 @@ jobs:
   runner-smoke:
     name: Раннер — исполнение 9 языков в Docker
     runs-on: ubuntu-latest
+    # Приложение поднимается целиком, поэтому нужна база: без неё оно падает
+    # на миграциях при старте.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: runit
+          POSTGRES_PASSWORD: runit
+          POSTGRES_DB: runit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U runit"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://runit:runit@localhost:5432/runit
     steps:
       - uses: actions/checkout@v4
 
@@ -132,7 +170,7 @@ jobs:
           # на человека, а здесь один прогон делает больше десятка запусков подряд
           # с одного адреса. Проверяем раннер, а не лимитер — его отдельно
           # покрывают тесты src/security.ts.
-          DB_PATH=/tmp/ci.sqlite RATE_LIMIT_RUNNER=200 npx tsx src/server.ts &
+          RATE_LIMIT_RUNNER=200 npx tsx src/server.ts &
           for i in $(seq 1 30); do
             curl -sf http://localhost:3001/health >/dev/null && break
             sleep 1

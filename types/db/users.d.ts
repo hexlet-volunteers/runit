@@ -119,6 +119,13 @@ export declare function updateUser(id: number, updates: Omit<UpdateUserInput, 'i
  */
 export declare function updateUserPasswordHash(id: number, passwordHash: string): Promise<void>;
 export declare function setUserRole(id: number, isAdmin: boolean): Promise<SafeUser | null>;
+/**
+ * Признак «что-то действительно изменилось» получаем через RETURNING, а не из
+ * метаданных результата: поле `changes` было особенностью better-sqlite3, в
+ * postgres-js его нет. Без RETURNING проверка `changes > 0` читалась бы как
+ * `undefined > 0`, то есть всегда false — удаление существующего пользователя
+ * отвечало бы «не найден».
+ */
 export declare function deleteUser(id: number): Promise<boolean>;
 export declare function updateRecoverHash(email: string, recoverHash: string | null): Promise<boolean>;
 export declare function getUserSettings(userId: number): Promise<UserSettings>;

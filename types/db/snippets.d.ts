@@ -161,5 +161,6 @@ export declare function getSnippetByShortCode(shortCode: string): Promise<(Snipp
 export declare function setSnippetVisibility(id: number, visibility: Visibility): Promise<Snippet>;
 export declare function createSnippet(snippetData: CreateSnippetData): Promise<Snippet>;
 export declare function updateSnippet(id: number, updates: Omit<UpdateSnippetInput, 'id' | 'userId'>): Promise<Snippet>;
+/** См. deleteUser в db/users.ts — почему RETURNING, а не `changes`. */
 export declare function deleteSnippet(id: number): Promise<boolean>;
 export declare function generateName(): string;

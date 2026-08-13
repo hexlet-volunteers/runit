@@ -21,7 +21,8 @@ declare const envSchema: z.ZodPipe<z.ZodObject<{
     }>>;
     HOST: z.ZodDefault<z.ZodString>;
     PORT: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
-    DB_PATH: z.ZodDefault<z.ZodString>;
+    DATABASE_URL: z.ZodDefault<z.ZodString>;
+    DATABASE_POOL_MAX: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
     JWT_ACCESS_SECRET: z.ZodOptional<z.ZodString>;
     JWT_REFRESH_SECRET: z.ZodOptional<z.ZodString>;
     CORS_ORIGIN: z.ZodDefault<z.ZodString>;
@@ -46,13 +47,15 @@ declare const envSchema: z.ZodPipe<z.ZodObject<{
     NODE_ENV: "development" | "test" | "production";
     HOST: string;
     PORT: number;
-    DB_PATH: string;
+    DATABASE_URL: string;
+    DATABASE_POOL_MAX: number;
     CORS_ORIGIN: string;
 }, {
     NODE_ENV: "development" | "test" | "production";
     HOST: string;
     PORT: number;
-    DB_PATH: string;
+    DATABASE_URL: string;
+    DATABASE_POOL_MAX: number;
     CORS_ORIGIN: string;
     JWT_ACCESS_SECRET?: string | undefined;
     JWT_REFRESH_SECRET?: string | undefined;

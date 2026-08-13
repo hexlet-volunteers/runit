@@ -1,17 +1,14 @@
 # Образ бэкенда Runit (Fastify + tRPC + Drizzle).
 # Фронтенд собирается отдельно: frontend/Dockerfile (статика + Caddy).
 #
-# better-sqlite3 — нативный модуль, и для текущей версии готового бинарника под
-# Node 24 нет, поэтому он компилируется через node-gyp. Тулчейн (python3, make,
-# g++) нужен только на стадиях установки зависимостей: в финальный образ он не
-# попадает — туда копируются уже собранные node_modules.
+# Нативных модулей в прод-дереве больше нет: драйвер PostgreSQL (postgres-js) —
+# чистый JS. Прежний better-sqlite3 требовал в образе python3, make и g++ и
+# компилировался node-gyp на каждой сборке — тулчейн и эти стадии удалены.
+# Осталась одна оговорка: bcrypt тоже нативный, но у него есть готовые сборки
+# под Node 24, и npm ci их скачивает.
 
-# ---------- Прод-зависимости (компилируются здесь) ----------
+# ---------- Прод-зависимости ----------
 FROM node:24-slim AS prod-deps
-
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends python3 make g++ \
-  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -19,10 +16,6 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 # ---------- Сборка ----------
 FROM node:24-slim AS build
-
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends python3 make g++ \
-  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -51,12 +44,15 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/drizzle ./drizzle
 
-# По умолчанию БД лежит в томе /data (см. docker-compose).
-ENV DB_PATH=/data/database.sqlite
 ENV PORT=3001
 ENV HOST=0.0.0.0
 
-RUN mkdir -p /data && chown -R node:node /data /app
+# DATABASE_URL по умолчанию не задаётся намеренно: в production приложение
+# требует её явно и падает на старте, если переменной нет (см. config/env.ts).
+# Значение по умолчанию указывало бы на localhost, и контейнер молча поднялся
+# бы на пустой базе вместо боевой.
+
+RUN chown -R node:node /app
 USER node
 
 EXPOSE 3001

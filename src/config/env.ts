@@ -64,7 +64,21 @@ const envSchema = z
       .default('development'),
     HOST: z.string().default('0.0.0.0'),
     PORT: z.coerce.number().int().positive().default(3001),
-    DB_PATH: z.string().default('database.sqlite'),
+    /**
+     * Строка подключения к PostgreSQL (#895). Значение по умолчанию совпадает с
+     * локальным сервисом из docker-compose, поэтому `npm run dev` работает без
+     * настройки. В production переменная обязательна — проверка ниже.
+     */
+    DATABASE_URL: z
+      .string()
+      .default('postgres://runit:runit@localhost:5432/runit'),
+    /**
+     * Размер пула соединений. У managed-PostgreSQL есть предел числа
+     * соединений, и несколько инстансов приложения обязаны делить его: без
+     * этой переменной каждый брал бы по умолчанию 10 и на четвёртом инстансе
+     * база начала бы отказывать.
+     */
+    DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
     JWT_ACCESS_SECRET: secretSchema.optional(),
     JWT_REFRESH_SECRET: secretSchema.optional(),
     // Через запятую для нескольких фронтенд-origin (например, dev + staging).
@@ -117,6 +131,19 @@ const envSchema = z
 
     if (value.NODE_ENV !== 'production') {
       return;
+    }
+
+    /**
+     * Строку подключения в проде тоже нельзя брать по умолчанию: значение по
+     * умолчанию указывает на localhost, и приложение молча поднялось бы на
+     * пустой локальной базе вместо боевой — с виду работая.
+     */
+    if (!process.env.DATABASE_URL) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['DATABASE_URL'],
+        message: 'DATABASE_URL обязателен в production',
+      });
     }
 
     const required = [

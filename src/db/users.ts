@@ -2,6 +2,7 @@ import { desc, eq } from 'drizzle-orm';
 import { z } from 'zod/v4';
 import { emailSchema } from '../auth/email';
 import { db } from './connection';
+import { isUniqueViolationOn } from './errors';
 import {
   type NewUser,
   type NewUserSettings,
@@ -201,13 +202,11 @@ export async function createUser(userData: CreateUserInput): Promise<SafeUser> {
     return result[0];
   } catch (error) {
     console.error('Error creating user:', error);
-    if (error instanceof Error && error.message.includes('UNIQUE constraint')) {
-      if (error.message.includes('username')) {
-        throw new Error('Username already exists');
-      }
-      if (error.message.includes('email')) {
-        throw new Error('Email already exists');
-      }
+    if (isUniqueViolationOn(error, 'username')) {
+      throw new Error('Username already exists');
+    }
+    if (isUniqueViolationOn(error, 'email')) {
+      throw new Error('Email already exists');
     }
     throw new Error('Failed to create user');
   }
@@ -236,13 +235,11 @@ export async function updateUser(
     return result[0];
   } catch (error) {
     console.error('Error updating user:', error);
-    if (error instanceof Error && error.message.includes('UNIQUE constraint')) {
-      if (error.message.includes('username')) {
-        throw new Error('Username already exists');
-      }
-      if (error.message.includes('email')) {
-        throw new Error('Email already exists');
-      }
+    if (isUniqueViolationOn(error, 'username')) {
+      throw new Error('Username already exists');
+    }
+    if (isUniqueViolationOn(error, 'email')) {
+      throw new Error('Email already exists');
     }
     throw new Error('Failed to update user');
   }
@@ -287,11 +284,21 @@ export async function setUserRole(
   }
 }
 
+/**
+ * Признак «что-то действительно изменилось» получаем через RETURNING, а не из
+ * метаданных результата: поле `changes` было особенностью better-sqlite3, в
+ * postgres-js его нет. Без RETURNING проверка `changes > 0` читалась бы как
+ * `undefined > 0`, то есть всегда false — удаление существующего пользователя
+ * отвечало бы «не найден».
+ */
 export async function deleteUser(id: number): Promise<boolean> {
   try {
-    const result = await db.delete(users).where(eq(users.id, id));
+    const deleted = await db
+      .delete(users)
+      .where(eq(users.id, id))
+      .returning({ id: users.id });
 
-    return result.changes > 0;
+    return deleted.length > 0;
   } catch (error) {
     console.error('Error deleting user:', error);
     throw new Error('Failed to delete user');
@@ -303,12 +310,13 @@ export async function updateRecoverHash(
   recoverHash: string | null,
 ): Promise<boolean> {
   try {
-    const result = await db
+    const updated = await db
       .update(users)
       .set({ recoverHash })
-      .where(eq(users.email, email));
+      .where(eq(users.email, email))
+      .returning({ id: users.id });
 
-    return result.changes > 0;
+    return updated.length > 0;
   } catch (error) {
     console.error('Error updating recover hash:', error);
     throw new Error('Failed to update recover hash');
