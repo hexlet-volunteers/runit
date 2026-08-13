@@ -7,13 +7,23 @@ name: Релиз
 # и условие `if: github.repository == 'hexlet-rus/runit'` не совпадало с
 # текущим репозиторием — то есть job не запускался вообще.
 #
-# Сейчас на тег происходит два независимых действия:
+# Сейчас на тег происходит:
 #   * publish.yml собирает и публикует образы бэкенда и фронтенда в GHCR;
-#   * этот workflow создаёт запись в GitHub Releases.
+#   * этот workflow создаёт запись в GitHub Releases и раскатывает стенд.
 #
-# Раскатки на стенд здесь пока нет намеренно: она появится вместе с
-# docker-compose.prod.yml после переезда на PostgreSQL (#895) — раскатывать
-# сборку на SQLite на боевой стенд смысла нет.
+# Раскатка включается только когда в настройках репозитория заданы адрес стенда
+# и ключ доступа. Пока их нет, job сообщает об этом и завершается успешно: это
+# не то же самое, что прежняя заглушка с `echo` — там деплой изображался
+# работающим, здесь причина пропуска называется явно.
+#
+# Что нужно задать в настройках репозитория, чтобы раскатка заработала:
+#   переменная DEPLOY_HOST  — хост стенда (он же адрес для проверки /health)
+#   переменная DEPLOY_USER  — пользователь ssh
+#   переменная DEPLOY_PATH  — каталог с docker-compose.prod.yml на сервере
+#   секрет     DEPLOY_KEY   — приватный ключ ssh
+#
+# Секреты приложения и строка подключения к managed PostgreSQL живут в .env на
+# самом сервере: в репозиторий и в образ они не попадают.
 
 on:
   push:
@@ -44,3 +54,59 @@ jobs:
             --verify-tag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    name: Раскатка на стенд
+    needs: release
+    runs-on: ubuntu-latest
+    if: github.repository == 'hexlet-volunteers/runit'
+    steps:
+      - name: Настроен ли стенд
+        id: check
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+        run: |
+          if [ -z "$DEPLOY_HOST" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Стенд не настроен: переменная DEPLOY_HOST пуста." \
+              "Образы опубликованы в GHCR, раскатка пропущена."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Раскатка по ssh
+        if: steps.check.outputs.configured == 'true'
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: ${{ vars.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          # Образ уже собран и проверен в CI — на сервере только подтягиваем
+          # нужный тег и перезапускаем. `--wait` ждёт healthcheck: без него шаг
+          # зеленел бы раньше, чем приложение действительно поднялось, и
+          # неудачный релиз выглядел бы успешным.
+          #
+          # Миграции прогоняет само приложение при старте (runMigrations),
+          # отдельного шага не нужно.
+          script: |
+            set -e
+            cd "${{ vars.DEPLOY_PATH }}"
+            export RUNIT_VERSION="${{ github.ref_name }}"
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --wait
+            docker image prune -f
+
+      - name: Стенд отвечает снаружи
+        if: steps.check.outputs.configured == 'true'
+        run: |
+          # Отдельная проверка: healthcheck внутри compose говорит о контейнере,
+          # а этот шаг — что сайт доступен снаружи, через прокси и TLS.
+          for i in $(seq 1 10); do
+            if curl -sf "https://${{ vars.DEPLOY_HOST }}/health"; then
+              echo "стенд отвечает"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "стенд не ответил на /health после раскатки"
+          exit 1
