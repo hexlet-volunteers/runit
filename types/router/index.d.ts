@@ -48,6 +48,24 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
             };
             meta: object;
         }>;
+        changePassword: import("@trpc/server").TRPCMutationProcedure<{
+            input: {
+                currentPassword: string;
+                newPassword: string;
+            };
+            output: {
+                success: boolean;
+                csrfToken: string;
+            };
+            meta: object;
+        }>;
+        csrfToken: import("@trpc/server").TRPCQueryProcedure<{
+            input: void;
+            output: {
+                csrfToken: string;
+            };
+            meta: object;
+        }>;
         me: import("@trpc/server").TRPCQueryProcedure<{
             input: void;
             output: {
@@ -64,17 +82,17 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
     }, import("@trpc/server").TRPCDecorateCreateRouterOptions<{
         getUserById: import("@trpc/server").TRPCQueryProcedure<{
             input: number;
-            output: import("../db/users").SafeUser;
-            meta: object;
-        }>;
-        getUserByEmail: import("@trpc/server").TRPCQueryProcedure<{
-            input: string;
-            output: import("../db/users").SafeUser;
+            output: import("../auth/publicUser").PublicProfile;
             meta: object;
         }>;
         getUserByUsername: import("@trpc/server").TRPCQueryProcedure<{
             input: string;
-            output: import("../db/users").SafeUser;
+            output: import("../auth/publicUser").PublicProfile;
+            meta: object;
+        }>;
+        getUserByEmail: import("@trpc/server").TRPCQueryProcedure<{
+            input: string;
+            output: import("../auth/publicUser").PublicUser;
             meta: object;
         }>;
         getAllUsers: import("@trpc/server").TRPCQueryProcedure<{
@@ -98,10 +116,8 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 id: number;
                 username?: string | undefined;
                 email?: string | undefined;
-                password?: string | undefined;
-                recoverHash?: string | undefined;
             };
-            output: import("../db/users").SafeUser | null;
+            output: import("../db/users").SafeUser;
             meta: object;
         }>;
         setUserRole: import("@trpc/server").TRPCMutationProcedure<{
@@ -118,9 +134,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
             };
             output: {
                 success: boolean;
-                id: {
-                    id: number;
-                };
+                id: number;
             };
             meta: object;
         }>;
@@ -238,6 +252,22 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
             }[];
             meta: object;
         }>;
+        getMySnippets: import("@trpc/server").TRPCQueryProcedure<{
+            input: void;
+            output: {
+                id: number;
+                code: string;
+                name: string;
+                createdAt: Date;
+                updatedAt: Date;
+                userId: number | null;
+                language: string | null;
+                slug: string | null;
+                shortCode: string | null;
+                visibility: string;
+            }[];
+            meta: object;
+        }>;
         getPublicSnippetsByUsername: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 username: string;
@@ -261,7 +291,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 name: string;
                 code: string;
                 language: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css";
-                userId: number;
                 slug?: string | undefined;
                 visibility?: "link" | "private" | "public" | undefined;
             };
@@ -286,7 +315,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 code?: string | undefined;
                 slug?: string | undefined;
                 language?: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css" | undefined;
-                userId?: number | undefined;
                 visibility?: "link" | "private" | "public" | undefined;
             };
             output: {

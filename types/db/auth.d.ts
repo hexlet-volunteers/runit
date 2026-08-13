@@ -20,5 +20,11 @@ export declare function findActiveRefreshToken(token: string): Promise<{
     createdAt: Date;
 }>;
 export declare function revokeRefreshToken(token: string): Promise<void>;
+/**
+ * Гасит все живые refresh-токены пользователя — то есть выкидывает его со всех
+ * устройств. Нужно при смене пароля: смысл смены в том, что тот, кто знал
+ * старый пароль, доступ теряет, а без этого его сессия живёт ещё 30 дней.
+ */
+export declare function revokeAllRefreshTokensForUser(userId: number): Promise<void>;
 export declare function getRecentPasswordHashes(userId: number, limit: number): Promise<string[]>;
 export declare function addPasswordHistoryEntry(userId: number, passwordHashValue: string): Promise<void>;

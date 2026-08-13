@@ -25,12 +25,21 @@ export declare const createUserSchema: z.ZodObject<{
     isAdmin: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
     recoverHash: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
+/**
+ * Обновление профиля. Ни password, ни recoverHash здесь нет намеренно:
+ *  - пароль меняется только через auth.changePassword — там проверяется текущий
+ *    пароль, политика и повторное использование, и результат хешируется. Пока
+ *    поле было в этой схеме, любое обновление профиля могло записать пароль
+ *    в открытом виде (#791);
+ *  - recoverHash — внутреннее поле восстановления доступа, клиент не должен
+ *    иметь возможности задать его сам (иначе выпишет себе токен сброса).
+ *
+ * isAdmin тоже исключён — роль меняется только через admin-only setUserRole.
+ */
 export declare const updateUserSchema: z.ZodObject<{
     id: z.ZodNumber;
     username: z.ZodOptional<z.ZodString>;
     email: z.ZodOptional<z.ZodPipe<z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>, z.ZodString>>;
-    password: z.ZodOptional<z.ZodString>;
-    recoverHash: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export declare const userSettingsSchema: z.ZodObject<{
     id: z.ZodNumber;
@@ -102,6 +111,13 @@ export declare function getUserByUsername(username: string): Promise<SafeUser | 
 export declare function getAllUsers(): Promise<SafeUser[]>;
 export declare function createUser(userData: CreateUserInput): Promise<SafeUser>;
 export declare function updateUser(id: number, updates: Omit<UpdateUserInput, 'id'>): Promise<SafeUser | null>;
+/**
+ * Записывает уже готовый bcrypt-хеш. Отделено от updateUser сознательно:
+ * там принимаются данные прямо из ввода клиента, здесь — значение, которое
+ * обязано быть посчитано hashPassword(). Единственный вызывающий —
+ * auth.changePassword.
+ */
+export declare function updateUserPasswordHash(id: number, passwordHash: string): Promise<void>;
 export declare function setUserRole(id: number, isAdmin: boolean): Promise<SafeUser | null>;
 export declare function deleteUser(id: number): Promise<boolean>;
 export declare function updateRecoverHash(email: string, recoverHash: string | null): Promise<boolean>;

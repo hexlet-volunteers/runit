@@ -4,6 +4,11 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
     errorShape: import("@trpc/server").TRPCDefaultErrorShape;
     transformer: false;
 }, import("@trpc/server").TRPCDecorateCreateRouterOptions<{
+    /**
+     * Сниппет по id — путь редактора. Приватный отдаём только владельцу: до
+     * появления авторизации приватный сниппет читался перебором id (#792).
+     * Публичный и доступный по ссылке открыт всем, в том числе гостю.
+     */
     getSnippetById: import("@trpc/server").TRPCQueryProcedure<{
         input: unknown;
         output: {
@@ -20,6 +25,11 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
         };
         meta: object;
     }>;
+    /**
+     * Просмотр по паре username+slug. Приватные отсекает БД-слой, но владелец
+     * должен открывать свой черновик по этому пути — иначе редактор ломается на
+     * собственном приватном сниппете.
+     */
     getSnippetByUsernameSlug: import("@trpc/server").TRPCQueryProcedure<{
         input: {
             username: string;
@@ -39,7 +49,25 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
         };
         meta: object;
     }>;
+    /** Служебная выборка всех сниппетов, включая чужие приватные — только админам. */
     getAllSnippets: import("@trpc/server").TRPCQueryProcedure<{
+        input: void;
+        output: {
+            id: number;
+            code: string;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            userId: number | null;
+            language: string | null;
+            slug: string | null;
+            shortCode: string | null;
+            visibility: string;
+        }[];
+        meta: object;
+    }>;
+    /** Свои сниппеты для дашборда — включая приватные. */
+    getMySnippets: import("@trpc/server").TRPCQueryProcedure<{
         input: void;
         output: {
             id: number;
@@ -78,12 +106,12 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
         }[];
         meta: object;
     }>;
+    /** Владелец берётся из сессии: создать сниппет от чужого имени нельзя. */
     createSnippet: import("@trpc/server").TRPCMutationProcedure<{
         input: {
             name: string;
             code: string;
             language: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css";
-            userId: number;
             slug?: string | undefined;
             visibility?: "link" | "private" | "public" | undefined;
         };
@@ -108,7 +136,6 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             code?: string | undefined;
             slug?: string | undefined;
             language?: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css" | undefined;
-            userId?: number | undefined;
             visibility?: "link" | "private" | "public" | undefined;
         };
         output: {
@@ -154,11 +181,7 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
         };
         meta: object;
     }>;
-    /**
-     * Публикация и снятие публикации.
-     * TODO(#792): проверять, что текущий пользователь — владелец, как только
-     * появится авторизация.
-     */
+    /** Публикация и снятие публикации — только своего сниппета. */
     setVisibility: import("@trpc/server").TRPCMutationProcedure<{
         input: {
             id: number;

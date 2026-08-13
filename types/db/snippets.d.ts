@@ -58,7 +58,6 @@ export declare const createSnippetSchema: z.ZodObject<{
         html: "html";
         css: "css";
     }>;
-    userId: z.ZodNumber;
     visibility: z.ZodOptional<z.ZodEnum<{
         link: "link";
         private: "private";
@@ -83,7 +82,6 @@ export declare const updateSnippetSchema: z.ZodObject<{
         html: "html";
         css: "css";
     }>>;
-    userId: z.ZodOptional<z.ZodNumber>;
     visibility: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
         link: "link";
         private: "private";
@@ -105,13 +103,21 @@ export declare const getPublicSnippetsByUsernameSchema: z.ZodObject<{
 export type CreateSnippetInput = z.infer<typeof createSnippetSchema>;
 export type UpdateSnippetInput = z.infer<typeof updateSnippetSchema>;
 /**
+ * userId нет в createSnippetSchema намеренно: владелец берётся из сессии
+ * (ctx.user.id), а не из тела запроса. Пока поле принималось от клиента, любой
+ * мог создать сниппет от имени чужого аккаунта (#792).
+ */
+export type CreateSnippetData = CreateSnippetInput & {
+    userId: number;
+};
+/**
  * Сниппет по id — путь редактора, поэтому приватные здесь НЕ отсекаются:
  * владелец обязан открывать свой приватный сниппет.
  *
- * Отличить владельца от постороннего пока нечем — авторизации в проекте нет
- * (#639), а процедура публичная (#792). До появления прав по id можно прочитать
- * чужой приватный сниппет, перебрав числа. Просмотровые пути (короткая ссылка,
- * username+slug, профиль) приватные уже не отдают — см. ниже.
+ * Владельца от постороннего отличает вызывающий: снаружи это
+ * snippets.getSnippetById, где приватный сниппет отдаётся только владельцу или
+ * админу (#792, #346). Внутри БД-слоя фильтра нет намеренно — иначе владелец
+ * не сможет открыть свой черновик.
  */
 export declare function getSnippetById(id: number): Promise<Snippet | undefined>;
 /**
@@ -122,7 +128,7 @@ export declare function getSnippetById(id: number): Promise<Snippet | undefined>
  * открываться, потому что видимость проверялась только в
  * getSnippetByShortCode.
  */
-export declare function getSnippetByUsernameSlug(username: string, slug: string): Promise<Snippet | undefined>;
+export declare function getSnippetByUsernameSlug(username: string, slug: string, viewerId?: number): Promise<Snippet | undefined>;
 /**
  * Сниппеты пользователя для его публичного профиля: без приватных.
  *
@@ -134,19 +140,26 @@ export declare function getPublicSnippetsByUsername(username: string): Promise<S
 /**
  * Все сниппеты в БД, включая приватные.
  *
- * Служебная выборка: показывать её постороннему нельзя. Ограничить выдачу
- * владельцем пока нечем (нет авторизации — #639, процедура публичная — #792),
- * поэтому для публичных мест есть getPublicSnippetsByUsername, а этот путь
- * должен уйти под права вместе с #792.
+ * Служебная выборка: снаружи доступна только админам
+ * (snippets.getAllSnippets). Дашборд пользователя ходит в
+ * getSnippetsByUserId, публичный профиль — в getPublicSnippetsByUsername.
  */
 export declare function getAllSnippets(): Promise<Snippet[]>;
+/** Свои сниппеты, включая приватные — выборка дашборда. */
+export declare function getSnippetsByUserId(userId: number): Promise<Snippet[]>;
+/**
+ * Владелец сниппета — для проверки прав перед изменением. Отдельный запрос
+ * вместо полного getSnippetById: проверке нужен только userId, а тащить код
+ * сниппета ради неё незачем.
+ */
+export declare function getSnippetOwnerId(id: number): Promise<number | null | undefined>;
 /** Сниппет по короткой ссылке. Приватные по коду не отдаём. */
 export declare function getSnippetByShortCode(shortCode: string): Promise<(Snippet & {
     authorUsername: string | null;
 }) | undefined>;
 /** Смена уровня доступа. */
 export declare function setSnippetVisibility(id: number, visibility: Visibility): Promise<Snippet>;
-export declare function createSnippet(snippetData: CreateSnippetInput): Promise<Snippet>;
+export declare function createSnippet(snippetData: CreateSnippetData): Promise<Snippet>;
 export declare function updateSnippet(id: number, updates: Omit<UpdateSnippetInput, 'id' | 'userId'>): Promise<Snippet>;
 export declare function deleteSnippet(id: number): Promise<boolean>;
 export declare function generateName(): string;
