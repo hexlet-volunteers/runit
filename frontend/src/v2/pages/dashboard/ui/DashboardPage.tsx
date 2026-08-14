@@ -9,6 +9,7 @@ import {
   Group,
   Loader,
   Select,
+  Stack,
   Text,
   TextInput,
   Title,
@@ -38,6 +39,8 @@ export default function DashboardPage() {
     sort,
     setSort,
     isLoading,
+    isError,
+    refetch,
     mySnippets,
   } = useSnippetFilter();
 
@@ -75,7 +78,23 @@ export default function DashboardPage() {
             </Center>
           )}
 
-          {!isLoading && !hasAny && (
+          {/* Список не загрузился — так и говорим, с кнопкой повторить. */}
+          {!isLoading && isError && (
+            <Center py={80}>
+              <Stack align="center" gap="sm">
+                <Text fw={600}>Не удалось загрузить сниппеты</Text>
+                <Text c="dimmed" fz="sm" ta="center">
+                  Список не пуст — его не удалось получить. Проверьте
+                  соединение и попробуйте снова.
+                </Text>
+                <Button variant="light" onClick={() => void refetch()}>
+                  Повторить
+                </Button>
+              </Stack>
+            </Center>
+          )}
+
+          {!isLoading && !isError && !hasAny && (
             <EmptyState
               onCreateClick={() => setModalOpened(true)}
               onCreateExample={(lang) => createExampleMutation.mutate(lang)}
@@ -83,7 +102,7 @@ export default function DashboardPage() {
             />
           )}
 
-          {!isLoading && hasAny && (
+          {!isLoading && !isError && hasAny && (
             <>
               <Group gap="sm" mb="xl" wrap="wrap">
                 <TextInput

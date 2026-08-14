@@ -34,6 +34,8 @@ export type EditorHeaderProps = {
       label: string;
     },
     markDirty: () => void,
+    /** Чужой сниппет: имя не меняется, статус сохранения не показывается. */
+    readOnly?: boolean,
     handleRun: () => Promise<void>,
     setShareOpened: (v: boolean) => void,
     running: boolean,
@@ -52,6 +54,7 @@ export default function EditorHeader( props: EditorHeaderProps ) {
     handleRun,
     setShareOpened,
     running,
+    readOnly = false,
   } = props;
 
   return (
@@ -96,6 +99,7 @@ export default function EditorHeader( props: EditorHeaderProps ) {
             <RunitLogo size={26} />
           </UnstyledButton>
           <input
+            readOnly={readOnly}
             value={name}
             onChange={(e) => {
               setName(e.currentTarget.value);
@@ -131,6 +135,8 @@ export default function EditorHeader( props: EditorHeaderProps ) {
               {meta.label}
             </Text>
         </Group>
+        {/* Статус сохранения бессмысленен там, где сохранять нечего. */}
+        {!readOnly && (
         <Tooltip
             label={
               isGuest
@@ -159,6 +165,7 @@ export default function EditorHeader( props: EditorHeaderProps ) {
               </Group>
             </UnstyledButton>
           </Tooltip>
+        )}
         </Group>
 
         <Group gap="sm" wrap="nowrap" style={{ flexShrink: 0 }}>

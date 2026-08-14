@@ -119,7 +119,6 @@ export default function NewSnippetModal({ opened, onClose }: Props) {
         </Stack>
 
         <Stack gap={6}>
-          {/* TODO(#828): реальное поле видимости на сервере; пока только визуально. */}
           <FieldLabel>Видимость</FieldLabel>
           <SegmentedControl
             fullWidth

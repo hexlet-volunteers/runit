@@ -1,5 +1,17 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { setCsrfToken, useTRPCClient } from '../../shared/api';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import { notifications } from '@mantine/notifications';
+import {
+  SESSION_EXPIRED_EVENT,
+  setCsrfToken,
+  useTRPCClient,
+} from '../../shared/api';
 import { CONSENT_VERSION } from '../../pages/legal/content';
 import {
   SessionContext,
@@ -72,6 +84,33 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [trpc]);
+
+  /**
+   * Сессию продлить не удалось — переводим интерфейс в состояние гостя.
+   *
+   * Слой fetch умеет продлевать access-токен по refresh-у, но когда и refresh
+   * недействителен (истёк, отозван, разлогин в другой вкладке), состояние в
+   * памяти оставалось «вошедшим»: аватар в шапке, «Мои сниппеты» в меню, а
+   * каждый запрос — 401. Человек видел ошибки и не понимал, что нужно войти.
+   */
+  const userRef = useRef<SessionUser | null>(null);
+  userRef.current = user;
+
+  useEffect(() => {
+    const onExpired = () => {
+      // Гость и так гость: сообщать ему о «истёкшей сессии» незачем.
+      if (!userRef.current) return;
+      setCsrfToken(null);
+      setUser(null);
+      notifications.show({
+        message: 'Сессия истекла — войдите заново.',
+        color: 'yellow',
+      });
+    };
+
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, []);
 
   const login = useCallback(
     async (email: string, password: string) => {

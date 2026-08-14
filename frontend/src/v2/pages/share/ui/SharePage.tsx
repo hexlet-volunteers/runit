@@ -66,9 +66,14 @@ export default function SharePage() {
   const forkMutation = useMutation({
     mutationFn: async (s: Snippet) =>
       createSnippet(trpc, {
-        name: `${s.name}-fork`,
+        // Имя ограничено 30 символами: с длинным исходным именем суффикс
+        // выходил за предел, и сервер отклонял форк целиком.
+        name: `${s.name}-fork`.slice(0, 30),
         code: s.code,
         language: toSnippetLanguage(s.language),
+        // Копия чужого сниппета — своя, приватная: публиковать её за автора
+        // копии мы не вправе.
+        visibility: 'private',
       }),
     onSuccess: (created: { id: number }) => navigate(`/editor/${created.id}`),
   });

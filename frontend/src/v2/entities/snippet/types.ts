@@ -38,6 +38,23 @@ export const isSnippetLanguage = (value: string): value is SnippetLanguage =>
 export const toSnippetLanguage = (value: string): SnippetLanguage =>
   isSnippetLanguage(value) ? value : 'javascript';
 
+/**
+ * Уровни доступа. Список обязан совпадать с VISIBILITIES бэкенда
+ * (src/db/snippets.ts) — по той же причине, что и список языков.
+ */
+export const SNIPPET_VISIBILITIES = ['private', 'link', 'public'] as const;
+
+export type SnippetVisibility = (typeof SNIPPET_VISIBILITIES)[number];
+
+export const isSnippetVisibility = (
+  value: string,
+): value is SnippetVisibility =>
+  (SNIPPET_VISIBILITIES as readonly string[]).includes(value);
+
+/** Приводит строку из формы к уровню доступа; неизвестное — самый закрытый. */
+export const toSnippetVisibility = (value: string): SnippetVisibility =>
+  isSnippetVisibility(value) ? value : 'private';
+
 export type Snippet = {
   id: number;
   name: string;
@@ -50,7 +67,7 @@ export type Snippet = {
   /** Код короткой ссылки /s/aB3xK9. Есть у всех сниппетов, созданных после #918. */
   shortCode?: string | null;
   /** private | link | public. */
-  visibility?: string;
+  visibility?: SnippetVisibility | string;
   /**
    * Логин автора. Приходит только от getSnippetByShortCode — там он нужен,
    * потому что в короткой ссылке имени пользователя нет.

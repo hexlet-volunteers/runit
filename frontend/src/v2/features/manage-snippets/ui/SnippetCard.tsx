@@ -20,16 +20,32 @@ export default function SnippetCard({
     runnable: false,
   };
 
-  /** Копирует ссылку на сниппет в буфер обмена: короткую, если она есть. */
+  /**
+   * Копирует ссылку на сниппет в буфер обмена: короткую, если она есть.
+   *
+   * У приватного сниппета ссылка есть, но у любого, кроме владельца, она
+   * открывается как «не найдено». Раньше кнопка молча сообщала «Ссылка
+   * скопирована» — человек отправлял её коллеге и узнавал о проблеме от него.
+   */
   const copyLink = async () => {
     const url = snippetUrl({
       shortCode: snippet.shortCode,
       username,
       slug: snippet.slug,
     });
+    const isPrivate = snippet.visibility === 'private';
     try {
       await navigator.clipboard.writeText(url);
-      notifications.show({ message: 'Ссылка скопирована', color: 'blue' });
+      notifications.show(
+        isPrivate
+          ? {
+              message:
+                'Ссылка скопирована, но сниппет приватный — по ней откроется только у вас. Смените видимость на «По ссылке» или «Публичный».',
+              color: 'yellow',
+              autoClose: 7000,
+            }
+          : { message: 'Ссылка скопирована', color: 'blue' },
+      );
     } catch {
       notifications.show({ message: `Не удалось скопировать: ${url}`, color: 'red' });
     }

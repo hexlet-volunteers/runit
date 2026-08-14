@@ -1,19 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import {
+  Alert,
   Box,
   Button,
   Center,
+  Group,
   Loader,
   SegmentedControl,
   Stack,
   Text,
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
 import { useQuery } from '@tanstack/react-query';
 import MonacoEditor, { type OnMount } from '@monaco-editor/react';
 
 import { useTRPCClient } from '../../../shared/api';
+import { useEditorPrefs } from '../../../shared/lib';
 import { editorColors, langMeta, runtimeLabel } from '../../../shared/theme';
 import { useSession } from '../../../entities/user';
 
@@ -32,8 +36,14 @@ import EditorHeader from './EditorHeader';
 import EditorSidebar from './EditorSidebar';
 import EditorStatusBar from './EditorStatusBar';
 import { useRunner } from '../../../features/run-code';
-import { useSnippetById, generateSnippetName } from '../../../entities/snippet';
+import {
+  useSnippetById,
+  generateSnippetName,
+  createSnippet,
+  toSnippetLanguage,
+} from '../../../entities/snippet';
 import { useUserById } from '../../../entities/user';
+import { useAuthModal } from '../../../features/auth';
 
 // Экран редактора Runit v2 (docs/design/editor.png).
 // TODO(#821, #609): серверное исполнение — сейчас JS выполняется в Web Worker,
@@ -44,6 +54,8 @@ export default function EditorPage() {
   const { id } = useParams();
   const snippetId = id ? Number(id) : null;
   const trpc = useTRPCClient();
+  const navigate = useNavigate();
+  const auth = useAuthModal();
   const { user } = useSession();
 
   const [name, setName] = useState('');
@@ -66,6 +78,17 @@ export default function EditorPage() {
    */
   const isMobile = useMediaQuery('(max-width: 767px)') ?? false;
   const [mobilePane, setMobilePane] = useState<'code' | 'output'>('code');
+
+  /**
+   * Настройки со страницы «Настройки → Редактор». До этого они писались в
+   * localStorage и никем не читались: у Monaco стоял жёсткий размер шрифта,
+   * табуляция всегда в два пробела, консоль всегда справа.
+   *
+   * Расположение консоли учитывается только на широком экране: на узком панели
+   * переключаются кнопкой (#842), делить там высоту не на чем.
+   */
+  const prefs = useEditorPrefs();
+  const consoleAtBottom = !isMobile && prefs.consoleLayout === 'bottom';
 
   // Рефы для стабильных колбэков (saveNow использует их через useSnippetSave).
   const nameRef = useRef(name);
@@ -98,16 +121,6 @@ export default function EditorPage() {
   useEffect(() => {
     if (isMobile && (running || runKey > 0)) setMobilePane('output');
   }, [isMobile, running, runKey]);
-  const {
-    saveManually,
-    markDirty,
-    saveStatus,
-    setSaveStatus,
-    slug,
-    setSlug,
-    snippetIdRef,
-  } = useSnippetSave(snippetId, nameRef, codeRef, languageRef);
-
   const initializedFor = useRef<string>('');
 
   // --- Данные -------------------------------------------------------------
@@ -134,6 +147,62 @@ export default function EditorPage() {
     staleTime: Infinity,
   });
 
+  /**
+   * Чужой сниппет открыт только для чтения.
+   *
+   * По id доступен публичный сниппет любого автора — это нормально, но править
+   * его нельзя: сервер отклоняет чужие изменения (NOT_FOUND). Раньше редактор
+   * об этом не знал: текст менялся, автосохранение уходило в отказ, и человек
+   * получал поток тостов «не удалось сохранить» вместо простого объяснения.
+   * Правки сохраняются в свою копию — кнопка ниже.
+   */
+  const isForeign =
+    snippetQuery.data != null &&
+    snippetQuery.data.userId != null &&
+    (user == null || snippetQuery.data.userId !== user.id);
+
+  const {
+    saveManually,
+    markDirty,
+    saveStatus,
+    setSaveStatus,
+    slug,
+    setSlug,
+    snippetIdRef,
+    createdHereRef,
+  } = useSnippetSave(snippetId, nameRef, codeRef, languageRef, {
+    readOnly: isForeign,
+  });
+
+  /** Создаёт свою копию открытого чужого сниппета и открывает её в редакторе. */
+  const [forking, setForking] = useState(false);
+  const forkSnippet = async () => {
+    if (!snippetQuery.data) return;
+    if (!user) {
+      auth.open('register');
+      return;
+    }
+    setForking(true);
+    try {
+      const created = await createSnippet(trpc, {
+        // Имя ограничено 30 символами, поэтому не «Копия …», а исходное имя.
+        name: nameRef.current.slice(0, 30),
+        code: codeRef.current,
+        language: toSnippetLanguage(languageRef.current),
+        visibility: 'private',
+      });
+      initializedFor.current = `id:${created.id}`;
+      navigate(`/editor/${created.id}`, { replace: false });
+    } catch {
+      notifications.show({
+        message: 'Не удалось создать копию сниппета',
+        color: 'red',
+      });
+    } finally {
+      setForking(false);
+    }
+  };
+
   /** Инициализация стейта редактора при загрузке существующего сниппета. */
   useEffect(() => {
     if (
@@ -142,6 +211,17 @@ export default function EditorPage() {
       initializedFor.current !== `id:${snippetId}`
     ) {
       initializedFor.current = `id:${snippetId}`;
+      /**
+       * Сниппет только что создан из этого же редактора: в состоянии уже лежит
+       * то, что человек набрал, и оно новее серверной копии. Пока этой проверки
+       * не было, символы, набранные за время запроса на создание, затирались
+       * ответом сервера — правка исчезала на глазах.
+       */
+      if (createdHereRef.current) {
+        createdHereRef.current = false;
+        setSlug(snippetQuery.data.slug);
+        return;
+      }
       setName(snippetQuery.data.name);
       setCode(snippetQuery.data.code);
       setLanguage(snippetQuery.data.language ?? 'javascript');
@@ -223,11 +303,30 @@ export default function EditorPage() {
         meta={meta}
         saveNow={saveManually}
         statusMeta={statusMeta}
+        readOnly={isForeign}
         setShareOpened={setShareOpened}
         handleRun={handleRun}
         running={running}
         markDirty={markDirty}
       />
+
+      {isForeign && (
+        <Alert color="yellow" radius={0} py={8}>
+          <Group justify="space-between" wrap="wrap" gap="xs">
+            <Text fz="sm">
+              Это чужой сниппет — он открыт только для чтения.
+            </Text>
+            <Button
+              size="xs"
+              variant="light"
+              loading={forking}
+              onClick={() => void forkSnippet()}
+            >
+              Создать свою копию
+            </Button>
+          </Group>
+        </Alert>
+      )}
 
       {/* ===== Основная область ===== */}
       {isMobile && (
@@ -258,11 +357,25 @@ export default function EditorPage() {
           />
         )}
 
-        {/* --- Центр: редактор кода --- */}
+        {/*
+          --- Центр: редактор и консоль ---
+          При консоли снизу редактор и консоль складываются в колонку внутри
+          этого блока, при консоли справа — консоль остаётся отдельной колонкой.
+        */}
         <div
           style={{
             flex: 1,
             minWidth: 0,
+            display: 'flex',
+            flexDirection: consoleAtBottom ? 'column' : 'row',
+            minHeight: 0,
+          }}
+        >
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            minHeight: 0,
             display: isMobile && mobilePane !== 'code' ? 'none' : 'flex',
             flexDirection: 'column',
             background: editorColors.bg,
@@ -304,10 +417,12 @@ export default function EditorPage() {
               onMount={handleEditorMount}
               loading={<Loader color={editorColors.accent} />}
               options={{
-                fontSize: 14,
+                readOnly: isForeign,
+                fontSize: prefs.fontSize,
                 fontFamily: "'JetBrains Mono', ui-monospace, monospace",
                 minimap: { enabled: false },
                 tabSize: 2,
+                insertSpaces: prefs.tabSpaces,
                 scrollBeyondLastLine: false,
                 automaticLayout: true,
                 padding: { top: 14 },
@@ -317,12 +432,14 @@ export default function EditorPage() {
           </div>
         </div>
 
-        {/* --- Правая панель: консоль/ввод (~25%, на мобильном — во всю ширину) --- */}
+        {/* --- Консоль/ввод: справа ~25%, снизу ~40% высоты, на мобильном — во всю ширину --- */}
         <div
           style={
             isMobile
               ? { flex: 1, minWidth: 0, display: mobilePane === 'output' ? 'block' : 'none' }
-              : { width: '25%', flexShrink: 0, minWidth: 260 }
+              : consoleAtBottom
+                ? { height: '40%', flexShrink: 0, minHeight: 180 }
+                : { width: '25%', flexShrink: 0, minWidth: 260 }
           }
         >
           <ConsolePanel
@@ -338,6 +455,7 @@ export default function EditorPage() {
             runKey={runKey}
             runtime={runtimeLabel(language)}
           />
+        </div>
         </div>
       </div>
 

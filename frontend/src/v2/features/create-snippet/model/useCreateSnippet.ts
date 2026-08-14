@@ -10,6 +10,7 @@ import {
   generateSnippetName,
   createSnippet,
   toSnippetLanguage,
+  toSnippetVisibility,
 } from '../../../entities/snippet';
 import { type Props } from '..';
 
@@ -67,6 +68,7 @@ export default function useCreateSnippet({ opened, onClose }: Props) {
         name: name.trim(),
         code: withExample ? (sampleCode[language] ?? '') : '',
         language: toSnippetLanguage(language),
+        visibility: toSnippetVisibility(visibility),
       }),
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: SNIPPETS_QUERY_KEY });

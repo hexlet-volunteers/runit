@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import SettingRow from './SettingRow';
 import {
   Badge,
@@ -10,57 +9,23 @@ import {
   Switch,
   Text,
 } from '@mantine/core';
+import {
+  MAX_FONT_SIZE,
+  MIN_FONT_SIZE,
+  useEditorPrefs,
+  writeEditorPrefs,
+  type ConsoleLayout,
+} from '../../../shared/lib';
 
-/** Ключи localStorage для настроек редактора. TODO(#832): перенести на сервер. */
-const LS_FONT_SIZE = 'runit.v2.editorFontSize';
-const LS_CONSOLE_LAYOUT = 'runit.v2.consoleLayout';
-const LS_TAB_SPACES = 'runit.v2.tabSpaces';
-
-/** Читает строку из localStorage. При ошибке (приватный режим) возвращает запасное значение. */
-const readLS = (key: string, fallback: string): string => {
-  try {
-    return localStorage.getItem(key) ?? fallback;
-  } catch {
-    return fallback;
-  }
-};
-
-/** Вкладка «Редактор»: размер шрифта, расположение консоли, табуляция. Настройки хранятся в localStorage. */
+/**
+ * Вкладка «Редактор»: размер шрифта, расположение консоли, табуляция.
+ *
+ * Значения хранятся локально (shared/lib/editorPrefs) и читаются редактором.
+ * Раньше вкладка складывала их в localStorage, а редактор об этом не знал:
+ * переключатели двигались, надпись обещала «уже применено», и ничего не менялось.
+ */
 export default function EditorTab() {
-  const [fontSize, setFontSize] = useState<number>(() => {
-    const parsed = Number(readLS(LS_FONT_SIZE, '14'));
-    return Number.isFinite(parsed) && parsed >= 12 && parsed <= 20 ? parsed : 14;
-  });
-  const [consoleLayout, setConsoleLayout] = useState<string>(() =>
-    readLS(LS_CONSOLE_LAYOUT, 'right'),
-  );
-  const [tabSpaces, setTabSpaces] = useState<boolean>(
-    () => readLS(LS_TAB_SPACES, 'true') === 'true',
-  );
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(LS_FONT_SIZE, String(fontSize));
-    } catch {
-      /* приватный режим — молча пропускаем */
-    }
-  }, [fontSize]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(LS_CONSOLE_LAYOUT, consoleLayout);
-    } catch {
-      /* noop */
-    }
-  }, [consoleLayout]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(LS_TAB_SPACES, String(tabSpaces));
-    } catch {
-      /* noop */
-    }
-  }, [tabSpaces]);
+  const { fontSize, consoleLayout, tabSpaces } = useEditorPrefs();
 
   return (
     <Card withBorder radius="lg" p="xl" mt="lg">
@@ -70,11 +35,11 @@ export default function EditorTab() {
         control={
           <Group gap="md" wrap="nowrap" w={320}>
             <Slider
-              min={12}
-              max={20}
+              min={MIN_FONT_SIZE}
+              max={MAX_FONT_SIZE}
               step={1}
               value={fontSize}
-              onChange={setFontSize}
+              onChange={(value) => writeEditorPrefs({ fontSize: value })}
               style={{ flex: 1 }}
               label={(v) => `${v} px`}
             />
@@ -91,7 +56,9 @@ export default function EditorTab() {
         control={
           <SegmentedControl
             value={consoleLayout}
-            onChange={setConsoleLayout}
+            onChange={(value) =>
+              writeEditorPrefs({ consoleLayout: value as ConsoleLayout })
+            }
             data={[
               { label: 'Справа', value: 'right' },
               { label: 'Снизу', value: 'bottom' },
@@ -107,13 +74,16 @@ export default function EditorTab() {
           <Switch
             size="md"
             checked={tabSpaces}
-            onChange={(e) => setTabSpaces(e.currentTarget.checked)}
+            onChange={(e) =>
+              writeEditorPrefs({ tabSpaces: e.currentTarget.checked })
+            }
           />
         }
       />
       <Text c="dimmed" fz="sm" ta="center" mt="lg">
-        Размер шрифта и расположение консоли уже применены к редактору — откройте его,
-        чтобы проверить.
+        Настройки применяются к редактору сразу — если он открыт в другой
+        вкладке, менять их там не нужно. На узком экране консоль всегда
+        переключается кнопкой, а не делит экран с кодом.
       </Text>
     </Card>
   );

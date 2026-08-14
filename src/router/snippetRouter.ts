@@ -58,9 +58,14 @@ async function assertCanEditSnippet(
 
 export const snippetRouter = router({
   /**
-   * Сниппет по id — путь редактора. Приватный отдаём только владельцу: до
-   * появления авторизации приватный сниппет читался перебором id (#792).
-   * Публичный и доступный по ссылке открыт всем, в том числе гостю.
+   * Сниппет по id — путь редактора (/editor/:id).
+   *
+   * Постороннему по id доступен только публичный сниппет. Уровень 'link'
+   * означает «открыт тому, кому автор дал ссылку», а id — это последовательное
+   * число: пока здесь проверялся лишь 'private', сниппеты «по ссылке»
+   * вычитывались перебором /editor/1, /editor/2, … то есть ссылка ничего не
+   * защищала. Раздача по ссылке идёт через короткий код
+   * (getSnippetByShortCode) — он не перебирается, и этот путь остаётся рабочим.
    */
   getSnippetById: publicProcedure
     .input(getSnippetByIdSchema)
@@ -75,7 +80,7 @@ export const snippetRouter = router({
         throw notFound;
       }
 
-      if (snippet.visibility === 'private') {
+      if (snippet.visibility !== 'public') {
         const isOwner =
           ctx.user != null &&
           (ctx.user.isAdmin ||

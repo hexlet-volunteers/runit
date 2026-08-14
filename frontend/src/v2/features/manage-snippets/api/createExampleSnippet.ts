@@ -11,4 +11,6 @@ export const createExampleSnippet = (trpc: TrpcClient, language: string) =>
     name: `example-${language}`,
     code: sampleCode[language] ?? '',
     language: toSnippetLanguage(language),
+    // Пример создаётся в личном списке — публиковать его незачем.
+    visibility: 'private',
   }) as Promise<{ id: number }>;

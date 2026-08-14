@@ -50,6 +50,8 @@ let guest: Caller;
 
 let privateSnippetId: number;
 let publicSnippetId: number;
+let linkSnippetId: number;
+let linkShortCode: string;
 
 beforeAll(async () => {
   await runMigrations();
@@ -108,6 +110,15 @@ beforeAll(async () => {
         visibility: 'public',
         userId: ownerId,
       },
+      {
+        name: 'by-link',
+        code: 'console.log(3)',
+        language: 'javascript',
+        slug: 'by-link',
+        visibility: 'link',
+        shortCode: 'lnk12345',
+        userId: ownerId,
+      },
     ])
     .returning({ id: snippets.id, name: snippets.name });
 
@@ -119,6 +130,8 @@ beforeAll(async () => {
 
   privateSnippetId = snippetIdByName('secret');
   publicSnippetId = snippetIdByName('shared');
+  linkSnippetId = snippetIdByName('by-link');
+  linkShortCode = 'lnk12345';
 });
 
 afterAll(async () => {
@@ -167,11 +180,34 @@ describe('чтение сниппетов', () => {
     expect(snippet.id).toBe(privateSnippetId);
   });
 
-  test('публичный профиль не показывает приватные сниппеты', async () => {
+  /**
+   * «По ссылке» — это ровно то, что обещано: доступ есть у того, кому автор дал
+   * ссылку. Профиль и перебор id такой ссылкой не являются, а раньше оба
+   * работали: профиль фильтровал `ne(visibility,'private')`, а getSnippetById
+   * проверял только 'private'.
+   */
+  test('публичный профиль показывает только публичные сниппеты', async () => {
     const list = await guest.snippets.getPublicSnippetsByUsername({
       username: 'owner',
     });
     expect(list.map((s) => s.id)).toEqual([publicSnippetId]);
+  });
+
+  test('сниппет «по ссылке» не вычитывается перебором id', async () => {
+    await expect(
+      guest.snippets.getSnippetById(linkSnippetId),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await expect(
+      stranger.snippets.getSnippetById(linkSnippetId),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  test('сниппет «по ссылке» открывается по короткому коду и владельцу по id', async () => {
+    const byCode = await guest.snippets.getSnippetByShortCode(linkShortCode);
+    expect(byCode.id).toBe(linkSnippetId);
+
+    const byId = await owner.snippets.getSnippetById(linkSnippetId);
+    expect(byId.id).toBe(linkSnippetId);
   });
 
   test('выборка всех сниппетов закрыта от обычного пользователя и гостя', async () => {
@@ -187,7 +223,7 @@ describe('чтение сниппетов', () => {
   test('getMySnippets отдаёт только свои сниппеты', async () => {
     const mine = await owner.snippets.getMySnippets();
     expect(mine.map((s) => s.id).sort()).toEqual(
-      [privateSnippetId, publicSnippetId].sort(),
+      [privateSnippetId, publicSnippetId, linkSnippetId].sort(),
     );
     await expect(stranger.snippets.getMySnippets()).resolves.toEqual([]);
   });
@@ -244,6 +280,40 @@ describe('изменение сниппетов', () => {
     } as never);
 
     expect(created.userId).toBe(strangerId);
+  });
+
+  /**
+   * Пустой сниппет — нормальное состояние: тумблер «Начать с примера кода»
+   * выключен, или человек стёр всё в редакторе. Раньше схема требовала min(1),
+   * и оба случая заканчивались ошибкой сохранения.
+   */
+  test('сниппет создаётся с пустым кодом', async () => {
+    const created = await stranger.snippets.createSnippet({
+      name: 'empty',
+      code: '',
+      language: 'javascript',
+    });
+    expect(created.code).toBe('');
+  });
+
+  test('слишком большой код отвергается', async () => {
+    await expect(
+      stranger.snippets.createSnippet({
+        name: 'huge',
+        code: 'x'.repeat(100_001),
+        language: 'javascript',
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  test('видимость из запроса сохраняется, а не подменяется значением по умолчанию', async () => {
+    const created = await stranger.snippets.createSnippet({
+      name: 'открытый',
+      code: 'console.log(1)',
+      language: 'javascript',
+      visibility: 'public',
+    });
+    expect(created.visibility).toBe('public');
   });
 
   test('владелец меняет свой сниппет', async () => {

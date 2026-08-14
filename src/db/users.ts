@@ -60,11 +60,19 @@ export const updateUserSchema = z.object({
   email: emailSchema.optional(),
 });
 
+/**
+ * Аватар лежит в базе строкой data:base64, поэтому размер ограничен здесь.
+ * ~1.4 МБ строки — это примерно 1 МБ картинки: без предела один запрос мог
+ * записать в text-поле десятки мегабайт, и они возвращались бы в каждом ответе
+ * getUserSettings.
+ */
+export const MAX_AVATAR_LENGTH = 1_400_000;
+
 export const updateUserSettingsSchema = z.object({
   userId: z.number(),
   theme: z.enum(['system', 'light', 'dark']).optional(),
   language: z.enum(['ru', 'en', 'es', 'fr', 'de']).optional(),
-  avatarBase64: z.string().nullable().optional(),
+  avatarBase64: z.string().max(MAX_AVATAR_LENGTH).nullable().optional(),
 });
 
 export const deleteUserSchema = z.object({

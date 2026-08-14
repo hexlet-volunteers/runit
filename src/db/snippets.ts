@@ -46,9 +46,17 @@ export const setVisibilitySchema = z.object({
   visibility: visibilitySchema,
 });
 
+/**
+ * Ограничения на размер кода — первая линия защиты от переполнения БД и
+ * раздувания ответов. min(1) убран сознательно: пустой сниппет — нормальное
+ * состояние. Раньше выключенный тумблер «Начать с примера кода» отправлял
+ * code: '' и получал BAD_REQUEST, а очистка редактора ломала автосохранение.
+ */
+export const MAX_CODE_LENGTH = 100_000;
+
 export const createSnippetSchema = z.object({
   name: z.string().min(1).max(30),
-  code: z.string().min(1),
+  code: z.string().max(MAX_CODE_LENGTH),
   slug: z.string().max(30).optional(),
   language: z.enum([
     'javascript',
@@ -198,9 +206,14 @@ export async function getPublicSnippetsByUsername(
       .select({ snippet: snippets })
       .from(snippets)
       .innerJoin(users, eq(snippets.userId, users.id))
-      .where(
-        and(eq(users.username, username), ne(snippets.visibility, 'private')),
-      )
+      /**
+       * Только 'public'. Уровень 'link' означает «доступен тому, у кого есть
+       * ссылка» — такой сниппет не должен появляться в списке профиля: иначе
+       * достаточно открыть /u/username, чтобы получить и сам код, и ссылку,
+       * которой автор ни с кем не делился. Раньше здесь стояло
+       * ne(visibility, 'private'), то есть в профиль попадало и то, и другое.
+       */
+      .where(and(eq(users.username, username), eq(snippets.visibility, 'public')))
       .orderBy(desc(snippets.createdAt));
 
     return rows.map((row) => row.snippet);

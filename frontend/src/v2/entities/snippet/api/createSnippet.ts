@@ -1,5 +1,5 @@
 import type { TrpcClient } from '../../../shared/api';
-import type { SnippetLanguage } from '../types';
+import type { SnippetLanguage, SnippetVisibility } from '../types';
 
 /**
  * Создание сниппета.
@@ -14,6 +14,11 @@ import type { SnippetLanguage } from '../types';
  *
  * Приведение результата остаётся: бэкенд объявляет id как необязательный,
  * а вызывающему коду нужен точный тип для редиректа в редактор.
+ *
+ * visibility передаётся обязательным полем: пока его не отправляли, сервер
+ * ставил значение по умолчанию 'private', и выбранная в модалке видимость
+ * молча терялась — «Публичный» сниппет не появлялся в профиле, а автор об этом
+ * не узнавал.
  */
 export const createSnippet = (
   trpc: TrpcClient,
@@ -21,10 +26,12 @@ export const createSnippet = (
     name: string;
     code: string;
     language: SnippetLanguage;
+    visibility: SnippetVisibility;
   },
 ) =>
   trpc.snippets.createSnippet.mutate({
     name: params.name,
     code: params.code,
     language: params.language,
+    visibility: params.visibility,
   }) as Promise<{ id: number; slug: string }>;

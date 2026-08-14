@@ -1,4 +1,4 @@
 export { useTRPC, TRPCProvider, useTRPCClient } from './trpc';
 export type { TrpcClient } from './trpc';
 export { getCsrfToken, setCsrfToken } from './csrf';
-export { fetchWithRefresh } from './refreshOnExpiry';
+export { fetchWithRefresh, SESSION_EXPIRED_EVENT } from './refreshOnExpiry';
