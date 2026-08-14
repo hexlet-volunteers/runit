@@ -35,21 +35,6 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.test.{ts,tsx}'],
     css: false,
-    server: {
-      deps: {
-        /**
-         * react-router обрабатывается Vite, как в самом приложении.
-         *
-         * Иначе Node грузит его как чистый ESM и падает на
-         * `import { useOptimistic } from 'react'`: react-router 8 объявляет
-         * peer-зависимость React >= 19.2.7, а в проекте React 18. В браузере
-         * это не проявляется — приложение не использует те возможности
-         * роутера, которым нужен React 19, — но несовпадение версий реальное и
-         * заслуживает отдельной задачи, а не обхода тестами.
-         */
-        inline: ['react-router'],
-      },
-    },
   },
   server: {
     port: 3000,

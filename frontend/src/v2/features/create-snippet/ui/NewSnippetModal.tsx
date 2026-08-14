@@ -14,7 +14,7 @@ import {
   UnstyledButton,
 } from '@mantine/core';
 import { IconDice5 } from '@tabler/icons-react';
-import { langMeta } from '../../../shared/theme';
+import { langMeta, runtimeLabel } from '../../../shared/theme';
 import FieldLabel from './FieldLabel';
 import { VISIBILITY_HINTS, type Props, useCreateSnippet } from '..';
 
@@ -34,11 +34,16 @@ export default function NewSnippetModal({ opened, onClose }: Props) {
     createMutation,
   } = useCreateSnippet({ opened, onClose })
 
-  // TODO(#641): реальный выбор версии среды исполнения; пока статичное значение.
-  const envOptions =
-    language === 'javascript'
-      ? ['Node.js 20 LTS']
-      : [`${langMeta[language]?.label ?? language} — стандартная среда`];
+  /**
+   * Подпись среды берётся из того же справочника, что и статус-бар редактора
+   * (runtimeLabel): у JavaScript это «Браузер (Web Worker)», а не «Node.js 20
+   * LTS» — код исполняется в браузере, и обещание серверной среды сбивало с
+   * толку тех, кто пробовал require или process.argv.
+   *
+   * TODO(#641): реальный выбор версии среды; пока значение одно и только
+   * показывается.
+   */
+  const envOptions = [runtimeLabel(language)];
 
   return (
     <Modal
