@@ -4,6 +4,12 @@
     "types": ["jest", "node"],
     "noEmit": true
   },
-  "include": ["src/**/*.test.ts"],
+  // Объявления типов (*.d.ts) включены наравне с тестами, потому что иначе
+  // расширения интерфейсов до этой проверки не доходят. Тесты тянут за собой
+  // обычный код, а тот опирается на них: без src/fastify.d.ts проверка падала
+  // на `Property 'isAppPage' does not exist on type 'FastifyRequest'`, хотя
+  // основной tsc проходил. Тот же разрыв ждал global.d.ts (декларация для
+  // *.svg) — первый же тест, задевший импорт картинки, упёрся бы в него.
+  "include": ["src/**/*.test.ts", "src/**/*.d.ts"],
   "exclude": ["node_modules", "dist", "types"]
 }
