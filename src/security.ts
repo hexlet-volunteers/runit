@@ -162,11 +162,20 @@ export async function registerSecurity(server: FastifyInstance): Promise<void> {
     // Health-check не должен получать 429: иначе оркестратор решит, что
     // приложение умерло, и начнёт перезапускать живой инстанс.
     allowList: (request: FastifyRequest) => request.url.startsWith('/health'),
-    // За прокси реальный адрес приходит в заголовке.
-    keyGenerator: (request: FastifyRequest) => {
-      const forwarded = String(request.headers['x-forwarded-for'] ?? '');
-      return forwarded.split(',')[0].trim() || request.ip;
-    },
+    /**
+     * Ключ — адрес клиента по версии fastify (см. trustProxy в index.ts).
+     *
+     * Раньше здесь брался первый элемент X-Forwarded-For напрямую. Этот
+     * заголовок подставляет кто угодно: меняя его в каждом запросе, клиент
+     * получал новую корзину и обходил все лимиты — перебор пароля шёл без
+     * ограничений. Обратная сторона той же ошибки: за нашим прокси, который
+     * заголовок перезаписывает, все посетители попадали в один бакет, и один
+     * скрипт мог выключить вход для всех.
+     *
+     * request.ip учитывает заголовок ровно настолько, насколько разрешено
+     * переменной TRUST_PROXY_HOPS.
+     */
+    keyGenerator: (request: FastifyRequest) => request.ip,
     errorResponseBuilder: (_request, context) => ({
       statusCode: 429,
       error: 'Too Many Requests',

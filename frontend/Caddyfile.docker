@@ -25,7 +25,17 @@
 
 	# Боты (превью в мессенджерах, oEmbed-discovery площадок) должны получать
 	# HTML с Open Graph, а не SPA-оболочку без метатегов. Людям отдаём приложение.
-	@bots header_regexp User-Agent (?i)(bot|crawler|spider|facebookexternalhit|twitterbot|slackbot|telegrambot|discordbot|whatsapp|vkshare|embedly|quora link preview|redditbot|linkedinbot)
+	# Регулярка обязана быть в кавычках: в ней есть пробел («quora link preview»),
+	# а Caddy разбирает аргументы по пробелам — без кавычек конфиг не парсится и
+	# контейнер web не стартует вообще (проверяется `caddy validate` в CI).
+	#
+	# Матчер ограничен путём /s/*: только там есть, что отдать боту — HTML с
+	# метатегами. Без ограничения любой User-Agent со словом bot получал бэкенд на
+	# всех путях, включая «/» со служебной страницей и /robots.txt.
+	@bots {
+		path /s/*
+		header_regexp User-Agent "(?i)(bot|crawler|spider|facebookexternalhit|twitterbot|slackbot|telegrambot|discordbot|whatsapp|vkshare|embedly|quora link preview|redditbot|linkedinbot)"
+	}
 	handle @bots {
 		rewrite /s/* /s/{http.request.uri.path.1}/meta
 		reverse_proxy app:3001

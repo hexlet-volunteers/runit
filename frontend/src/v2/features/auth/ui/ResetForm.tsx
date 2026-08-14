@@ -1,67 +1,54 @@
-import { useState } from 'react';
-import {
-  Anchor,
-  Button,
-  Stack,
-  Text,
-  TextInput,
-} from '@mantine/core';
-import { useForm } from '@mantine/form';
-import { notifications } from '@mantine/notifications';
-import { useAuthModal, validateEmail, titles } from '..';
+import { Alert, Anchor, Stack, Text } from '@mantine/core';
+import { useAuthModal, titles } from '..';
 import FormHeader from './FormHeader';
+
+/**
+ * Восстановление доступа.
+ *
+ * Формы отправки письма здесь нет намеренно, пока сброс не реализован на
+ * сервере (#620). До этого экран изображал работающую функцию: поле для почты,
+ * кнопка «Отправить ссылку», задержка 400 мс вместо запроса и тост «Письмо
+ * отправлено (заглушка)» — слово «заглушка» видел конечный пользователь.
+ *
+ * Так хуже, чем ничего: человек, забывший пароль, уходил ждать письмо, которого
+ * никто не отправлял, и терял аккаунт молча. Пока процедуры нет, честнее сказать
+ * прямо и дать адрес, по которому доступ восстановят руками.
+ */
+const SUPPORT_EMAIL = 'support@hexlet.io';
 
 function ResetForm() {
   const { setMode, close } = useAuthModal();
-  const [loading, setLoading] = useState(false);
-
-  const form = useForm({
-    initialValues: { email: '' },
-    validate: { email: validateEmail },
-  });
-
-  // TODO(#640/#620): реальная отправка письма для сброса пароля на бэкенде.
-  const handleSubmit = form.onSubmit(async () => {
-    setLoading(true);
-    // Имитация запроса, чтобы кнопка показала loading-состояние.
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    setLoading(false);
-    close();
-    notifications.show({
-      title: 'Сброс пароля',
-      message: 'Письмо отправлено (заглушка)',
-      color: 'blue',
-    });
-  });
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Stack gap="md">
-        <FormHeader title={titles.reset} onClose={close} />
-        <Text size="sm" c="dimmed">
-          Укажите почту, привязанную к аккаунту, — пришлём ссылку для сброса пароля.
+    <Stack gap="md">
+      <FormHeader title={titles.reset} onClose={close} />
+
+      <Alert color="yellow" radius="md">
+        <Text size="sm">
+          Автоматическое восстановление пароля пока не работает — письма со
+          ссылкой сервис не отправляет.
         </Text>
-        <TextInput
-          label="Электронная почта"
-          placeholder="you@example.com"
-          type="email"
-          autoComplete="email"
-          {...form.getInputProps('email')}
-        />
-        <Button type="submit" size="md" fullWidth loading={loading}>
-          Отправить ссылку
-        </Button>
-        <Anchor
-          component="button"
-          type="button"
-          size="sm"
-          ta="center"
-          onClick={() => setMode('login')}
-        >
-          ← Назад ко входу
-        </Anchor>
-      </Stack>
-    </form>
+      </Alert>
+
+      <Text size="sm" c="dimmed">
+        Напишите на{' '}
+        <Anchor href={`mailto:${SUPPORT_EMAIL}`} size="sm">
+          {SUPPORT_EMAIL}
+        </Anchor>{' '}
+        с адреса, на который зарегистрирован аккаунт, — доступ восстановят
+        вручную.
+      </Text>
+
+      <Anchor
+        component="button"
+        type="button"
+        size="sm"
+        ta="center"
+        onClick={() => setMode('login')}
+      >
+        ← Назад ко входу
+      </Anchor>
+    </Stack>
   );
 }
 

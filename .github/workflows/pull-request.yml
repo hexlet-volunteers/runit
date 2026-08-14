@@ -124,6 +124,17 @@ jobs:
         # Контекст — корень репозитория: фронту нужны типы из types/.
         run: docker build -f frontend/Dockerfile -t runit-web:ci .
 
+      - name: Конфиг Caddy валиден
+        # Сборка образа не проверяет конфиг: Caddy читает его при старте, а не
+        # при COPY. Из-за этого незакавыченный пробел в регулярке @bots прошёл
+        # зелёным CI и уронил бы контейнер web в проде — нашлось только
+        # аудитом. Проверяем оба конфига тем же caddy, что лежит в образе.
+        run: |
+          docker run --rm -v "$PWD/frontend/Caddyfile.docker:/cfg:ro" caddy:2-alpine \
+            caddy validate --config /cfg --adapter caddyfile
+          docker run --rm -v "$PWD/Caddyfile:/cfg:ro" caddy:2-alpine \
+            caddy validate --config /cfg --adapter caddyfile
+
   runner-smoke:
     name: Раннер — исполнение 9 языков в Docker
     runs-on: ubuntu-latest

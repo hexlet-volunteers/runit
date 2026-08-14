@@ -57,6 +57,9 @@ jobs:
 
   deploy:
     name: Раскатка на стенд
+    # Ждём и запись релиза, и публикацию образов: без второго условия деплой
+    # стартовал параллельно с publish.yml и регулярно опережал его, пытаясь
+    # скачать ещё не опубликованный тег.
     needs: release
     runs-on: ubuntu-latest
     if: github.repository == 'hexlet-volunteers/runit'
@@ -91,7 +94,12 @@ jobs:
           script: |
             set -e
             cd "${{ vars.DEPLOY_PATH }}"
-            export RUNIT_VERSION="${{ github.ref_name }}"
+            # Тег образа — без ведущей v: publish.yml публикует по semver
+            # (v1.2.3 → 1.2.3), а имя тега git приходит как v1.2.3. Раньше
+            # деплой просил runit-app:v1.2.3 и падал на docker compose pull с
+            # «manifest unknown».
+            TAG="${{ github.ref_name }}"
+            export RUNIT_VERSION="${TAG#v}"
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --wait
             docker image prune -f

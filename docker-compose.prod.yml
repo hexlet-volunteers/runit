@@ -1,6 +1,6 @@
 # Боевой стенд Runit.
 #
-#   RUNIT_VERSION=v1.2.3 docker compose -f docker-compose.prod.yml up -d --wait
+#   RUNIT_VERSION=1.2.3 docker compose -f docker-compose.prod.yml up -d --wait
 #
 # Отличия от docker-compose.yml (тот — для локальной проверки сборки):
 #
@@ -15,7 +15,8 @@
 #    и не хранится в репозитории.
 #
 # Требуемые переменные (в .env на сервере):
-#   RUNIT_VERSION       тег образов, например v1.2.3
+#   RUNIT_VERSION       тег образа, например 1.2.3 (без ведущей v — так
+#                       publish.yml публикует по semver)
 #   DATABASE_URL        строка подключения к managed PostgreSQL
 #   JWT_ACCESS_SECRET   секрет подписи access-токена
 #   JWT_REFRESH_SECRET  секрет подписи refresh-токена
@@ -44,6 +45,10 @@ services:
       # хосте. Включается отдельным runner-хостом — RUNNER_ENABLED=true и
       # DOCKER_HOST на него (см. README).
       RUNNER_ENABLED: ${RUNNER_ENABLED:-false}
+      # Перед приложением стоит наш Caddy (сервис web) — ровно один прокси.
+      # Без этого лимитер считает всех посетителей одним клиентом: адрес берётся
+      # из сокета, а он у всех одинаковый — адрес прокси.
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-1}
       DOCKER_HOST: ${DOCKER_HOST:-}
     expose:
       - '3001'

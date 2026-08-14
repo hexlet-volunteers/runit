@@ -30,6 +30,15 @@ const getApp = async () => {
     logger: {
       level: env.LOG_LEVEL,
     },
+    /**
+     * Сколько прокси перед приложением считать доверенными (#858).
+     *
+     * Без этого fastify не разбирает X-Forwarded-For, а лимитер брал заголовок
+     * напрямую — и обходился подстановкой любого значения. Теперь адрес
+     * клиента определяет fastify по числу доверенных хопов: 0 (по умолчанию) —
+     * только адрес сокета, подделать нельзя.
+     */
+    trustProxy: env.TRUST_PROXY_HOPS > 0 ? env.TRUST_PROXY_HOPS : false,
     routerOptions: {
       maxParamLength: 1000,
       caseSensitive: false,

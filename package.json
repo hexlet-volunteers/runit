@@ -35,6 +35,7 @@
   },
   "homepage": "https://github.com/hexlet-rus/runit#readme",
   "dependencies": {
+    "@faker-js/faker": "^10.0.0",
     "@fastify/cookie": "^11.1.2",
     "@fastify/cors": "^11.3.0",
     "@fastify/csrf-protection": "^8.0.1",
@@ -51,7 +52,6 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.3",
-    "@faker-js/faker": "^10.0.0",
     "@swc/core": "^1.15.47",
     "@swc/jest": "^0.2.39",
     "@types/bcrypt": "^6.0.0",

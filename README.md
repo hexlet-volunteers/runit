@@ -313,7 +313,7 @@ rootless/удалённый демон (переменные `RUNNER_DOCKER_BIN`
 собирать на месте нельзя: раскатывался бы не тот образ, что прошёл проверки.
 
 ```bash
-RUNIT_VERSION=v1.2.3 docker compose -f docker-compose.prod.yml up -d --wait
+RUNIT_VERSION=1.2.3 docker compose -f docker-compose.prod.yml up -d --wait
 ```
 
 Отличия от локального compose:
