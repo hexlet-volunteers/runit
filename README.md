@@ -505,6 +505,9 @@ Docker на PaaS обычно недоступен, поэтому сервер�
 
 ## Выпуск версии
 
+Как участвовать в разработке — правила мержа, ограничения `main` и полный процесс
+выпуска — в [CONTRIBUTING.md](CONTRIBUTING.md). Ниже — техническая сторона.
+
 Теги руками не ставят. Версию считает
 [release-please](https://github.com/googleapis/release-please) по conventional
 commits — так же, как в `hexlet-basics` и `hexlet/hexlet`, и с теми же
