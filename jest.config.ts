@@ -29,10 +29,18 @@ const config: Config = {
    * src/runner/*.test.ts исключены отдельно: у них свой раннер на node:test
    * (см. npm run test:runner), потому что они проверяют argv для docker без
    * jest-окружения.
+   *
+   * Исключение записано через <rootDir>, а не как '/runner/': шаблоны
+   * сопоставляются с абсолютным путём файла, и в CI он выглядит как
+   * /home/runner/work/runit/runit/src/... — то есть голое '/runner/' совпадало с
+   * домашним каталогом пользователя раннера GitHub Actions и отсекало ВСЕ тесты.
+   * Локально этого не видно (в пути разработчика нет «runner»), а в CI job падал
+   * с «No tests found». Тот же класс ошибки, что и с монтированием: путь
+   * означает разное в разных местах.
    */
   rootDir: 'src',
   testMatch: ['**/*.test.ts'],
-  testPathIgnorePatterns: ['/node_modules/', '/runner/'],
+  testPathIgnorePatterns: ['/node_modules/', '<rootDir>/runner/'],
 };
 
 export default config;
