@@ -15,7 +15,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { copyToClipboard } from '../../../shared/lib';
+import { copyToClipboard, embedUrl, snippetUrl } from '../../../shared/lib';
 import { useTRPCClient } from '../../../shared/api';
 import { type Props } from '..'
 
@@ -37,14 +37,19 @@ export default function ShareModal({
   const [shared, setShared] = useState((visibility ?? 'private') !== 'private');
   const [saving, setSaving] = useState(false);
 
-  const origin = window.location.origin;
-  // Короткая ссылка — основная: её удобно диктовать, и по ней работает
-  // встраивание по ссылке (oEmbed). Путь с username/slug остаётся рабочим.
+  /**
+   * Ссылки строит общий модуль (shared/lib/snippetLinks), а не эта модалка.
+   *
+   * Раньше адрес брался из window.location.origin — то есть скопированный код
+   * содержал адрес того окружения, где его скопировали: со стейджинга или с
+   * localhost:3000 такой iframe на чужом сайте не открывался вообще. Общий
+   * модуль знает про VITE_PUBLIC_BASE_URL и про то, что короткая ссылка
+   * каноническая.
+   */
+  const linkSource = { shortCode, username, slug };
   const pagePath = shortCode ? `/s/${shortCode}` : `/s/${username}/${slug}`;
-  const shareUrl = `${origin}${pagePath}`;
-  const embedSrc = shortCode
-    ? `${origin}/embed/s/${shortCode}?theme=${theme}&height=${height}`
-    : `${origin}/embed/${username}/${slug}?theme=${theme}&height=${height}`;
+  const shareUrl = snippetUrl(linkSource);
+  const embedSrc = embedUrl(linkSource, { theme, height: Number(height) });
   const embedCode = `<iframe src="${embedSrc}" width="100%" height="${height}" style="border:0;border-radius:12px" title="Runit"></iframe>`;
 
   /** Публикация и снятие публикации. */
@@ -103,6 +108,7 @@ export default function ShareModal({
             <TextInput value={shareUrl} readOnly style={{ flex: 1 }} ff="monospace" />
             <Button
               variant="light"
+              disabled={!shared}
               onClick={() => copyToClipboard(shareUrl, 'Ссылка скопирована')}
             >
               Копировать
@@ -147,11 +153,20 @@ export default function ShareModal({
             {embedCode}
           </Code>
           <Group justify="space-between" mt="sm">
-            <Text fz="sm" c="dimmed">
-              Код обновляется при смене настроек
+            <Text fz="sm" c={shared ? 'dimmed' : 'orange'}>
+              {shared
+                ? 'Код обновляется при смене настроек'
+                : 'Включите доступ по ссылке — иначе виджет покажет «сниппет не найден»'}
             </Text>
+            {/*
+              У приватного сниппета встраивание не работает: и oEmbed, и сама
+              страница виджета отвечают «не найдено». Копировать код, который
+              заведомо не заработает на чужом сайте, — та же ложная кнопка, что
+              и «ссылка скопирована» для приватного сниппета в дашборде.
+            */}
             <Button
               variant="default"
+              disabled={!shared}
               onClick={() => copyToClipboard(embedCode, 'Код для вставки скопирован')}
             >
               Копировать код

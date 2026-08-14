@@ -36,12 +36,33 @@ const logProbe = (what: string, stderr: string) => {
   if (stderr.trim()) console.error(`[runner] ${what}: ${stderr.trim()}`);
 };
 
+/**
+ * Сообщение о недоступности — по адресату.
+ *
+ * Сниппеты встраиваются в чужие страницы: «Выполнить» в виджете нажимает
+ * читатель урока или статьи, который про наш сервер ничего не знает. Ему
+ * доставались инструкции для администратора — «Запустите Docker и повторите
+ * попытку», «Выполните: npm run runner:build-images». Совет, который читатель
+ * не может выполнить, выглядит как поломка сайта, на котором он читает.
+ *
+ * Поэтому в production наружу идёт нейтральный текст, а точную причину видит
+ * тот, кому она адресована — она остаётся в логах (logProbe выше и вызывающий
+ * код). В разработке остаются подсказки: там сообщение читает разработчик.
+ */
+const audienceMessage = (developerHint: string): string =>
+  process.env.NODE_ENV === 'production'
+    ? 'Серверное исполнение сейчас недоступно. Попробуйте позже.'
+    : developerHint;
+
 export async function checkDaemon(): Promise<Availability> {
   if (!runnerConfig.enabled) {
     return {
       ok: false,
       reason: 'disabled',
-      message: 'Серверное исполнение отключено (RUNNER_ENABLED=false).',
+      // Название переменной окружения читателю встроенного виджета не поможет.
+      message: audienceMessage(
+        'Серверное исполнение отключено (RUNNER_ENABLED=false).',
+      ),
     };
   }
 
@@ -61,8 +82,9 @@ export async function checkDaemon(): Promise<Availability> {
     return remember('daemon', {
       ok: false,
       reason: 'no_cli',
-      message:
+      message: audienceMessage(
         'Docker не установлен на сервере — серверное исполнение недоступно.',
+      ),
     });
   }
 
@@ -71,7 +93,9 @@ export async function checkDaemon(): Promise<Availability> {
     return remember('daemon', {
       ok: false,
       reason: 'no_daemon',
-      message: 'Docker-демон не запущен. Запустите Docker и повторите попытку.',
+      message: audienceMessage(
+        'Docker-демон не запущен. Запустите Docker и повторите попытку.',
+      ),
     });
   }
 
@@ -98,7 +122,9 @@ export async function checkImage(language: string): Promise<Availability> {
     return remember(`image:${tag}`, {
       ok: false,
       reason: 'no_image',
-      message: `Образ ${tag} не собран. Выполните: npm run runner:build-images`,
+      message: audienceMessage(
+        `Образ ${tag} не собран. Выполните: npm run runner:build-images`,
+      ),
     });
   }
 
