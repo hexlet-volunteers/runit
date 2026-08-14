@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { getSnippetByShortCode } from './db/snippets';
 
 /**
@@ -12,7 +12,7 @@ import { getSnippetByShortCode } from './db/snippets';
  *  1. GET /oembed — сам oEmbed-эндпоинт (спецификация oembed.com);
  *  2. GET /s/:shortCode/meta — HTML с Open Graph и ссылкой на oEmbed (discovery):
  *     по нему площадки и мессенджеры разворачивают превью. Отдаём его ботам —
- *     людям Caddy отдаёт SPA (см. frontend/Caddyfile.docker);
+ *     людям уходит SPA (Caddy в docker-схеме, staticSite.ts на PaaS);
  *  3. общие размеры виджета по умолчанию.
  */
 
@@ -117,26 +117,45 @@ export function registerOembedRoutes(server: FastifyInstance): void {
   });
 
   // ---------- 2. HTML с метатегами (для ботов и мессенджеров) ----------
-  server.get('/s/:shortCode/meta', async (request, reply) => {
-    const { shortCode } = request.params as { shortCode: string };
-    const snippet = await getSnippetByShortCode(shortCode);
-    if (!snippet)
-      return reply
-        .code(404)
-        .type('text/html')
-        .send('<!doctype html><title>Не найдено</title>');
+  server.get('/s/:shortCode/meta', snippetMetaHandler);
+}
 
-    const base = baseUrlFrom(
-      request.headers as Record<string, unknown>,
-      'https://runit.hexlet.io',
-    );
-    const pageUrl = `${base}/s/${shortCode}`;
-    const embedUrl = `${base}/embed/s/${shortCode}`;
-    const author = snippet.authorUsername ?? 'Runit';
-    const title = `${snippet.name} — Runit`;
-    const description = `Сниппет на ${snippet.language ?? 'коде'} от @${author}: смотрите и запускайте прямо в браузере.`;
+/**
+ * HTML с метатегами вынесен из registerOembedRoutes отдельным обработчиком,
+ * потому что у него два входа. Явный путь `/s/:code/meta` нужен площадкам,
+ * которые пришли по ссылке из oEmbed-discovery. Но мессенджер приходит по
+ * обычной ссылке `/s/:code` и метатеги должен получить там же — в
+ * docker-схеме этот случай закрывает Caddy внутренней перезаписью пути
+ * (`rewrite * /s/{code}/meta`), а на PaaS фронтенд раздаёт сам Fastify, и
+ * перезаписывать некому: `staticSite.ts` вызывает этот обработчик напрямую.
+ *
+ * Ответ собирается тут, а не редиректом на `/s/:code/meta`: часть ботов
+ * редиректы не проходит, а те, что проходят, показали бы в превью служебный
+ * адрес вместо ссылки, которой поделился человек.
+ */
+export const snippetMetaHandler = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => {
+  const { shortCode } = request.params as { shortCode: string };
+  const snippet = await getSnippetByShortCode(shortCode);
+  if (!snippet)
+    return reply
+      .code(404)
+      .type('text/html')
+      .send('<!doctype html><title>Не найдено</title>');
 
-    return reply.type('text/html; charset=utf-8').send(`<!doctype html>
+  const base = baseUrlFrom(
+    request.headers as Record<string, unknown>,
+    'https://runit.hexlet.io',
+  );
+  const pageUrl = `${base}/s/${shortCode}`;
+  const embedUrl = `${base}/embed/s/${shortCode}`;
+  const author = snippet.authorUsername ?? 'Runit';
+  const title = `${snippet.name} — Runit`;
+  const description = `Сниппет на ${snippet.language ?? 'коде'} от @${author}: смотрите и запускайте прямо в браузере.`;
+
+  return reply.type('text/html; charset=utf-8').send(`<!doctype html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
@@ -169,5 +188,4 @@ export function registerOembedRoutes(server: FastifyInstance): void {
 <p><a href="${esc(pageUrl)}">Открыть сниппет в Runit</a></p>
 </body>
 </html>`);
-  });
-}
+};

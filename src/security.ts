@@ -77,6 +77,22 @@ const isAuth = (url: string): boolean =>
  * Все остальные мутации меняют данные аккаунта, требуют сессии — а значит, у
  * клиента уже есть выданный вместе с ней токен.
  */
+/**
+ * Что вообще считается запросом к бэкенду.
+ *
+ * Нужно с тех пор, как на PaaS интерфейс раздаёт сам Fastify (staticSite.ts):
+ * лимит применим к работе, за которой стоит база или docker, а не к файлам
+ * страницы. Одна загрузка редактора — это десятки запросов (Monaco приезжает
+ * чанками), и под общим лимитом 300/мин вторая-третья перезагрузка отдавала бы
+ * 429 вместо приложения. В docker-схеме этой развилки не было: до бэкенда
+ * доходило только то, что Caddy ему проксировал.
+ *
+ * `/s/` здесь есть намеренно, хотя людям по этому пути уходит статика: ботам
+ * там отдаётся HTML с метатегами, а он ходит в базу.
+ */
+const isBackendPath = (url: string): boolean =>
+  url.startsWith('/trpc') || url.startsWith('/oembed') || url.startsWith('/s/');
+
 const isCsrfExempt = (url: string): boolean =>
   url.startsWith('/trpc/auth.login') ||
   url.startsWith('/trpc/auth.register') ||
@@ -93,9 +109,12 @@ export async function registerSecurity(server: FastifyInstance): Promise<void> {
   });
 
   await server.register(helmet, {
-    // Fastify отдаёт API и служебный HTML (/s/:code/meta). Страницы приложения и
-    // embed-виджет раздаёт Caddy — их заголовки заданы в frontend/Caddyfile.docker,
-    // иначе встраивание сломалось бы политикой фрейминга.
+    // Политика рассчитана на API и служебный HTML (/s/:code/meta) — в них нет ни
+    // скриптов, ни стилей. К страницам приложения и embed-виджету она
+    // неприменима, поэтому тот, кто их раздаёт, её снимает: в docker-схеме
+    // заголовки задаёт Caddy (frontend/Caddyfile.docker), на PaaS — хук в
+    // staticSite.ts. Иначе интерфейс встал бы белым экраном, а встраивание
+    // сломалось бы политикой фрейминга.
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'none'"],
@@ -160,8 +179,9 @@ export async function registerSecurity(server: FastifyInstance): Promise<void> {
     },
     timeWindow: '1 minute',
     // Health-check не должен получать 429: иначе оркестратор решит, что
-    // приложение умерло, и начнёт перезапускать живой инстанс.
-    allowList: (request: FastifyRequest) => request.url.startsWith('/health'),
+    // приложение умерло, и начнёт перезапускать живой инстанс. Заодно из-под
+    // лимита выведены файлы интерфейса — см. isBackendPath.
+    allowList: (request: FastifyRequest) => !isBackendPath(request.url),
     /**
      * Ключ — адрес клиента по версии fastify (см. trustProxy в index.ts).
      *

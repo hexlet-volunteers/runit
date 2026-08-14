@@ -16,6 +16,7 @@ import { runnerConfig } from './runner/config';
 import { prefetchImages } from './runner/images';
 import { sweepOrphans } from './runner/run';
 import { registerSecurity } from './security';
+import { registerStaticSite } from './staticSite';
 
 const getApp = async () => {
   try {
@@ -67,7 +68,7 @@ const getApp = async () => {
    * готовую карту API для того, кто ищет, что можно позвать, — и `/hello`,
    * отвечавший «Hello world». Ни один из них ничего не проверял: живость
    * приложения показывает /health (он же в HEALTHCHECK образа), а страницы
-   * отдаёт фронтенд.
+   * отдаёт фронтенд — Caddy в docker-схеме либо staticSite.ts на PaaS.
    */
 
   // Обработчик ошибок — раньше роутов, чтобы ловить сбои во всех из них.
@@ -116,6 +117,15 @@ const getApp = async () => {
     console.error('❌ Failed to register tRPC plugin:', error);
     throw error;
   }
+
+  /**
+   * Интерфейс — последним: внутри объявляется обработчик «не найдено», и он
+   * должен видеть уже зарегистрированные маршруты API. Если каталога сборки
+   * фронтенда нет (образ бэкенда, локальная разработка через Vite), вызов
+   * ничего не делает и приложение остаётся чистым API.
+   */
+  await registerStaticSite(server);
+
   return server;
 };
 

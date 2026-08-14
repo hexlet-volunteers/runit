@@ -9,21 +9,31 @@ name: Релиз
 #
 # Сейчас на тег происходит:
 #   * publish.yml собирает и публикует образы бэкенда и фронтенда в GHCR;
-#   * этот workflow создаёт запись в GitHub Releases и раскатывает стенд.
+#   * этот workflow создаёт запись в GitHub Releases и раскатывает стенды.
 #
-# Раскатка включается только когда в настройках репозитория заданы адрес стенда
-# и ключ доступа. Пока их нет, job сообщает об этом и завершается успешно: это
-# не то же самое, что прежняя заглушка с `echo` — там деплой изображался
-# работающим, здесь причина пропуска называется явно.
+# Стендов может быть два, и они независимы: свой сервер по docker-compose и
+# PaaS (Heroku). Оба выпускаются одним и тем же тегом намеренно — иначе версия
+# в проде перестаёт быть одним числом. Раскатка по ветке была бы для PaaS проще,
+# но тогда docker-стенд жил бы по RUNIT_VERSION из тега, а PaaS по «последнему
+# коммиту ветки»: два стенда с разным представлением о том, что выпущено.
 #
-# Что нужно задать в настройках репозитория, чтобы раскатка заработала:
-#   переменная DEPLOY_HOST  — хост стенда (он же адрес для проверки /health)
-#   переменная DEPLOY_USER  — пользователь ssh
-#   переменная DEPLOY_PATH  — каталог с docker-compose.prod.yml на сервере
-#   секрет     DEPLOY_KEY   — приватный ключ ssh
+# Каждая раскатка включается только когда заданы её настройки. Пока их нет, job
+# называет причину пропуска и завершается успешно: это не то же самое, что
+# прежняя заглушка с `echo` — там деплой изображался работающим.
 #
-# Секреты приложения и строка подключения к managed PostgreSQL живут в .env на
-# самом сервере: в репозиторий и в образ они не попадают.
+# Что нужно задать в настройках репозитория:
+#   свой сервер (docker-compose)
+#     переменная DEPLOY_HOST     — хост стенда (он же адрес для проверки /health)
+#     переменная DEPLOY_USER     — пользователь ssh
+#     переменная DEPLOY_PATH     — каталог с docker-compose.prod.yml на сервере
+#     секрет     DEPLOY_KEY      — приватный ключ ssh
+#   PaaS
+#     переменная HEROKU_APP      — имя приложения
+#     секрет     HEROKU_API_KEY  — ключ API (heroku authorizations:create)
+#
+# Секреты приложения и строка подключения к managed PostgreSQL задаются на самом
+# стенде — в .env на сервере или в config vars приложения. В репозиторий и в
+# образ они не попадают.
 
 on:
   push:
@@ -117,4 +127,91 @@ jobs:
             sleep 5
           done
           echo "стенд не ответил на /health после раскатки"
+          exit 1
+
+  deploy-heroku:
+    name: Раскатка на PaaS (Heroku)
+    # Независимо от deploy: у стендов нет общих ресурсов, и упавший ssh-деплой
+    # не повод не выпускать PaaS. Запись в GitHub Releases всё же ждём — она
+    # проверяет сам тег (--verify-tag).
+    needs: release
+    runs-on: ubuntu-latest
+    if: github.repository == 'hexlet-volunteers/runit'
+    steps:
+      - name: Настроен ли PaaS
+        id: check
+        env:
+          HEROKU_APP: ${{ vars.HEROKU_APP }}
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          if [ -z "$HEROKU_APP" ] || [ -z "$HEROKU_API_KEY" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::PaaS не настроен: пусты HEROKU_APP или HEROKU_API_KEY." \
+              "Раскатка на Heroku пропущена."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.configured == 'true'
+        with:
+          # Полная история обязательна: Heroku отвергает shallow clone
+          # («shallow update not allowed»), а checkout по умолчанию делает
+          # именно его — fetch-depth: 1.
+          fetch-depth: 0
+
+      - name: Push в Heroku
+        if: steps.check.outputs.configured == 'true'
+        env:
+          HEROKU_APP: ${{ vars.HEROKU_APP }}
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          set -e
+          # Отдельный remote и push именно коммита тега, а не ветки: сборку
+          # запускает сам Heroku, и получить он должен ровно то состояние, на
+          # которое поставлен тег.
+          #
+          # Ветка-приёмник называется main независимо от того, что деплоится:
+          # Heroku собирает то, что пришло в его основную ветку. `+` — форс:
+          # история приложения на стороне Heroku может расходиться с нашей
+          # (откаты через `heroku rollback` не меняют git), и без него push
+          # падал бы на non-fast-forward.
+          git push --force \
+            "https://heroku:${HEROKU_API_KEY}@git.heroku.com/${HEROKU_APP}.git" \
+            "${GITHUB_SHA}:refs/heads/main"
+
+      - name: Стенд отвечает снаружи
+        if: steps.check.outputs.configured == 'true'
+        env:
+          HEROKU_APP: ${{ vars.HEROKU_APP }}
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          set -e
+          # Адрес спрашиваем у API, а не собираем как «<имя>.herokuapp.com»:
+          # приложениям, созданным после 2022 года, платформа добавляет в имя
+          # хоста случайный суффикс, и собранный вручную адрес не существует —
+          # проверка падала бы на исправном стенде. Для своего домена web_url
+          # тоже вернёт верное значение.
+          BASE=$(curl -sf \
+            -H "Authorization: Bearer ${HEROKU_API_KEY}" \
+            -H "Accept: application/vnd.heroku+json; version=3" \
+            "https://api.heroku.com/apps/${HEROKU_APP}" | jq -r '.web_url')
+          URL="${BASE%/}/health"
+          echo "проверяем $URL"
+
+          # Своего healthcheck у PaaS нет: маршрутизатор считает приложение
+          # живым, как только процесс занял порт. А занять его приложение может
+          # и с недоехавшими миграциями — их оно прогоняет при старте. Поэтому
+          # проверяем /health, он же проверяет базу.
+          #
+          # Ожидание длиннее, чем у docker-стенда: там образ уже собран, здесь
+          # Heroku после push собирает слаг (npm ci + tsc + сборка Vite).
+          for i in $(seq 1 40); do
+            if curl -sf "$URL"; then
+              echo "стенд отвечает"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "стенд не ответил на $URL после раскатки"
           exit 1
