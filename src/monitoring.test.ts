@@ -29,7 +29,9 @@ describe('sanitizeUrl', () => {
   });
 
   test('несколько параметров перечисляются один раз', () => {
-    const cleaned = sanitizeUrl('/trpc/snippets.getSnippetById?batch=1&input=7');
+    const cleaned = sanitizeUrl(
+      '/trpc/snippets.getSnippetById?batch=1&input=7',
+    );
 
     expect(cleaned).toBe('/trpc/snippets.getSnippetById?batch,input=[скрыто]');
   });
