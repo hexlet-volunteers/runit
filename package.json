@@ -19,6 +19,7 @@
     "lint:fix": "biome check --write src/",
     "generate:types": "tsc --emitDeclarationOnly --outDir types",
     "runner:build-images": "tsx src/runner/buildImages.ts",
+    "runner:pull-images": "tsx src/runner/pullImages.ts",
     "test:runner": "node --import tsx --test src/runner/*.test.ts",
     "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest",
     "runner:smoke": "node bin/runner-smoke.mjs",

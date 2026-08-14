@@ -12,6 +12,15 @@ name: Публикация образов
 # GHCR тянет и российский провайдер, и свой сервер. Если позже понадобится
 # реестр площадки, добавится второй тег в этом же шаге.
 #
+# Образов две группы:
+#   * приложение и фронтенд — собираются на каждый пуш в main и на тег;
+#   * девять образов раннера (по языку) — только на тег и по ручному запуску.
+#     Они меняются редко (Dockerfile языка), а собирать их на каждый коммит —
+#     девять лишних сборок; при этом релизу они нужны обязательно: раннер
+#     никогда не тянет образы в обработчике запроса, поэтому на боевом хосте
+#     они должны существовать заранее. Пока их не публиковали, на стенде
+#     работали три языка из двенадцати при зелёном деплое.
+#
 # Теги:
 #   main            → edge      (последнее состояние main)
 #   v1.2.3          → 1.2.3, 1.2, latest
@@ -97,6 +106,74 @@ jobs:
             VITE_PUBLIC_BASE_URL=${{ vars.VITE_PUBLIC_BASE_URL }}
           # Кэш слоёв в самом реестре: без него каждая сборка заново
           # компилирует better-sqlite3 через node-gyp.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Опубликованные теги
+        run: echo "${{ steps.meta.outputs.tags }}"
+
+  publish-runners:
+    name: Раннер — ${{ matrix.language }}
+    runs-on: ubuntu-latest
+    if: >-
+      github.repository == 'hexlet-volunteers/runit' &&
+      (startsWith(github.ref, 'refs/tags/v') ||
+       github.event_name == 'workflow_dispatch')
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        # Список обязан совпадать с RUNNER_LANGUAGES (src/runner/types.ts).
+        # JavaScript здесь нет намеренно: он исполняется в браузере, в Web Worker.
+        language:
+          - python
+          - php
+          - ruby
+          - typescript
+          - go
+          - cpp
+          - sql
+          - bash
+          - java
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Вход в реестр
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Теги и метки
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # Имя совпадает с тем, что вычисляет imageTagFor:
+          # <RUNNER_IMAGE_PREFIX>-<язык>:<RUNNER_IMAGE_TAG>.
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/runit-runner-${{ matrix.language }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=edge,branch=main
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+          flavor: latest=false
+          labels: |
+            org.opencontainers.image.title=runit-runner-${{ matrix.language }}
+
+      - name: Сборка и публикация
+        uses: docker/build-push-action@v6
+        with:
+          # Контекст — каталог языка: в Dockerfile раннера нет ничего из репозитория,
+          # только базовый образ и настройка пользователя.
+          context: runner-images/${{ matrix.language }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

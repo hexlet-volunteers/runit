@@ -13,6 +13,7 @@ import { registerMonitoring, reportError, sanitizeUrl } from './monitoring';
 import { registerOembedRoutes } from './oembed';
 import { type AppRouter, appRouter } from './router/index';
 import { runnerConfig } from './runner/config';
+import { prefetchImages } from './runner/images';
 import { sweepOrphans } from './runner/run';
 import { registerSecurity } from './security';
 
@@ -87,6 +88,17 @@ const getApp = async () => {
   // Работает в фоне и молча — если docker недоступен, ничего не происходит.
   if (runnerConfig.enabled) {
     sweepOrphans();
+    /**
+     * Образы раннера должны быть на хосте до первого запуска: в обработчике
+     * запроса мы их не тянем никогда (иначе первый же сниппет ждал бы
+     * многоминутного скачивания). Локально их собирают, в проде — скачивают из
+     * реестра, и делать это некому: раньше на новом стенде девять языков из
+     * двенадцати отвечали «недоступно» при зелёном деплое.
+     *
+     * В фоне и без await: старт сервера ждать сети не должен, а итог попадает
+     * в лог.
+     */
+    prefetchImages((message) => server.log.info(message));
   }
 
   try {
