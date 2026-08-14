@@ -13,8 +13,8 @@ name: Публикация образов
 # реестр площадки, добавится второй тег в этом же шаге.
 #
 # Образов две группы:
-#   * приложение и фронтенд — собираются на каждый пуш в main и на тег;
-#   * девять образов раннера (по языку) — только на тег и по ручному запуску.
+#   * приложение и фронтенд — на каждый пуш в main и на каждый выпуск;
+#   * девять образов раннера (по языку) — только на выпуск и по ручному запуску.
 #     Они меняются редко (Dockerfile языка), а собирать их на каждый коммит —
 #     девять лишних сборок; при этом релизу они нужны обязательно: раннер
 #     никогда не тянет образы в обработчике запроса, поэтому на боевом хосте
@@ -22,17 +22,32 @@ name: Публикация образов
 #     работали три языка из двенадцати при зелёном деплое.
 #
 # Теги:
-#   main            → edge      (последнее состояние main)
-#   v1.2.3          → 1.2.3, 1.2, latest
-#   ручной запуск   → edge
+#   пуш в main            → edge   (последнее состояние main)
+#   выпуск 0.3.0          → 0.3.0, 0.3, latest
+#   ручной запуск без version → edge
 
+# Триггера по тегу здесь нет намеренно. Теги ставит release-please встроенным
+# GITHUB_TOKEN, а созданные им события других workflow не запускают — публикация
+# по `push: tags: v*` молча не срабатывала бы. Поэтому выпуск вызывает этот
+# workflow как переиспользуемый и передаёт версию входом.
 on:
   push:
     branches:
       - main
-    tags:
-      - v*
+  workflow_call:
+    inputs:
+      version:
+        description: Версия выпуска X.Y.Z. Без неё публикуется только edge.
+        required: false
+        type: string
+        default: ''
   workflow_dispatch:
+    inputs:
+      version:
+        description: Версия выпуска X.Y.Z. Без неё публикуется только edge.
+        required: false
+        type: string
+        default: ''
 
 env:
   REGISTRY: ghcr.io
@@ -71,19 +86,42 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Версию считаем шагом, а не выражением в tags: major.minor нужен отдельным
+      # тегом (по нему стенд может держаться на минорной линии), а обрезать
+      # строку внутри выражений GitHub Actions нечем.
+      - name: Разбор версии
+        id: v
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [ -n "$VERSION" ]; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "full=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "minor=${VERSION%.*}" >> "$GITHUB_OUTPUT"
+          else
+            # Заполнители, а не пустые строки: docker/metadata-action получает
+            # `value=` даже у выключенного правила, и пустое значение — лишний
+            # повод для него упасть. Эти теги не публикуются (enable=false).
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "full=unused" >> "$GITHUB_OUTPUT"
+            echo "minor=unused" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Теги и метки
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
+          # Раньше здесь стоял type=semver, который берёт версию из имени тега.
+          # После перехода на release-please прогон запускается пушем в main, а
+          # не тегом: ref — refs/heads/main, и semver не дал бы ни одного тега.
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=edge,branch=main
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-          # latest ставим только на тег версии (строка выше): иначе он уезжал бы
-          # на каждый коммит в main, и «latest» перестал бы означать выпущенную
-          # версию.
+            type=raw,value=${{ steps.v.outputs.full }},enable=${{ steps.v.outputs.release == 'true' }}
+            type=raw,value=${{ steps.v.outputs.minor }},enable=${{ steps.v.outputs.release == 'true' }}
+            type=raw,value=latest,enable=${{ steps.v.outputs.release == 'true' }}
+            type=edge,branch=main,enable=${{ steps.v.outputs.release != 'true' }}
+          # latest ставим только на выпуск: иначе он уезжал бы на каждый коммит
+          # в main, и «latest» перестал бы означать выпущенную версию.
           flavor: latest=false
           labels: |
             org.opencontainers.image.title=${{ matrix.image }}
@@ -115,10 +153,11 @@ jobs:
   publish-runners:
     name: Раннер — ${{ matrix.language }}
     runs-on: ubuntu-latest
+    # Условие про тег заменено на «есть версия»: прогон выпуска теперь запускает
+    # пуш в main, и по github.ref тег больше не отличить.
     if: >-
       github.repository == 'hexlet-volunteers/runit' &&
-      (startsWith(github.ref, 'refs/tags/v') ||
-       github.event_name == 'workflow_dispatch')
+      (inputs.version != '' || github.event_name == 'workflow_dispatch')
     permissions:
       contents: read
       packages: write
@@ -149,6 +188,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Свой разбор версии: steps.* не переходят между job'ами.
+      - name: Разбор версии
+        id: v
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [ -n "$VERSION" ]; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "full=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "minor=${VERSION%.*}" >> "$GITHUB_OUTPUT"
+          else
+            # Заполнители, а не пустые строки: docker/metadata-action получает
+            # `value=` даже у выключенного правила, и пустое значение — лишний
+            # повод для него упасть. Эти теги не публикуются (enable=false).
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "full=unused" >> "$GITHUB_OUTPUT"
+            echo "minor=unused" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Теги и метки
         id: meta
         uses: docker/metadata-action@v5
@@ -156,11 +214,13 @@ jobs:
           # Имя совпадает с тем, что вычисляет imageTagFor:
           # <RUNNER_IMAGE_PREFIX>-<язык>:<RUNNER_IMAGE_TAG>.
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/runit-runner-${{ matrix.language }}
+          # См. пояснение к тегам образа приложения выше: semver отсюда убран,
+          # потому что прогон выпуска запускается пушем в main, а не тегом.
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=edge,branch=main
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=${{ steps.v.outputs.full }},enable=${{ steps.v.outputs.release == 'true' }}
+            type=raw,value=${{ steps.v.outputs.minor }},enable=${{ steps.v.outputs.release == 'true' }}
+            type=raw,value=latest,enable=${{ steps.v.outputs.release == 'true' }}
+            type=edge,branch=main,enable=${{ steps.v.outputs.release != 'true' }}
           flavor: latest=false
           labels: |
             org.opencontainers.image.title=runit-runner-${{ matrix.language }}

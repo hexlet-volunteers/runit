@@ -33,4 +33,12 @@ db-generate:
 db-studio:
 	npm run db:studio
 
+# Цели для выпуска здесь нет намеренно — версию считает release-please, теги
+# руками не ставят. См. README, раздел «Выпуск версии».
+#
+# Прежние цели release/tag/heroku-deploy из старого стека удалены: они
+# опирались на bin/generate-next-tag (инкремент числа — отсюда старые теги
+# v81…v109), на remote с именем upstream и на `git push heroku`. Ни скрипта, ни
+# remote больше нет, теги стали semver, а раскатку делает CI.
+
 .PHONY: install dev dev-frontend build lint-backend lint-fix-backend test db-migrate db-generate db-studio

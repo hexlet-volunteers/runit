@@ -1,25 +1,21 @@
-name: Релиз
+name: Раскатка
 
-# Выпуск версии по тегу vX.Y.Z.
+# Раскатка выпущенной версии на стенды. Вызывается из release-please.yml после
+# того, как релизный PR смержен и образы опубликованы.
 #
-# Раньше здесь стояла заглушка с `echo «Deployment is temporarily disabled»`.
-# Она была вредна дважды: изображала зелёный деплой, которого не существует,
-# и условие `if: github.repository == 'hexlet-rus/runit'` не совпадало с
-# текущим репозиторием — то есть job не запускался вообще.
+# Собственного триггера у этого workflow нет намеренно. Раньше он висел на
+# `push: tags: v*` и сам создавал запись в GitHub Releases. И то, и другое
+# теперь лишнее: запись создаёт release-please, а тег он ставит встроенным
+# GITHUB_TOKEN — события от такого тега других workflow не запускают, поэтому
+# триггер по тегу молча не срабатывал бы и выпуск заканчивался бы без деплоя.
 #
-# Сейчас на тег происходит:
-#   * publish.yml собирает и публикует образы бэкенда и фронтенда в GHCR;
-#   * этот workflow создаёт запись в GitHub Releases и раскатывает стенды.
-#
-# Стендов может быть два, и они независимы: свой сервер по docker-compose и
-# PaaS (Heroku). Оба выпускаются одним и тем же тегом намеренно — иначе версия
-# в проде перестаёт быть одним числом. Раскатка по ветке была бы для PaaS проще,
-# но тогда docker-стенд жил бы по RUNIT_VERSION из тега, а PaaS по «последнему
-# коммиту ветки»: два стенда с разным представлением о том, что выпущено.
+# Стендов два, и они независимы: свой сервер по docker-compose и PaaS (Heroku).
+# Оба получают одну и ту же версию намеренно — иначе «что в проде» перестаёт
+# быть одним числом.
 #
 # Каждая раскатка включается только когда заданы её настройки. Пока их нет, job
 # называет причину пропуска и завершается успешно: это не то же самое, что
-# прежняя заглушка с `echo` — там деплой изображался работающим.
+# заглушка с `echo`, которая когда-то стояла здесь и изображала рабочий деплой.
 #
 # Что нужно задать в настройках репозитория:
 #   свой сервер (docker-compose)
@@ -36,41 +32,19 @@ name: Релиз
 # образ они не попадают.
 
 on:
-  push:
-    tags:
-      - v*
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      version:
+        description: Версия выпуска X.Y.Z, без ведущей v.
+        required: true
+        type: string
 
 jobs:
-  release:
-    name: Запись в GitHub Releases
-    runs-on: ubuntu-latest
-    if: github.repository == 'hexlet-volunteers/runit'
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          # Полная история нужна для автоматических примечаний к релизу.
-          fetch-depth: 0
-
-      - name: Создать релиз
-        # --verify-tag: без него команда создала бы релиз на несуществующий тег
-        # при ручном запуске из ветки.
-        run: |
-          gh release create "${{ github.ref_name }}" \
-            --title "${{ github.ref_name }}" \
-            --generate-notes \
-            --verify-tag
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   deploy:
     name: Раскатка на стенд
-    # Ждём и запись релиза, и публикацию образов: без второго условия деплой
-    # стартовал параллельно с publish.yml и регулярно опережал его, пытаясь
-    # скачать ещё не опубликованный тег.
-    needs: release
+    # Ожидание публикации образов обеспечивает вызывающий workflow (needs:
+    # publish в release-please.yml): раскатка их только скачивает, и без этого
+    # порядка деплой опережал публикацию и просил ещё не опубликованный тег.
     runs-on: ubuntu-latest
     if: github.repository == 'hexlet-volunteers/runit'
     steps:
@@ -104,12 +78,11 @@ jobs:
           script: |
             set -e
             cd "${{ vars.DEPLOY_PATH }}"
-            # Тег образа — без ведущей v: publish.yml публикует по semver
-            # (v1.2.3 → 1.2.3), а имя тега git приходит как v1.2.3. Раньше
-            # деплой просил runit-app:v1.2.3 и падал на docker compose pull с
-            # «manifest unknown».
-            TAG="${{ github.ref_name }}"
-            export RUNIT_VERSION="${TAG#v}"
+            # Версия приходит уже без ведущей v — так её отдаёт release-please
+            # (major.minor.patch), и так же названы теги образов. Пока здесь
+            # разбиралось имя тега git, деплой просил runit-app:v1.2.3 и падал
+            # на docker compose pull с «manifest unknown».
+            export RUNIT_VERSION="${{ inputs.version }}"
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --wait
             docker image prune -f
@@ -132,9 +105,7 @@ jobs:
   deploy-heroku:
     name: Раскатка на PaaS (Heroku)
     # Независимо от deploy: у стендов нет общих ресурсов, и упавший ssh-деплой
-    # не повод не выпускать PaaS. Запись в GitHub Releases всё же ждём — она
-    # проверяет сам тег (--verify-tag).
-    needs: release
+    # не повод не выпускать PaaS.
     runs-on: ubuntu-latest
     if: github.repository == 'hexlet-volunteers/runit'
     steps:
@@ -167,9 +138,10 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
           set -e
-          # Отдельный remote и push именно коммита тега, а не ветки: сборку
-          # запускает сам Heroku, и получить он должен ровно то состояние, на
-          # которое поставлен тег.
+          # Пушим конкретный коммит, а не ветку: сборку запускает сам Heroku, и
+          # получить он должен ровно выпущенное состояние. GITHUB_SHA здесь —
+          # коммит мержа релизного PR, то есть тот самый, на который
+          # release-please поставил тег.
           #
           # Ветка-приёмник называется main независимо от того, что деплоится:
           # Heroku собирает то, что пришло в его основную ветку. `+` — форс:

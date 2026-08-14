@@ -1,0 +1,69 @@
+name: release-please
+
+# Единственная точка выпуска. Теги руками не ставят.
+#
+# Как это работает: на каждый пуш в main release-please пересобирает «релизный
+# PR» — он поднимает версию в package.json и дописывает CHANGELOG.md по
+# conventional commits. Пока PR не смержен, ничего не выпускается. Мерж PR
+# создаёт тег vX.Y.Z и запись в GitHub Releases, а этот же прогон публикует
+# образы и раскатывает стенды.
+#
+# Так же устроены hexlet-basics и hexlet/hexlet — соглашения (include-v-in-tag,
+# bump-minor-pre-major, набор changelog-sections) скопированы оттуда, чтобы
+# история версий читалась одинаково во всех репозиториях.
+#
+# Почему публикация и раскатка вызываются отсюда, а не по `push: tags: v*`, как
+# было раньше: тег, созданный встроенным GITHUB_TOKEN, намеренно НЕ запускает
+# другие workflow — GitHub так защищается от бесконечных цепочек. Прежние
+# триггеры по тегу молча не срабатывали бы, и выпуск заканчивался бы записью в
+# Releases без образов и без деплоя. Альтернатива — токен GitHub App (так сделано
+# в hexlet/hexlet), но он требует установки приложения в организацию, а
+# вызов из того же прогона не требует ни одного нового секрета.
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release-please:
+    name: Релизный PR
+    runs-on: ubuntu-latest
+    if: github.repository == 'hexlet-volunteers/runit'
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      # Версия без ведущей v: в теге git она есть, в теге образа — нет.
+      # Расхождение уже стоило падения деплоя с «manifest unknown», когда на
+      # сервере просили runit-app:v1.2.3.
+      version: ${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}.${{ steps.release.outputs.patch }}
+    steps:
+      - uses: googleapis/release-please-action@v5
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    name: Образы
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/publish.yml
+    with:
+      version: ${{ needs.release-please.outputs.version }}
+
+  deploy:
+    name: Стенды
+    # Ждём образы: раскатка их скачивает, и без этого условия деплой стартовал
+    # параллельно с публикацией и просил ещё не опубликованный тег.
+    needs: [release-please, publish]
+    if: needs.release-please.outputs.release_created == 'true'
+    uses: ./.github/workflows/deploy.yml
+    with:
+      version: ${{ needs.release-please.outputs.version }}
+    secrets: inherit
