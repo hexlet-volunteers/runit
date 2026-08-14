@@ -61,7 +61,9 @@ const main = async () => {
     );
   }
 
-  if (reports.some((r) => r.state === 'failed' || r.state === 'local_missing')) {
+  if (
+    reports.some((r) => r.state === 'failed' || r.state === 'local_missing')
+  ) {
     process.exit(1);
   }
 };

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { ProcessResult, RunProcessOptions } from './process';
 import { ensureImages, type ImageDeps, isRemoteImage } from './images';
+import type { ProcessResult, RunProcessOptions } from './process';
 
 /**
  * Доставка образов раннера на хост.
@@ -37,7 +37,10 @@ const depsFor = (
 };
 
 test('ссылка на реестр отличается от локального имени', () => {
-  assert.equal(isRemoteImage('ghcr.io/hexlet-volunteers/runit-runner-go:1'), true);
+  assert.equal(
+    isRemoteImage('ghcr.io/hexlet-volunteers/runit-runner-go:1'),
+    true,
+  );
   assert.equal(isRemoteImage('registry:5000/runit-runner-go:1'), true);
   assert.equal(isRemoteImage('localhost/runit-runner-go:1'), true);
   // Локальные имена не тянем: docker пошёл бы за ними в Docker Hub и ответил

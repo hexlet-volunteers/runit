@@ -64,10 +64,7 @@ export function isRemoteImage(tag: string): boolean {
   );
 }
 
-const exists = async (
-  tag: string,
-  deps: ImageDeps,
-): Promise<ProcessResult> =>
+const exists = async (tag: string, deps: ImageDeps): Promise<ProcessResult> =>
   deps.runProcess({
     bin: runnerConfig.dockerBin,
     args: ['image', 'inspect', tag],
@@ -96,8 +93,7 @@ const pull = async (tag: string, deps: ImageDeps): Promise<ProcessResult> =>
  * «недоступно», как и раньше.
  */
 export async function ensureImages(
-  languages: readonly RunnerLanguage[] = runnerConfig
-    .enabledLanguages as readonly RunnerLanguage[],
+  languages: readonly RunnerLanguage[] = runnerConfig.enabledLanguages as readonly RunnerLanguage[],
   deps: ImageDeps = defaultDeps,
 ): Promise<ImageReport[]> {
   const reports: ImageReport[] = [];
