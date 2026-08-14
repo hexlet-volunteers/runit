@@ -1,7 +1,10 @@
 import { initTRPC, TRPCError } from '@trpc/server';
+import { eq } from 'drizzle-orm';
 import { ZodError } from 'zod/v4';
 import type { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 import { verifyAccessToken } from './auth/jwt';
+import { db } from './db/connection';
+import { users } from './db/schema/schema';
 
 export interface AuthenticatedUser {
   id: number;
@@ -103,16 +106,34 @@ const isAuthenticated = t.middleware(({ ctx, next }) => {
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
 
-const isAdmin = t.middleware(({ ctx, next }) => {
+/**
+ * Права админа проверяются по базе, а не по токену.
+ *
+ * Признак isAdmin лежит в access-токене, а токен живёт 15 минут и не
+ * отзывается. Значит, после снятия роли человек ещё четверть часа проходил бы
+ * все админские проверки — включая выборку всех сниппетов и поиск по почте.
+ * Разжалование должно действовать сразу, поэтому здесь один дополнительный
+ * запрос: админских вызовов мало, а цена ошибки высока.
+ *
+ * Токен по-прежнему проверяется первым (createContext): без валидной подписи
+ * до базы дело не доходит.
+ */
+const isAdmin = t.middleware(async ({ ctx, next }) => {
   if (!ctx.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
 
-  if (!ctx.user.isAdmin) {
+  const [row] = await db
+    .select({ isAdmin: users.isAdmin })
+    .from(users)
+    .where(eq(users.id, ctx.user.id))
+    .limit(1);
+
+  if (!row?.isAdmin) {
     throw new TRPCError({ code: 'FORBIDDEN' });
   }
 
-  return next({ ctx: { ...ctx, user: ctx.user } });
+  return next({ ctx: { ...ctx, user: { ...ctx.user, isAdmin: true } } });
 });
 
 export const protectedProcedure = t.procedure.use(isAuthenticated);

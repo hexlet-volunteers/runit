@@ -17,15 +17,16 @@
  *    опечатка в миграции или ручной правке данных должна отвергаться базой.
  */
 
-import { relations } from 'drizzle-orm';
 import {
   boolean,
+  index,
   integer,
   pgEnum,
   pgTable,
   serial,
   text,
   timestamp,
+  uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
 
@@ -107,7 +108,24 @@ export const snippets = pgTable('snippets', {
     onDelete: 'cascade',
   }),
   ...timestamps,
-});
+}, (table) => [
+  /**
+   * По владельцу выбираются дашборд и публичный профиль — самые частые запросы
+   * к таблице. PostgreSQL сам индекс по внешнему ключу не создаёт, поэтому без
+   * этой строки оба запроса были полным сканом таблицы сниппетов всего сервиса.
+   */
+  index('snippets_user_id_idx').on(table.userId),
+  /**
+   * Пара «пользователь + slug» уникальна.
+   *
+   * Это условие код уже подразумевает: slug генерируется уникальным среди
+   * сниппетов пользователя, а просмотр по /s/:user/:slug берёт первую
+   * найденную запись. Пока ограничения не было, совпадение slug (сбой
+   * генерации, ручная правка данных) молча отдавало бы посетителю не тот
+   * сниппет — вместо ошибки. Индекс заодно обслуживает сам этот запрос.
+   */
+  uniqueIndex('snippets_user_id_slug_idx').on(table.userId, table.slug),
+]);
 
 export const refreshTokens = pgTable('refresh_tokens', {
   id: serial('id').primaryKey(),
@@ -121,7 +139,11 @@ export const refreshTokens = pgTable('refresh_tokens', {
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}, (table) => [
+  // Все токены пользователя отзываются при смене пароля и выходе — выборка по
+  // user_id, а индекса по внешнему ключу PostgreSQL сам не создаёт.
+  index('refresh_tokens_user_id_idx').on(table.userId),
+]);
 
 export const passwordHistory = pgTable('password_history', {
   id: serial('id').primaryKey(),
@@ -132,48 +154,20 @@ export const passwordHistory = pgTable('password_history', {
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}, (table) => [
+  // История паролей читается целиком по пользователю при каждой смене пароля.
+  index('password_history_user_id_idx').on(table.userId),
+]);
 
-export const usersRelations = relations(users, ({ many, one }) => ({
-  snippets: many(snippets),
-  settings: one(userSettings, {
-    fields: [users.id],
-    references: [userSettings.userId],
-  }),
-  refreshTokens: many(refreshTokens),
-  passwordHistory: many(passwordHistory),
-}));
-
-export const snippetsRelations = relations(snippets, ({ one }) => ({
-  user: one(users, {
-    fields: [snippets.userId],
-    references: [users.id],
-  }),
-}));
-
-export const userSettingsRelations = relations(userSettings, ({ one }) => ({
-  user: one(users, {
-    fields: [userSettings.userId],
-    references: [users.id],
-  }),
-}));
-
-export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
-  user: one(users, {
-    fields: [refreshTokens.userId],
-    references: [users.id],
-  }),
-}));
-
-export const passwordHistoryRelations = relations(
-  passwordHistory,
-  ({ one }) => ({
-    user: one(users, {
-      fields: [passwordHistory.userId],
-      references: [users.id],
-    }),
-  }),
-);
+/*
+ * Блоки relations() здесь были, но их удалили.
+ *
+ * Они нужны только реляционному API drizzle (`db.query.users.findMany({ with:
+ * … })`), а весь код работает через select/join. То есть это было ~40 строк
+ * описания связей, которые ничего не проверяли и никуда не влияли: настоящие
+ * связи и каскадное удаление задаёт references() выше, а расхождение между
+ * relations() и схемой компилятор бы не заметил.
+ */
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;

@@ -17,6 +17,31 @@ import type { FastifyError, FastifyInstance, FastifyRequest } from 'fastify';
  * зависимости без готовности принимать DSN в проде.
  */
 
+/**
+ * URL без строки запроса — для логов.
+ *
+ * tRPC передаёт входные данные процедуры GET-параметром `input`, поэтому в
+ * лог запросов попадало содержимое вызова целиком: адрес почты при поиске
+ * пользователя, код сниппета, поисковые строки. Логи живут дольше запросов и
+ * читаются шире, а для разбора сбоя достаточно имени процедуры — оно в пути.
+ *
+ * Путь сохраняется полностью, ключи запроса перечисляются без значений: по
+ * ним видно форму вызова, но не данные.
+ */
+export function sanitizeUrl(url: string): string {
+  const [path, query] = url.split('?');
+  if (!query) return path;
+  const keys = [
+    ...new Set(
+      query
+        .split('&')
+        .map((pair) => pair.split('=')[0])
+        .filter(Boolean),
+    ),
+  ];
+  return keys.length > 0 ? `${path}?${keys.join(',')}=[скрыто]` : path;
+}
+
 export interface ErrorContext {
   /** Где произошло: путь tRPC-процедуры или маршрут Fastify. */
   where?: string;
@@ -52,7 +77,7 @@ export function registerMonitoring(server: FastifyInstance): void {
   server.setErrorHandler(
     (error: FastifyError, request: FastifyRequest, reply) => {
       reportError(error, {
-        where: request.url,
+        where: sanitizeUrl(request.url),
         requestId: request.id,
         method: request.method,
       });

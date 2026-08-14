@@ -16,15 +16,40 @@ const bool = (raw: string | undefined, fallback: boolean): boolean => {
   return raw !== 'false' && raw !== '0';
 };
 
+/**
+ * Разбор RUNNER_LANGUAGES — списка языков, которым разрешено серверное
+ * исполнение. Переменная не задана — разрешены все поддерживаемые.
+ *
+ * Опечатка не должна расширять список. Раньше при `RUNNER_LANGUAGES=py,rb`
+ * (правильно — python,ruby) не оставалось ни одного узнанного имени, и функция
+ * возвращала ВСЕ языки: администратор, который сужал набор, молча получал
+ * обратное тому, что просил. Теперь нераспознанные имена попадают в лог, а
+ * пустой в итоге список остаётся пустым — раннер откажет, и это заметно сразу.
+ */
 const languages = (raw: string | undefined): RunnerLanguage[] => {
   if (!raw) return [...RUNNER_LANGUAGES];
-  const allowed = raw
+
+  const parts = raw
     .split(',')
     .map((part) => part.trim())
-    .filter((part): part is RunnerLanguage =>
-      (RUNNER_LANGUAGES as readonly string[]).includes(part),
+    .filter(Boolean);
+  const allowed = parts.filter((part): part is RunnerLanguage =>
+    (RUNNER_LANGUAGES as readonly string[]).includes(part),
+  );
+  const unknown = parts.filter((part) => !allowed.includes(part as never));
+
+  if (unknown.length > 0) {
+    console.error(
+      `[runner] RUNNER_LANGUAGES: неизвестные языки ${unknown.join(', ')} — пропущены. Допустимые: ${RUNNER_LANGUAGES.join(', ')}`,
     );
-  return allowed.length > 0 ? allowed : [...RUNNER_LANGUAGES];
+  }
+  if (allowed.length === 0) {
+    console.error(
+      '[runner] RUNNER_LANGUAGES не содержит ни одного известного языка — серверное исполнение отключено для всех языков',
+    );
+  }
+
+  return allowed;
 };
 
 export const runnerConfig = {

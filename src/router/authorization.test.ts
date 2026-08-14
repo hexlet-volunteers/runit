@@ -501,3 +501,36 @@ describe('смена пароля', () => {
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 });
+
+/**
+ * Роль проверяется по базе на каждом админском вызове.
+ *
+ * Признак isAdmin лежит в access-токене и живёт 15 минут, поэтому проверка «по
+ * токену» означала, что разжалованный администратор ещё четверть часа сохраняет
+ * все права. Здесь роль снимается в базе, а «токен» у каллера остаётся
+ * админским — ровно та ситуация, что была сломана.
+ */
+describe('снятие роли администратора', () => {
+  afterAll(async () => {
+    await db
+      .update(users)
+      .set({ isAdmin: true })
+      .where(eq(users.id, adminId));
+  });
+
+  test('действует сразу, не дожидаясь истечения токена', async () => {
+    await expect(admin.snippets.getAllSnippets()).resolves.toBeDefined();
+
+    await db
+      .update(users)
+      .set({ isAdmin: false })
+      .where(eq(users.id, adminId));
+
+    await expect(admin.snippets.getAllSnippets()).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
+    await expect(
+      admin.users.getUserByEmail('owner@example.com'),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+});

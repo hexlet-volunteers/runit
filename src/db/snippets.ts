@@ -42,7 +42,7 @@ export type Visibility = (typeof VISIBILITIES)[number];
 export const getSnippetByShortCodeSchema = z.string().min(4).max(16);
 
 export const setVisibilitySchema = z.object({
-  id: z.number(),
+  id: z.number().int().positive(),
   visibility: visibilitySchema,
 });
 
@@ -76,13 +76,22 @@ export const createSnippetSchema = z.object({
 });
 
 export const updateSnippetSchema = createSnippetSchema.partial().extend({
-  id: z.number(),
+  id: z.number().int().positive(),
 });
 
-export const getSnippetByIdSchema = z.coerce.number().positive();
+/**
+ * Идентификаторы — целые положительные. `int()` здесь не украшение: столбцы
+ * объявлены как serial, и дробное значение (id=1.5, пришедшее из адреса или
+ * подставленное вручную) доходило до запроса, где PostgreSQL отвергал его
+ * ошибкой типа — то есть клиент получал 500 «внутренняя ошибка» вместо
+ * понятного «некорректные данные».
+ */
+export const idSchema = z.coerce.number().int().positive();
+
+export const getSnippetByIdSchema = idSchema;
 
 export const deleteSnippetSchema = z.object({
-  id: z.coerce.number().positive(),
+  id: idSchema,
 });
 
 export const getSnippetByUsernameSlugSchema = z.object({

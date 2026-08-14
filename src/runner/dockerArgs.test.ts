@@ -115,6 +115,15 @@ test('php: тег дописывается только при отсутств�
   assert.equal(prepare("echo 'Hello';"), "<?php echo 'Hello';");
   assert.equal(prepare("<?php echo 'Hi';"), "<?php echo 'Hi';");
   assert.equal(prepare('<?= 1 ?>'), '<?= 1 ?>');
+  // Регистр тега PHP не важен — второй тег дописывать нельзя.
+  assert.equal(prepare("<?PHP echo 'Hi';"), "<?PHP echo 'Hi';");
+  // Смешанный код: тег есть, но не в начале файла.
+  assert.equal(
+    prepare('<h1>Заголовок</h1>\n<?php echo 1; ?>'),
+    '<h1>Заголовок</h1>\n<?php echo 1; ?>',
+  );
+  // Чистая разметка без PHP: php выведет её дословно, дописывать тег нельзя.
+  assert.equal(prepare('<p>просто html</p>'), '<p>просто html</p>');
   // нумерация строк сохранена: первая строка осталась первой
   assert.equal(prepare('echo 1;\necho 2;').split('\n').length, 2);
 });
@@ -167,11 +176,12 @@ test('новые языки: команды и файлы', () => {
     'node',
     '/app/main.ts',
   ]);
-  assert.deepEqual(specFor('go').command('/app/main.go'), [
-    'go',
-    'run',
-    '/app/main.go',
-  ]);
+  // Go разворачивает прогретый кэш из образа и только потом собирает: tmpfs
+  // пересоздаётся на каждый запуск, иначе stdlib компилируется заново каждый раз.
+  const goCmd = specFor('go').command('/app/main.go');
+  assert.deepEqual(goCmd.slice(0, 2), ['sh', '-c']);
+  assert.match(goCmd[2], /cp -r \/gocache \/tmp\/gocache/);
+  assert.match(goCmd[2], /exec go run \/app\/main\.go$/);
   assert.deepEqual(specFor('bash').command('/app/main.sh'), [
     'bash',
     '/app/main.sh',
@@ -248,7 +258,7 @@ test('/tmp: скриптовым языкам noexec, компилируемым
     assert.match(value, /nosuid/);
     assert.match(value, /nodev/);
   }
-  assert.match(tmpfsOf('go'), /size=320m/);
+  assert.match(tmpfsOf('go'), /size=384m/);
 });
 
 test('компилируемые языки пишут артефакты только в /tmp', () => {

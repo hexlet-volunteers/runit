@@ -55,7 +55,7 @@ export const createUserSchema = z.object({
  * isAdmin тоже исключён — роль меняется только через admin-only setUserRole.
  */
 export const updateUserSchema = z.object({
-  id: z.number(),
+  id: z.number().int().positive(),
   username: z.string().min(3).max(20).optional(),
   email: emailSchema.optional(),
 });
@@ -69,22 +69,29 @@ export const updateUserSchema = z.object({
 export const MAX_AVATAR_LENGTH = 1_400_000;
 
 export const updateUserSettingsSchema = z.object({
-  userId: z.number(),
+  userId: z.number().int().positive(),
   theme: z.enum(['system', 'light', 'dark']).optional(),
   language: z.enum(['ru', 'en', 'es', 'fr', 'de']).optional(),
   avatarBase64: z.string().max(MAX_AVATAR_LENGTH).nullable().optional(),
 });
 
+/**
+ * Идентификаторы — целые положительные. `int()` здесь не украшение: столбцы
+ * объявлены как serial, и дробное значение (id=1.5, пришедшее из адреса или
+ * подставленное вручную) доходило до запроса, где PostgreSQL отвергал его
+ * ошибкой типа — то есть клиент получал 500 «внутренняя ошибка» вместо
+ * понятного «некорректные данные».
+ */
 export const deleteUserSchema = z.object({
-  id: z.coerce.number().positive(),
+  id: z.coerce.number().int().positive(),
 });
 
 export const setUserRoleSchema = z.object({
-  id: z.number(),
+  id: z.number().int().positive(),
   isAdmin: z.boolean(),
 });
 
-export const getUserByIdSchema = z.number();
+export const getUserByIdSchema = z.coerce.number().int().positive();
 export const getUserByEmailSchema = emailSchema;
 export const getUserByUsernameSchema = z.string().min(3).max(20);
 

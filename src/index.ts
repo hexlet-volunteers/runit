@@ -9,7 +9,7 @@ import { env } from './config/env';
 import { createContext } from './context';
 import { runMigrations } from './db/connection';
 import { registerHealthRoute } from './health';
-import { registerMonitoring, reportError } from './monitoring';
+import { registerMonitoring, reportError, sanitizeUrl } from './monitoring';
 import { registerOembedRoutes } from './oembed';
 import { type AppRouter, appRouter } from './router/index';
 import { runnerConfig } from './runner/config';
@@ -24,11 +24,24 @@ const getApp = async () => {
     throw error;
   }
 
-  // to do: подключить полноценное логирование (pino-pretty)
-
   const server = fastify({
     logger: {
       level: env.LOG_LEVEL,
+      /**
+       * Из лога запросов убрана строка запроса: tRPC кладёт в неё входные
+       * данные процедуры, то есть в журнал попадали адреса почты, код сниппетов
+       * и поисковые строки. Имя процедуры остаётся в пути — для разбора сбоя
+       * этого достаточно.
+       */
+      serializers: {
+        req(request) {
+          return {
+            method: request.method,
+            url: sanitizeUrl(request.url),
+            remoteAddress: request.ip,
+          };
+        },
+      },
     },
     /**
      * Сколько прокси перед приложением считать доверенными (#858).
@@ -46,22 +59,15 @@ const getApp = async () => {
     },
   });
 
-  server.get('/', async (_request, reply) => {
-    reply.type('text/html').send(`
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Welcome</title>
-      </head>
-      <body>
-        <h2>WELCOME</h2>
-        <p>Available procedures: ${Object.keys(appRouter._def?.procedures || {}).join(', ')}</p>
-      </body>
-      </html>
-    `);
-  });
+  /*
+   * Отладочных роутов здесь нет намеренно.
+   *
+   * Были два: `/` печатал страницу «WELCOME» со списком ВСЕХ процедур tRPC —
+   * готовую карту API для того, кто ищет, что можно позвать, — и `/hello`,
+   * отвечавший «Hello world». Ни один из них ничего не проверял: живость
+   * приложения показывает /health (он же в HEALTHCHECK образа), а страницы
+   * отдаёт фронтенд.
+   */
 
   // Обработчик ошибок — раньше роутов, чтобы ловить сбои во всех из них.
   registerMonitoring(server);
@@ -82,10 +88,6 @@ const getApp = async () => {
   if (runnerConfig.enabled) {
     sweepOrphans();
   }
-
-  server.get('/hello', async (_request, reply) => {
-    reply.type('text/plain').send('Hello world');
-  });
 
   try {
     await server.register(fastifyTRPCPlugin, {

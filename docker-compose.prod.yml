@@ -37,6 +37,11 @@ services:
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?задайте JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?задайте JWT_REFRESH_SECRET}
       CORS_ORIGIN: ${PUBLIC_ORIGIN:?задайте PUBLIC_ORIGIN}
+      # Адрес, который сервис называет своим в oEmbed и метатегах. Без него он
+      # выводился из заголовков запроса, и площадка, пришедшая по http или на
+      # внутренний порт (8080), получала iframe со ссылкой http://host:8080 —
+      # такой виджет не открывался на чужой https-странице (mixed content).
+      PUBLIC_BASE_URL: ${PUBLIC_ORIGIN}
       # COOKIE_SECURE не задаётся: в production он включён по умолчанию, и
       # стенд обязан работать за TLS.
       #

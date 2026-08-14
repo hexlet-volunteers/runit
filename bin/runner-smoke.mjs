@@ -10,6 +10,20 @@ const BASE = process.argv[2] ?? 'http://localhost:3001';
 const CASES = [
   { language: 'python', code: "print('ok-python')", expect: 'ok-python' },
   { language: 'php', code: "echo 'ok-php';", expect: 'ok-php' },
+  // Тег в верхнем регистре и смешанный с разметкой код: раньше сервис дописывал
+  // второй `<?php` и выводил его текстом или ломал разметку parse error.
+  {
+    language: 'php',
+    code: "<?PHP echo 'ok-php-upper';",
+    expect: 'ok-php-upper',
+    label: 'php: тег в верхнем регистре',
+  },
+  {
+    language: 'php',
+    code: "<h1>html</h1>\n<?php echo 'ok-php-mixed'; ?>",
+    expect: 'ok-php-mixed',
+    label: 'php: разметка вместе с кодом',
+  },
   { language: 'ruby', code: "puts 'ok-ruby'", expect: 'ok-ruby' },
   { language: 'bash', code: "echo ok-bash", expect: 'ok-bash' },
   { language: 'typescript', code: "const s: string = 'ok-ts';\nconsole.log(s);", expect: 'ok-ts' },

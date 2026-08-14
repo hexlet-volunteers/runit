@@ -87,6 +87,14 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # Переменные Vite вшиваются в статику на сборке, поэтому передаются
+          # здесь, а не в docker-compose на стенде. Пустые значения безопасны:
+          # без DSN отчёты об ошибках просто не включаются, а без базового
+          # адреса ссылки строятся по window.location. Задаются в настройках
+          # репозитория (Variables/Secrets), для бэкенда игнорируются.
+          build-args: |
+            VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }}
+            VITE_PUBLIC_BASE_URL=${{ vars.VITE_PUBLIC_BASE_URL }}
           # Кэш слоёв в самом реестре: без него каждая сборка заново
           # компилирует better-sqlite3 через node-gyp.
           cache-from: type=gha

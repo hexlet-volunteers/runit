@@ -89,6 +89,11 @@ services:
       # Контекст — корень репозитория: фронту нужны типы из types/.
       context: .
       dockerfile: frontend/Dockerfile
+      # Значения Vite вшиваются в статику на сборке — задавать их через
+      # environment бессмысленно, поэтому они передаются аргументами сборки.
+      args:
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+        VITE_PUBLIC_BASE_URL: ${VITE_PUBLIC_BASE_URL:-}
     restart: unless-stopped
     ports:
       - '${WEB_PORT:-8080}:80'
