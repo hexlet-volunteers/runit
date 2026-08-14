@@ -6,6 +6,7 @@
       "package-name": "runit",
       "changelog-path": "CHANGELOG.md",
       "include-v-in-tag": true,
+      "include-component-in-tag": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "extra-release-commit-types": ["chore", "build"],
