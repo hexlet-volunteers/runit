@@ -91,73 +91,85 @@ export const userSettings = pgTable('user_settings', {
   ...timestamps,
 });
 
-export const snippets = pgTable('snippets', {
-  id: serial('id').primaryKey(),
-  name: varchar('name', { length: 30 }).notNull(),
-  slug: varchar('slug', { length: 30 }),
-  code: text('code').notNull(),
-  language: varchar('language', { length: 50 }),
-  /**
-   * Короткий код для публичной ссылки вида /s/aB3xK9 — им делятся и по нему
-   * встраивают сниппет. Уникален глобально (в отличие от slug, который
-   * уникален только внутри пользователя).
-   */
-  shortCode: varchar('short_code', { length: 16 }).unique(),
-  visibility: visibilityEnum('visibility').notNull().default('private'),
-  userId: integer('user_id').references(() => users.id, {
-    onDelete: 'cascade',
-  }),
-  ...timestamps,
-}, (table) => [
-  /**
-   * По владельцу выбираются дашборд и публичный профиль — самые частые запросы
-   * к таблице. PostgreSQL сам индекс по внешнему ключу не создаёт, поэтому без
-   * этой строки оба запроса были полным сканом таблицы сниппетов всего сервиса.
-   */
-  index('snippets_user_id_idx').on(table.userId),
-  /**
-   * Пара «пользователь + slug» уникальна.
-   *
-   * Это условие код уже подразумевает: slug генерируется уникальным среди
-   * сниппетов пользователя, а просмотр по /s/:user/:slug берёт первую
-   * найденную запись. Пока ограничения не было, совпадение slug (сбой
-   * генерации, ручная правка данных) молча отдавало бы посетителю не тот
-   * сниппет — вместо ошибки. Индекс заодно обслуживает сам этот запрос.
-   */
-  uniqueIndex('snippets_user_id_slug_idx').on(table.userId, table.slug),
-]);
+export const snippets = pgTable(
+  'snippets',
+  {
+    id: serial('id').primaryKey(),
+    name: varchar('name', { length: 30 }).notNull(),
+    slug: varchar('slug', { length: 30 }),
+    code: text('code').notNull(),
+    language: varchar('language', { length: 50 }),
+    /**
+     * Короткий код для публичной ссылки вида /s/aB3xK9 — им делятся и по нему
+     * встраивают сниппет. Уникален глобально (в отличие от slug, который
+     * уникален только внутри пользователя).
+     */
+    shortCode: varchar('short_code', { length: 16 }).unique(),
+    visibility: visibilityEnum('visibility').notNull().default('private'),
+    userId: integer('user_id').references(() => users.id, {
+      onDelete: 'cascade',
+    }),
+    ...timestamps,
+  },
+  (table) => [
+    /**
+     * По владельцу выбираются дашборд и публичный профиль — самые частые запросы
+     * к таблице. PostgreSQL сам индекс по внешнему ключу не создаёт, поэтому без
+     * этой строки оба запроса были полным сканом таблицы сниппетов всего сервиса.
+     */
+    index('snippets_user_id_idx').on(table.userId),
+    /**
+     * Пара «пользователь + slug» уникальна.
+     *
+     * Это условие код уже подразумевает: slug генерируется уникальным среди
+     * сниппетов пользователя, а просмотр по /s/:user/:slug берёт первую
+     * найденную запись. Пока ограничения не было, совпадение slug (сбой
+     * генерации, ручная правка данных) молча отдавало бы посетителю не тот
+     * сниппет — вместо ошибки. Индекс заодно обслуживает сам этот запрос.
+     */
+    uniqueIndex('snippets_user_id_slug_idx').on(table.userId, table.slug),
+  ],
+);
 
-export const refreshTokens = pgTable('refresh_tokens', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  // sha256 в hex — 64 символа.
-  tokenHash: varchar('token_hash', { length: 64 }).notNull().unique(),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  revokedAt: timestamp('revoked_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-}, (table) => [
-  // Все токены пользователя отзываются при смене пароля и выходе — выборка по
-  // user_id, а индекса по внешнему ключу PostgreSQL сам не создаёт.
-  index('refresh_tokens_user_id_idx').on(table.userId),
-]);
+export const refreshTokens = pgTable(
+  'refresh_tokens',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    // sha256 в hex — 64 символа.
+    tokenHash: varchar('token_hash', { length: 64 }).notNull().unique(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // Все токены пользователя отзываются при смене пароля и выходе — выборка по
+    // user_id, а индекса по внешнему ключу PostgreSQL сам не создаёт.
+    index('refresh_tokens_user_id_idx').on(table.userId),
+  ],
+);
 
-export const passwordHistory = pgTable('password_history', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  passwordHash: varchar('password_hash', { length: 60 }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-}, (table) => [
-  // История паролей читается целиком по пользователю при каждой смене пароля.
-  index('password_history_user_id_idx').on(table.userId),
-]);
+export const passwordHistory = pgTable(
+  'password_history',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    passwordHash: varchar('password_hash', { length: 60 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // История паролей читается целиком по пользователю при каждой смене пароля.
+    index('password_history_user_id_idx').on(table.userId),
+  ],
+);
 
 /*
  * Блоки relations() здесь были, но их удалили.
@@ -171,9 +183,7 @@ export const passwordHistory = pgTable('password_history', {
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
-export type RefreshToken = typeof refreshTokens.$inferSelect;
 export type NewRefreshToken = typeof refreshTokens.$inferInsert;
-export type PasswordHistoryEntry = typeof passwordHistory.$inferSelect;
 export type NewPasswordHistoryEntry = typeof passwordHistory.$inferInsert;
 export type Snippet = typeof snippets.$inferSelect;
 export type NewSnippet = typeof snippets.$inferInsert;

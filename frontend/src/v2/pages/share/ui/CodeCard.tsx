@@ -10,25 +10,16 @@ import { runCode, unsupportedLanguage, type RunResult } from '../../../shared/ru
 import { isPreviewLanguage } from '../../../shared/runner/preview';
 import HtmlPreview from '../../../shared/ui/HtmlPreview';
 import { useTRPCClient } from '../../../shared/api';
+import { snippetFileName } from '../../../shared/lib';
 import { editorColors, langMeta } from '../../../shared/theme';
 import { type Snippet } from '../../../entities/snippet'
-
-const EXT: Record<string, string> = {
-  javascript: 'js',
-  python: 'py',
-  php: 'php',
-  ruby: 'rb',
-  java: 'java',
-  html: 'html',
-  css: 'css',
-};
 
 /** Высота панели превью вёрстки на странице шаринга. */
 const PREVIEW_HEIGHT = 320;
 
 /** Генерирует имя файла из названия сниппета и расширения языка. */
 export function fileNameOf(snippet: Pick<Snippet, 'name' | 'language'>): string {
-  return `${snippet.name}.${EXT[snippet.language] ?? 'txt'}`;
+  return snippetFileName(snippet.name, snippet.language);
 }
 
 /** Цвет строки вывода в зависимости от типа (error/warn/system/stdout). */

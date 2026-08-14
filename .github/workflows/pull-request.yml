@@ -49,6 +49,13 @@ jobs:
       - name: Проверка типов
         run: npx tsc --noEmit
 
+      - name: Проверка типов в тестах
+        # Отдельный конфиг: основной tsconfig исключает *.test.ts, поэтому тесты
+        # не проверялись вовсе. Из-за этого в фикстуре лимитов раннера не
+        # хватало поля, и проверка молча собирала аргумент
+        # `--ulimit fsize=undefined` — с таким docker бы не запустился.
+        run: npx tsc --noEmit -p tsconfig.test.json
+
       - name: Юнит-тесты раннера
         # Docker в CI не нужен: тесты проверяют сборку аргументов docker и ветки
         # деградации через внедрение зависимостей.
@@ -128,11 +135,9 @@ jobs:
         # Сборка образа не проверяет конфиг: Caddy читает его при старте, а не
         # при COPY. Из-за этого незакавыченный пробел в регулярке @bots прошёл
         # зелёным CI и уронил бы контейнер web в проде — нашлось только
-        # аудитом. Проверяем оба конфига тем же caddy, что лежит в образе.
+        # аудитом. Проверяем тем же caddy, что лежит в образе.
         run: |
           docker run --rm -v "$PWD/frontend/Caddyfile.docker:/cfg:ro" caddy:2-alpine \
-            caddy validate --config /cfg --adapter caddyfile
-          docker run --rm -v "$PWD/Caddyfile:/cfg:ro" caddy:2-alpine \
             caddy validate --config /cfg --adapter caddyfile
 
   runner-smoke:

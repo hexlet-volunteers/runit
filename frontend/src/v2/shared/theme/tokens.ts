@@ -36,7 +36,10 @@ export const langMeta: Record<
  */
 export const runtimeLabel = (language: string): string =>
   ({
-    javascript: 'Node.js 20 LTS',
+    // JavaScript исполняется в браузере, в Web Worker, а не на сервере.
+    // Подпись «Node.js 20 LTS» обещала серверную среду: сниппет с require или
+    // process.argv не работал, и причина по этой подписи не угадывалась.
+    javascript: 'Браузер (Web Worker)',
     typescript: 'Node.js 24 (TS)',
     python: 'Python 3.13',
     php: 'PHP 8.3',

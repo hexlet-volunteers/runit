@@ -5,12 +5,20 @@ import { buildDockerArgs } from './dockerArgs';
 import { LANGUAGE_SPECS, specFor } from './languages';
 import type { RunLimits, RunnerLanguage } from './types';
 
+/**
+ * Полный набор лимитов. Раньше здесь не было maxFileBytes, и для языков без
+ * своего переопределения аргументы получались с `--ulimit fsize=undefined` —
+ * docker такой запуск отверг бы, а тест этого не замечал: проверялись другие
+ * флаги. Заодно это ловит проверка типов тестов (tsconfig.test.json), которая
+ * теперь идёт в CI.
+ */
 const limits: RunLimits = {
   timeoutMs: 10_000,
   memory: '256m',
   cpus: '1',
   pidsLimit: 64,
   maxOutputBytes: 65_536,
+  maxFileBytes: 8 * 1024 * 1024,
 };
 
 const argsFor = (language: RunnerLanguage) =>
@@ -76,6 +84,17 @@ test('код монтируется только для чтения', () => {
   assert.equal(mount, '/tmp/runit-runner-abc:/app:ro');
 });
 
+test('ulimit fsize задан числом для каждого языка', () => {
+  // Значение подставляется из лимитов, и пропуск поля давал бы строку
+  // «fsize=undefined»: docker отказался бы запускать контейнер.
+  for (const language of Object.keys(LANGUAGE_SPECS) as RunnerLanguage[]) {
+    const args = argsFor(language);
+    const idx = args.findIndex((a) => a.startsWith('fsize='));
+    assert.notEqual(idx, -1, `${language}: нет ulimit fsize`);
+    assert.match(args[idx], /^fsize=\d+$/, `${language}: ${args[idx]}`);
+  }
+});
+
 test('ulimit cpu страхует wall-clock таймаут', () => {
   const args = argsFor('python');
   const cpuLimit = args.filter((a) => a.startsWith('cpu='))[0];
@@ -111,7 +130,10 @@ test('команды и имена файлов по языкам', () => {
 });
 
 test('php: тег дописывается только при отсутствии и не сдвигает строки', () => {
-  const prepare = LANGUAGE_SPECS.php.prepare!;
+  const { prepare } = LANGUAGE_SPECS.php;
+  // Утверждение вместо `!`: если prepare когда-нибудь уберут из спеки, тест
+  // должен падать с внятной причиной, а не молча пропускать проверки.
+  assert.ok(prepare, 'у php должна быть подготовка кода');
   assert.equal(prepare("echo 'Hello';"), "<?php echo 'Hello';");
   assert.equal(prepare("<?php echo 'Hi';"), "<?php echo 'Hi';");
   assert.equal(prepare('<?= 1 ?>'), '<?= 1 ?>');

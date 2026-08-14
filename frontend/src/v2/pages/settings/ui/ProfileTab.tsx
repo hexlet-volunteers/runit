@@ -1,4 +1,5 @@
-import { useState } from 'react';import {
+import {
+  Alert,
   Avatar,
   Button,
   Card,
@@ -9,15 +10,25 @@ import { useState } from 'react';import {
   TextInput,
   Textarea,
 } from '@mantine/core';
-import { initialsOf } from '../../../shared/lib';
+import { initialsOf, publicBaseUrl } from '../../../shared/lib';
 import { useSession } from '../../../entities/user';
 
-/** Вкладка «Профиль»: аватар, имя, username, био. */
+/**
+ * Вкладка «Профиль»: аватар, имя, username, био.
+ *
+ * Поля неактивны намеренно. Сохранения профиля на сервере пока нет (#718/#832),
+ * а поля были обычными: человек правил имя, нажимал «Сохранить» (кнопка тоже
+ * заглушка) и уходил, считая, что изменения приняты. Пустое поле, в которое
+ * нельзя ввести, честнее поля, которое молча забывает ввод.
+ */
 export default function ProfileTab() {
   const { user } = useSession();
-  const [name, setName] = useState('');
-  const [username, setUsername] = useState(user?.username ?? '');
-  const [about, setAbout] = useState('');
+  /**
+   * Адрес профиля показывается настоящий. Раньше здесь был текст
+   * «runit.hexlet.io/@» — и домен прибит в код (на стейджинге он другой), и
+   * такого адреса не существует: профиль живёт по /u/:username.
+   */
+  const profilePrefix = `${publicBaseUrl().replace(/^https?:\/\//, '')}/u/`;
 
   return (
     <Card withBorder radius="lg" p="xl" mt="lg">
@@ -50,31 +61,38 @@ export default function ProfileTab() {
           </Group>
         </Group>
 
+        <Alert color="gray" radius="md">
+          <Text fz="sm">
+            Редактирование профиля пока не работает — изменения не сохранятся
+            (#718/#832). Имя пользователя ниже — текущее.
+          </Text>
+        </Alert>
+
         <TextInput
           label="Имя"
           placeholder="Как вас зовут"
-          value={name}
-          onChange={(e) => setName(e.currentTarget.value)}
+          value=""
+          disabled
         />
         <TextInput
           label="Имя пользователя"
           leftSection={
             <Text fz="sm" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-              runit.hexlet.io/@
+              {profilePrefix}
             </Text>
           }
-          leftSectionWidth={140}
-          styles={{ input: { paddingLeft: 140 } }}
-          value={username}
-          onChange={(e) => setUsername(e.currentTarget.value)}
+          leftSectionWidth={160}
+          styles={{ input: { paddingLeft: 160 } }}
+          value={user?.username ?? ''}
+          disabled
         />
         <Textarea
           label="О себе"
           placeholder="Пара слов о том, чем занимаетесь"
           minRows={3}
           autosize
-          value={about}
-          onChange={(e) => setAbout(e.currentTarget.value)}
+          value=""
+          disabled
         />
 
         <Group justify="flex-end">

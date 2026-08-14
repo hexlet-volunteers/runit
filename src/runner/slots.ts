@@ -17,5 +17,3 @@ export function tryAcquire(): (() => void) | null {
     active -= 1;
   };
 }
-
-export const activeRuns = (): number => active;

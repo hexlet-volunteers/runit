@@ -1,7 +1,7 @@
 import { initTRPC, TRPCError } from '@trpc/server';
+import type { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 import { eq } from 'drizzle-orm';
 import { ZodError } from 'zod/v4';
-import type { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 import { verifyAccessToken } from './auth/jwt';
 import { db } from './db/connection';
 import { users } from './db/schema/schema';

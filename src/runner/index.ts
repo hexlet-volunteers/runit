@@ -1,8 +1,6 @@
 import { z } from 'zod/v4';
 import { checkDaemon } from './availability';
 import { runnerConfig } from './config';
-// sweepOrphans только реэкспортируется ниже: вызывает её src/index.ts при старте.
-import { runCode } from './run';
 import { RUNNER_LANGUAGES } from './types';
 
 export { runCode, sweepOrphans } from './run';
@@ -15,8 +13,6 @@ export const runInputSchema = z.object({
   code: z.string().min(1).max(runnerConfig.maxCodeBytes),
   stdin: z.string().max(runnerConfig.maxStdinBytes).default(''),
 });
-
-export type RunInput = z.infer<typeof runInputSchema>;
 
 export interface RunnerStatus {
   /** Языки, исполняемые на сервере (JavaScript исполняется в браузере). */
@@ -33,5 +29,3 @@ export async function runnerStatus(): Promise<RunnerStatus> {
     message: daemon.ok ? null : daemon.message,
   };
 }
-
-export { runCode as runnerRun, runInputSchema as runnerRunInputSchema };

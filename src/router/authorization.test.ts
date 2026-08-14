@@ -512,19 +512,13 @@ describe('смена пароля', () => {
  */
 describe('снятие роли администратора', () => {
   afterAll(async () => {
-    await db
-      .update(users)
-      .set({ isAdmin: true })
-      .where(eq(users.id, adminId));
+    await db.update(users).set({ isAdmin: true }).where(eq(users.id, adminId));
   });
 
   test('действует сразу, не дожидаясь истечения токена', async () => {
     await expect(admin.snippets.getAllSnippets()).resolves.toBeDefined();
 
-    await db
-      .update(users)
-      .set({ isAdmin: false })
-      .where(eq(users.id, adminId));
+    await db.update(users).set({ isAdmin: false }).where(eq(users.id, adminId));
 
     await expect(admin.snippets.getAllSnippets()).rejects.toMatchObject({
       code: 'FORBIDDEN',

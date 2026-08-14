@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { and, desc, eq, ne } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { z } from 'zod/v4';
 import { generateUniqSlug } from '../utils/generate-uniq-slug';
 import { db } from './connection';
@@ -9,30 +9,6 @@ import {
   snippets,
   users,
 } from './schema/schema';
-
-export const snippetSchema = z.object({
-  id: z.number(),
-  name: z.string().min(1).max(30),
-  slug: z.string().max(30).nullable(),
-  code: z.string().min(1),
-  language: z.enum([
-    'javascript',
-    'typescript',
-    'python',
-    'php',
-    'ruby',
-    'java',
-    'go',
-    'cpp',
-    'sql',
-    'bash',
-    'html',
-    'css',
-  ]),
-  userId: z.number(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
 
 /** Уровни доступа к сниппету. */
 export const VISIBILITIES = ['private', 'link', 'public'] as const;
@@ -222,7 +198,9 @@ export async function getPublicSnippetsByUsername(
        * которой автор ни с кем не делился. Раньше здесь стояло
        * ne(visibility, 'private'), то есть в профиль попадало и то, и другое.
        */
-      .where(and(eq(users.username, username), eq(snippets.visibility, 'public')))
+      .where(
+        and(eq(users.username, username), eq(snippets.visibility, 'public')),
+      )
       .orderBy(desc(snippets.createdAt));
 
     return rows.map((row) => row.snippet);

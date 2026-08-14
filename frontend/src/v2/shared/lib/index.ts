@@ -19,3 +19,8 @@ export {
   writeEditorPrefs,
   useEditorPrefs,
 } from './editorPrefs';
+export {
+  FILE_EXTENSIONS,
+  fileExtension,
+  snippetFileName,
+} from './languageFiles';

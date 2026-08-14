@@ -47,5 +47,5 @@ export function uniqueViolationConstraint(error: unknown): string | null {
 /** Нарушена ли уникальность по колонке с указанным именем. */
 export function isUniqueViolationOn(error: unknown, column: string): boolean {
   const constraint = uniqueViolationConstraint(error);
-  return constraint !== null && constraint.includes(column);
+  return constraint?.includes(column) ?? false;
 }
