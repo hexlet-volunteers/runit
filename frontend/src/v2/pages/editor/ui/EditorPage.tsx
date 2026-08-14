@@ -30,6 +30,7 @@ import {
   FILE_NAME_BY_LANGUAGE,
   STARTER_CODE,
   SAVE_STATUS_META,
+  monacoLanguage,
   useSnippetSave,
 } from '..';
 import EditorHeader from './EditorHeader';
@@ -408,7 +409,7 @@ export default function EditorPage() {
           <div style={{ flex: 1, minHeight: 0 }}>
             <MonacoEditor
               theme="vs-dark"
-              language={language}
+              language={monacoLanguage(language)}
               value={code}
               onChange={(value) => {
                 setCode(value ?? '');

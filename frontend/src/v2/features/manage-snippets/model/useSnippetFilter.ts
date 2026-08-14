@@ -39,6 +39,13 @@ export default function useSnippetFilter() {
      * первый — человек с сотней сниппетов видел, что всё пропало.
      */
     isError,
+    /**
+     * Браузер считает, что сети нет: react-query не отправляет запрос и ставит
+     * его на паузу (networkMode: 'online'). Ошибки при этом нет, данных тоже —
+     * и без отдельной проверки дашборд показывал «Создайте первый сниппет»
+     * человеку, у которого просто пропал интернет.
+     */
+    isPaused,
     refetch,
   } = useQuery({
     queryKey: SNIPPETS_QUERY_KEY,
@@ -100,6 +107,7 @@ export default function useSnippetFilter() {
     setSort,
     isLoading,
     isError,
+    isPaused,
     refetch,
     mySnippets,
   };

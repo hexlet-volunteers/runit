@@ -63,6 +63,42 @@ const FIELD_LABELS: Record<string, string> = {
   avatarBase64: 'аватар',
 };
 
+/**
+ * Текст одной претензии на русском.
+ *
+ * Свои сообщения (политика пароля, согласие, почта) написаны по-русски и
+ * остаются как есть — их узнаём по кириллице. Остальное приходит от zod
+ * по-английски: «Too big: expected string to have <=30 characters» — так и
+ * доезжало до пользователя.
+ */
+const describeIssue = (issue: ZodError['issues'][number]): string => {
+  if (/[а-яё]/i.test(issue.message)) return issue.message;
+
+  switch (issue.code) {
+    case 'too_big': {
+      const max = issue.maximum;
+      return typeof max === 'bigint' || typeof max === 'number'
+        ? `слишком длинное значение, максимум ${max}`
+        : 'слишком длинное значение';
+    }
+    case 'too_small': {
+      const min = issue.minimum;
+      return min === 1 || min === 1n
+        ? 'обязательное поле'
+        : `слишком короткое значение, минимум ${min}`;
+    }
+    case 'invalid_type':
+      return 'неверный тип значения';
+    case 'invalid_format':
+      return 'неверный формат';
+    case 'invalid_value':
+    case 'invalid_union':
+      return 'недопустимое значение';
+    default:
+      return 'значение не подходит';
+  }
+};
+
 const formatZodIssues = (error: ZodError): string =>
   error.issues
     .map((issue) => {
@@ -71,7 +107,8 @@ const formatZodIssues = (error: ZodError): string =>
       );
       const field = path.length > 0 ? path[path.length - 1] : undefined;
       const label = field ? (FIELD_LABELS[field] ?? field) : undefined;
-      return label ? `${label}: ${issue.message}` : issue.message;
+      const message = describeIssue(issue);
+      return label ? `${label}: ${message}` : message;
     })
     .join('; ');
 

@@ -3,6 +3,7 @@ import {
   Text,
 } from '@mantine/core';
 import { runtimeLabel } from '../../../shared/theme';
+import { useEditorPrefs } from '../../../shared/lib';
 import { type Meta } from '..'
 
 export type StatusBarProps = {
@@ -24,6 +25,9 @@ export type StatusBarProps = {
 
 export default function EditorStatusBar(props: StatusBarProps) {
   const { meta, language, cursor, compact = false } = props;
+  // Подпись об отступе была постоянной («2 пробела») независимо от настроек:
+  // с выключенным «Tab вставляет пробелы» она прямо противоречила редактору.
+  const { tabSpaces } = useEditorPrefs();
 
   if (compact) {
     return (
@@ -66,7 +70,9 @@ export default function EditorStatusBar(props: StatusBarProps) {
         <Text fz={12} c="dimmed">
           Строка {cursor.line}, столбец {cursor.col}
         </Text>
-        <Text fz={12} c="dimmed">Отступ: 2 пробела</Text>
+        <Text fz={12} c="dimmed">
+          Отступ: {tabSpaces ? '2 пробела' : 'табуляция'}
+        </Text>
       </Group>
       <Group gap="lg" wrap="nowrap">
         <Text fz={12} c="dimmed">UTF-8</Text>

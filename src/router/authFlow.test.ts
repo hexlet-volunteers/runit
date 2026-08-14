@@ -215,7 +215,10 @@ describe('регистрация, вход и сессия', () => {
     const { message } = response.json().error;
     expect(message).not.toContain('too_big');
     expect(message).not.toContain('[{');
+    // И по-русски: сообщения zod приходят на английском, их переводим.
+    expect(message).not.toMatch(/[A-Za-z]{4,}/);
     expect(message).toContain('имя');
+    expect(message).toContain('30');
   });
 
   test('гость получает UNAUTHORIZED, а не ошибку CSRF', async () => {

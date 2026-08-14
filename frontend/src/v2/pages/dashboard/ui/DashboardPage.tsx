@@ -40,9 +40,17 @@ export default function DashboardPage() {
     setSort,
     isLoading,
     isError,
+    isPaused,
     refetch,
     mySnippets,
   } = useSnippetFilter();
+
+  /**
+   * Список не получен: либо запрос упал, либо браузер offline и запрос даже не
+   * ушёл. Оба случая нельзя показывать как «сниппетов нет» — человек с сотней
+   * сниппетов видел приглашение создать первый.
+   */
+  const loadFailed = isError || isPaused;
 
   const {
     deleteMutation,
@@ -79,13 +87,16 @@ export default function DashboardPage() {
           )}
 
           {/* Список не загрузился — так и говорим, с кнопкой повторить. */}
-          {!isLoading && isError && (
+          {!isLoading && loadFailed && (
             <Center py={80}>
               <Stack align="center" gap="sm">
-                <Text fw={600}>Не удалось загрузить сниппеты</Text>
+                <Text fw={600}>
+                  {isPaused ? 'Нет соединения' : 'Не удалось загрузить сниппеты'}
+                </Text>
                 <Text c="dimmed" fz="sm" ta="center">
-                  Список не пуст — его не удалось получить. Проверьте
-                  соединение и попробуйте снова.
+                  {isPaused
+                    ? 'Список сниппетов не загружен: браузер не видит сети. Он появится сам, когда связь вернётся.'
+                    : 'Это не значит, что сниппетов нет — их не удалось получить. Попробуйте снова.'}
                 </Text>
                 <Button variant="light" onClick={() => void refetch()}>
                   Повторить
@@ -94,7 +105,7 @@ export default function DashboardPage() {
             </Center>
           )}
 
-          {!isLoading && !isError && !hasAny && (
+          {!isLoading && !loadFailed && !hasAny && (
             <EmptyState
               onCreateClick={() => setModalOpened(true)}
               onCreateExample={(lang) => createExampleMutation.mutate(lang)}
@@ -102,7 +113,7 @@ export default function DashboardPage() {
             />
           )}
 
-          {!isLoading && !isError && hasAny && (
+          {!isLoading && !loadFailed && hasAny && (
             <>
               <Group gap="sm" mb="xl" wrap="wrap">
                 <TextInput
