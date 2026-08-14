@@ -18,10 +18,21 @@ const config: Config = {
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
-  // src/runner/*.test.ts используют node:test (свой раннер, см. test:runner) —
-  // исключены, чтобы Jest не пытался их подхватить.
-  testMatch: ['**/src/**/*.test.ts'],
-  testPathIgnorePatterns: ['/node_modules/', '/src/runner/'],
+  /**
+   * Только тесты бэкенда.
+   *
+   * `rootDir: 'src'` — не косметика: с корнем репозитория jest подхватывал и
+   * тесты фронтенда (frontend/src/**), написанные под vitest и jsdom, и падал на
+   * них с ошибками разбора. Выглядело это как «7 наборов упали», хотя ни один
+   * тест бэкенда не сломался.
+   *
+   * src/runner/*.test.ts исключены отдельно: у них свой раннер на node:test
+   * (см. npm run test:runner), потому что они проверяют argv для docker без
+   * jest-окружения.
+   */
+  rootDir: 'src',
+  testMatch: ['**/*.test.ts'],
+  testPathIgnorePatterns: ['/node_modules/', '/runner/'],
 };
 
 export default config;

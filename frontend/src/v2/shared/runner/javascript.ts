@@ -1,3 +1,4 @@
+import { SHOW_SOURCE } from './showValue';
 import type { ConsoleLine, RunResult } from './types';
 
 // JavaScript исполняется в браузере, в Web Worker: мгновенно, офлайн и без нагрузки
@@ -5,47 +6,7 @@ import type { ConsoleLine, RunResult } from './types';
 
 const WORKER_SOURCE = `
   const lines = [];
-  /**
-   * Печать значения так, как это делает консоль Node (#880).
-   *
-   * JSON.stringify здесь недостаточно: для undefined он возвращает undefined
-   * (не строку), и console.log(undefined) печатал пустую строку — человек видел
-   * пустую строку вместо значения и не понимал, сработал ли код. По той же
-   * причине терялись функции, символы и NaN, а Infinity превращался в null.
-   *
-   * Циклические ссылки JSON.stringify роняет исключением — на них
-   * возвращается [Circular].
-   */
-  const show = (value, depth) => {
-    if (typeof value === 'string') return depth > 0 ? JSON.stringify(value) : value;
-    if (value === undefined) return 'undefined';
-    if (value === null) return 'null';
-    if (typeof value === 'number') return Object.is(value, -0) ? '-0' : String(value);
-    if (typeof value === 'bigint') return String(value) + 'n';
-    if (typeof value === 'boolean') return String(value);
-    if (typeof value === 'symbol') return value.toString();
-    if (typeof value === 'function')
-      return '[Function: ' + (value.name || 'anonymous') + ']';
-    if (value instanceof Error) return value.stack || String(value);
-    if (depth > 4) return Array.isArray(value) ? '[Array]' : '[Object]';
-    if (Array.isArray(value))
-      return '[ ' + value.map((item) => show(item, depth + 1)).join(', ') + ' ]';
-    if (value instanceof Map)
-      return 'Map(' + value.size + ') { ' + [...value].map(([k, v]) =>
-        show(k, depth + 1) + ' => ' + show(v, depth + 1)).join(', ') + ' }';
-    if (value instanceof Set)
-      return 'Set(' + value.size + ') { ' + [...value].map((item) =>
-        show(item, depth + 1)).join(', ') + ' }';
-    if (value instanceof Date) return value.toISOString();
-    try {
-      const entries = Object.entries(value).map(
-        ([key, item]) => key + ': ' + show(item, depth + 1),
-      );
-      return entries.length === 0 ? '{}' : '{ ' + entries.join(', ') + ' }';
-    } catch {
-      return '[Circular]';
-    }
-  };
+  ${SHOW_SOURCE}
   const push = (type, args) =>
     lines.push({ type, text: args.map((a) => show(a, 0)).join(' ') });
   ['log', 'error', 'warn', 'info'].forEach((m) => {

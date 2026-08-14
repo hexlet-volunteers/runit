@@ -11,35 +11,14 @@ import {
   toSnippetLanguage,
 } from '../../../entities/snippet';
 import { type SaveStatus } from '../types';
+import {
+  MAX_CODE_LENGTH,
+  MAX_NAME_LENGTH,
+  validateSnippetDraft,
+} from './draftValidation';
 
-/**
- * Пределы совпадают со схемой бэкенда (src/db/snippets.ts). Дублирование
- * осознанное: без проверки на клиенте сервер отвечал BAD_REQUEST, а редактор
- * показывал «Проверьте соединение» и бесконечно повторял тот же запрос —
- * соединение было в порядке, а имя длиннее тридцати символов.
- */
-export const MAX_NAME_LENGTH = 30;
-export const MAX_CODE_LENGTH = 100_000;
-
-/**
- * Что не так с содержимым до отправки, или null, если всё в порядке.
- *
- * Проверяется то же, что проверит сервер: пустое имя, слишком длинное имя,
- * слишком большой код. Такие ошибки повтором запроса не лечатся, поэтому
- * автосохранение на них не запускается.
- */
-export function validateSnippetDraft(name: string, code: string): string | null {
-  if (name.trim().length === 0) {
-    return 'Дайте сниппету имя — без него он не сохранится.';
-  }
-  if (name.trim().length > MAX_NAME_LENGTH) {
-    return `Имя длиннее ${MAX_NAME_LENGTH} символов — сократите его, чтобы сниппет сохранился.`;
-  }
-  if (code.length > MAX_CODE_LENGTH) {
-    return `Код больше ${Math.round(MAX_CODE_LENGTH / 1000)} тысяч символов — столько сервис не сохраняет.`;
-  }
-  return null;
-}
+// Реэкспорт для вызывающего кода: правила живут в draftValidation.ts.
+export { MAX_CODE_LENGTH, MAX_NAME_LENGTH, validateSnippetDraft };
 
 /** Код ошибки tRPC, если он есть. Формат ответа сервера, а не гадание по тексту. */
 function trpcErrorCode(error: unknown): string | undefined {
