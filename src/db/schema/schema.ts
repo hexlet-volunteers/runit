@@ -134,15 +134,6 @@ export const passwordHistory = pgTable('password_history', {
     .defaultNow(),
 });
 
-export const sections = pgTable('sections', {
-  id: serial('id').primaryKey(),
-  title: text('title').notNull(),
-  description: text('description').notNull(),
-  content: text('content').notNull(),
-  componentType: text('component_type').notNull(),
-  ...timestamps,
-});
-
 export const usersRelations = relations(users, ({ many, one }) => ({
   snippets: many(snippets),
   settings: one(userSettings, {
@@ -194,5 +185,3 @@ export type Snippet = typeof snippets.$inferSelect;
 export type NewSnippet = typeof snippets.$inferInsert;
 export type UserSettings = typeof userSettings.$inferSelect;
 export type NewUserSettings = typeof userSettings.$inferInsert;
-export type Section = typeof sections.$inferSelect;
-export type NewSection = typeof sections.$inferInsert;

@@ -8,7 +8,6 @@ import { registerAuthPlugins } from './auth/plugins';
 import { env } from './config/env';
 import { createContext } from './context';
 import { runMigrations } from './db/connection';
-import { seedHomePageData } from './db/seedHomePageData';
 import { registerHealthRoute } from './health';
 import { registerMonitoring, reportError } from './monitoring';
 import { registerOembedRoutes } from './oembed';
@@ -20,9 +19,8 @@ import { registerSecurity } from './security';
 const getApp = async () => {
   try {
     await runMigrations();
-    await seedHomePageData();
   } catch (error) {
-    console.error('Migration/Seeding failed:', error);
+    console.error('Migration failed:', error);
     throw error;
   }
 
