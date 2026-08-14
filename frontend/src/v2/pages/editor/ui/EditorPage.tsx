@@ -64,7 +64,7 @@ export default function EditorPage() {
     clearLines,
   } = useRunner(code, language);
   const {
-    saveNow,
+    saveManually,
     markDirty,
     saveStatus,
     setSaveStatus,
@@ -186,7 +186,7 @@ export default function EditorPage() {
         setName={setName}
         name={name}
         meta={meta}
-        saveNow={saveNow}
+        saveNow={saveManually}
         statusMeta={statusMeta}
         setShareOpened={setShareOpened}
         handleRun={handleRun}

@@ -57,12 +57,23 @@ const refreshOnce = (): Promise<boolean> => {
   return inFlight;
 };
 
-/** Не пытаемся продлевать сессию на самих auth-запросах — получилась бы петля. */
+/**
+ * Запросы, для которых продление не делается.
+ *
+ * `auth.refresh` — иначе петля. `auth.login` и `auth.register` — там сессии ещё
+ * нет, продлевать нечего.
+ *
+ * `auth.me` в этом списке быть НЕ должен, хотя выглядит похоже. Именно им
+ * приложение восстанавливает сессию при загрузке страницы: если access-токен
+ * истёк (15 минут), а refresh жив (30 дней), то без продления `me` отвечает 401
+ * и интерфейс показывает гостя — пользователь оказывался «разлогинен» после
+ * любой паузы в работе, хотя его сессия действительна ещё месяц. Это и было
+ * видно в проверке: сессия слетала сама.
+ */
 const isAuthCall = (url: string): boolean =>
   url.includes('/trpc/auth.refresh') ||
   url.includes('/trpc/auth.login') ||
-  url.includes('/trpc/auth.register') ||
-  url.includes('/trpc/auth.me');
+  url.includes('/trpc/auth.register');
 
 export const fetchWithRefresh: typeof fetch = async (input, init) => {
   const request = () =>

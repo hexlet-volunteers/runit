@@ -31,13 +31,46 @@ export default function useSnippetSave(
   const snippetIdRef = useRef(snippetId);
   snippetIdRef.current = snippetId;
 
-  /** Сохраняет сниппет (создаёт или обновляет) через API. */
-  const saveNow = useCallback(async () => {
+  /**
+   * Состояние неудачных попыток автосохранения (#875).
+   *
+   * Автосохранение запускалось по факту «статус = unsaved», а неудачная попытка
+   * возвращала ровно этот статус — получался цикл: каждые 1,5 секунды новый
+   * запрос и новый тост «Не удалось сохранить». При недоступном сервере это
+   * бесконечный поток запросов и заваленный тостами экран.
+   *
+   * Теперь: пауза между попытками растёт (1,5 → 3 → 6 → 12 с), попыток не
+   * больше четырёх, тост показывается один раз на серию, а не на каждую
+   * попытку. Правка кода или нажатие «Сохранить» сбрасывают счётчик — значит
+   * восстановившийся сервер подхватится с первого же изменения.
+   */
+  const AUTOSAVE_BASE_DELAY_MS = 1500;
+  const AUTOSAVE_MAX_ATTEMPTS = 4;
+  const failedAttemptsRef = useRef(0);
+  const notifiedRef = useRef(false);
+  const [autosaveDelay, setAutosaveDelay] = useState(AUTOSAVE_BASE_DELAY_MS);
+
+  const resetFailures = useCallback(() => {
+    failedAttemptsRef.current = 0;
+    notifiedRef.current = false;
+    setAutosaveDelay(AUTOSAVE_BASE_DELAY_MS);
+  }, []);
+
+  /**
+   * Сохраняет сниппет (создаёт или обновляет) через API.
+   *
+   * `manual` — вызов кнопкой «Сохранить». Такой вызов означает «попробуй сейчас»:
+   * счётчик неудач сбрасывается, поэтому попытка происходит даже после серии
+   * сбоев, и об очередной неудаче пользователю снова сообщают — он ведь только
+   * что нажал кнопку и ждёт ответа.
+   */
+  const saveNow = useCallback(async (manual = false) => {
     if (isGuest || !user) {
       auth.open('register');
       return;
     }
     if (savingRef.current) return;
+    if (manual) resetFailures();
     savingRef.current = true;
     setSaveStatus('saving');
     try {
@@ -59,32 +92,82 @@ export default function useSnippetSave(
         });
         setSaveStatus('saved');
       }
+      resetFailures();
     } catch {
+      failedAttemptsRef.current += 1;
+      // Пауза удваивается: сервер, который лежит, не нужно опрашивать каждые
+      // 1,5 секунды.
+      setAutosaveDelay(
+        AUTOSAVE_BASE_DELAY_MS * 2 ** (failedAttemptsRef.current - 1),
+      );
       setSaveStatus('unsaved');
-      notifications.show({
-        message: 'Не удалось сохранить сниппет',
-        color: 'red',
-      });
+
+      if (!notifiedRef.current) {
+        notifiedRef.current = true;
+        notifications.show({
+          message:
+            'Не удалось сохранить сниппет. Проверьте соединение — попробуем ещё раз автоматически.',
+          color: 'red',
+        });
+      }
     } finally {
       savingRef.current = false;
     }
-  }, [isGuest, user, auth, trpc, navigate, nameRef, codeRef, languageRef]);
+  }, [
+    isGuest,
+    user,
+    auth,
+    trpc,
+    navigate,
+    nameRef,
+    codeRef,
+    languageRef,
+    resetFailures,
+  ]);
 
-  // Автосохранение с debounce 1.5 c — только для сохранённого сниппета юзера.
+  /**
+   * Автосохранение сохранённого сниппета. Пауза растёт после каждой неудачи,
+   * а после AUTOSAVE_MAX_ATTEMPTS попыток автосохранение останавливается: дальше
+   * либо пользователь правит код (сброс счётчика), либо нажимает «Сохранить».
+   */
   useEffect(() => {
     if (saveStatus !== 'unsaved') return;
     if (isGuest || snippetId == null) return;
+    if (failedAttemptsRef.current >= AUTOSAVE_MAX_ATTEMPTS) return;
+
     const timer = setTimeout(() => {
       void saveNow();
-    }, 1500);
+    }, autosaveDelay);
     return () => clearTimeout(timer);
-  }, [saveStatus, nameRef, codeRef, languageRef, isGuest, snippetId, saveNow]);
+  }, [
+    saveStatus,
+    autosaveDelay,
+    nameRef,
+    codeRef,
+    languageRef,
+    isGuest,
+    snippetId,
+    saveNow,
+  ]);
 
-  /** Помечает сниппет как несохранённый — триггерит автосохранение через 1.5 с. */
-  const markDirty = useCallback(() => setSaveStatus('unsaved'), []);
+  /**
+   * Помечает сниппет как несохранённый — запускает автосохранение.
+   * Правка означает новую попытку: счётчик неудач и пауза сбрасываются, иначе
+   * после серии сбоев редактор перестал бы сохранять до перезагрузки страницы.
+   */
+  const markDirty = useCallback(() => {
+    resetFailures();
+    setSaveStatus('unsaved');
+  }, [resetFailures]);
+
+  /** Обёртка для кнопки «Сохранить»: явное действие пользователя. */
+  const saveManually = useCallback(() => {
+    void saveNow(true);
+  }, [saveNow]);
 
   return {
     saveNow,
+    saveManually,
     markDirty,
     saveStatus,
     setSaveStatus,

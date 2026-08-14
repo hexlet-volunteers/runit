@@ -67,7 +67,18 @@ export default function EditorHeader( props: EditorHeaderProps ) {
         borderBottom: '1px solid #e9ecef',
       }}
     >
-      <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+      {/*
+        Левая часть сжимается и обрезается, правая — нет. Без этого на узком
+        экране (примерно от 900 px) имя сниппета и статус сохранения заезжали
+        на кнопки «Поделиться» и «Выполнить»: у Group стоит wrap="nowrap", а
+        input имел фиксированную ширину, поэтому лишнее не убиралось, а
+        накладывалось поверх.
+      */}
+      <Group
+        gap="sm"
+        wrap="nowrap"
+        style={{ minWidth: 0, flex: '1 1 auto', overflow: 'hidden' }}
+      >
           <Tooltip label="К моим сниппетам" withArrow>
             <ActionIcon
               component={Link}
@@ -99,8 +110,9 @@ export default function EditorHeader( props: EditorHeaderProps ) {
               fontSize: 15,
               fontWeight: 600,
               color: '#212529',
-              width: 200,
-              minWidth: 0,
+              flex: '0 1 200px',
+              minWidth: 60,
+              textOverflow: 'ellipsis',
             }}
           />
           <Group
@@ -123,7 +135,9 @@ export default function EditorHeader( props: EditorHeaderProps ) {
             }
             withArrow
           >
-            <UnstyledButton onClick={() => void saveNow()}>
+            {/* Статус сохранения не сжимается и не обрезается: это обратная
+                связь о сохранности работы, она важнее длины имени. */}
+            <UnstyledButton onClick={() => void saveNow()} style={{ flexShrink: 0 }}>
               <Group gap={6} wrap="nowrap">
                 <Box
                   w={8}
@@ -138,10 +152,16 @@ export default function EditorHeader( props: EditorHeaderProps ) {
           </Tooltip>
         </Group>
 
-        <Group gap="sm" wrap="nowrap">
-          {/* TODO(#836, #837): история версий со снапшотами и diff */}
+        <Group gap="sm" wrap="nowrap" style={{ flexShrink: 0 }}>
+          {/*
+            Обе кнопки — заглушки нереализованных функций, и обе скрыты на
+            узких экранах: места в шапке не хватает, а из-за них статус
+            сохранения оказывался перекрыт. Работающие элементы приоритетнее
+            неработающих.
+          */}
           <Tooltip label="В разработке (#836/#837)" withArrow>
             <ActionIcon
+              visibleFrom="md"
               variant="subtle"
               color="gray"
               data-disabled
@@ -154,6 +174,7 @@ export default function EditorHeader( props: EditorHeaderProps ) {
           {/* TODO(#3, #838): совместное редактирование в реальном времени */}
           <Tooltip label="В разработке (#3/#838)" withArrow>
             <ActionIcon
+              visibleFrom="md"
               variant="subtle"
               color="gray"
               data-disabled

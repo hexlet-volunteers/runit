@@ -12,7 +12,9 @@ import { type OutputTab } from '..';
 /**
  * Хук управления запуском кода и состоянием консоли.
  *
- * Регистрирует глобальный хоткей Ctrl+Enter (дублируется Monaco-командой из EditorPage).
+ * Регистрирует глобальный хоткей Ctrl+Enter. Внутри редактора кода работает
+ * команда Monaco (EditorPage), здесь такие события пропускаются — иначе одно
+ * нажатие давало бы два запуска (#879).
  *  
  * @param code — текущий код в редакторе
  * @param language — текущий язык
@@ -81,12 +83,30 @@ export default function useRunner(code: string, language: string) {
   const runRef = useRef(handleRun);
   runRef.current = handleRun;
 
+  /**
+   * Глобальный Ctrl/Cmd+Enter (#879).
+   *
+   * Внутри редактора кода хоткей не обрабатывается: там своя команда Monaco
+   * (см. EditorPage). Раньше срабатывали оба, и одно нажатие давало два запуска
+   * — на сервере это два контейнера и два ответа в консоли, а для превью
+   * вёрстки двойная перерисовка.
+   *
+   * В однострочных полях (название сниппета, поиск) хоткей тоже не работает:
+   * там Enter принадлежит форме, и запуск кода по нему — неожиданность. В
+   * многострочном поле ввода stdin, наоборот, оставлен: набрать данные и
+   * запустить не отрывая рук — обычный сценарий.
+   */
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
-        void runRef.current();
-      }
+      if (!(e.ctrlKey || e.metaKey) || e.key !== 'Enter') return;
+
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('.monaco-editor')) return;
+      if (target instanceof HTMLInputElement) return;
+      if (target?.isContentEditable) return;
+
+      e.preventDefault();
+      void runRef.current();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);

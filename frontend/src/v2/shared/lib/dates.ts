@@ -39,8 +39,21 @@ export function relativeDate(input: string | Date | null | undefined): string {
   return years === 1 ? 'год назад' : `${years} ${plural(years, ['год', 'года', 'лет'])} назад`;
 }
 
-/** Приводит строку с датой к числовому таймстампу. Если дата некорректна или отсутствует — возвращает 0. */
-export const parseTimestamp = (d: string | null | undefined): number => {
+/**
+ * Таймстамп из даты или null, если даты нет или она нечитаема (#881).
+ *
+ * Раньше функция возвращала 0 — то есть 1 января 1970 года. Отсутствующая дата
+ * становилась не «неизвестно», а «самая старая запись», и при сортировке
+ * «сначала старые» такие сниппеты оказывались наверху списка.
+ *
+ * Отдельная тонкость: `new Date(null)` — это не NaN, а начало эпохи, поэтому
+ * прежняя проверка на NaN пропускала null молча. Здесь null отсекается до
+ * разбора.
+ */
+export const parseTimestamp = (
+  d: string | Date | null | undefined,
+): number | null => {
+  if (d === null || d === undefined || d === '') return null;
   const t = new Date(d).getTime();
-  return Number.isNaN(t) ? 0 : t;
+  return Number.isNaN(t) ? null : t;
 };
