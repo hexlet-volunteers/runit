@@ -485,6 +485,7 @@ Docker на PaaS обычно недоступен, поэтому сервер�
 | `HOST` | `0.0.0.0` | Интерфейс бэкенда |
 | `DATABASE_URL` | `postgres://runit:runit@localhost:5432/runit` | Строка подключения, **обязательна в production** |
 | `DATABASE_POOL_MAX` | `10` | Предел соединений на инстанс |
+| `DATABASE_SSL` | `require` в проде, иначе `prefer` | Режим TLS до базы: `require`, `prefer`, `verify-full`, `off`. Managed-PostgreSQL открытое соединение отвергает, а драйвер по умолчанию идёт без TLS |
 | `WEB_PORT` | `8080` | Внешний порт compose |
 | `NODE_ENV` | `development` | `production` требует боевых секретов и включает HSTS |
 | `LOG_LEVEL` | по `NODE_ENV` | Уровень pino: прод — `info`, разработка — `debug`, тесты — `silent` |

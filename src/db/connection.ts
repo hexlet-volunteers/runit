@@ -24,6 +24,17 @@ const __dirname = path.dirname(__filename);
  */
 const client = postgres(env.DATABASE_URL, {
   max: env.DATABASE_POOL_MAX,
+  /**
+   * TLS. Задаётся явно, потому что у postgres-js значение по умолчанию —
+   * `ssl: false`, то есть открытое соединение, а managed-PostgreSQL его не
+   * принимает: Heroku отвечал «no pg_hba.conf entry for host …, no encryption»,
+   * и приложение падало на первом же запросе миграций (#941).
+   *
+   * Режим приходит из DATABASE_SSL (см. config/env.ts): в production require,
+   * иначе prefer. Значение 'off' приводится к false — драйвер понимает
+   * режимы libpq, но не строку 'off'.
+   */
+  ssl: env.DATABASE_SSL === 'off' ? false : env.DATABASE_SSL,
   // Приложение само сообщает об ошибках (см. monitoring.ts), драйверу
   // логировать нечего.
   onnotice: () => {},

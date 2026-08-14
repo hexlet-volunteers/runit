@@ -41,6 +41,11 @@ results.json
 !.vscode/launch.json
 !.vscode/extensions.json
 
+# Дампы базы. Скачанный с боевого стенда бэкап — это персональные данные
+# (почты и хеши паролей), и лежит он ровно там, где легко попасть под git add -A.
+*.dump
+*.sql.gz
+
 # database
 *.sqlite*
 /db/*.sqlite3*

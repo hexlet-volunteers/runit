@@ -57,6 +57,13 @@ export const resolveCookieSecure = (
   override?: boolean,
 ): boolean => override ?? nodeEnv === 'production';
 
+/** Режим TLS для базы — см. DATABASE_SSL в схеме ниже. */
+export const resolveDatabaseSsl = (
+  nodeEnv: 'development' | 'test' | 'production',
+  override?: 'require' | 'prefer' | 'verify-full' | 'off',
+): 'require' | 'prefer' | 'verify-full' | 'off' =>
+  override ?? (nodeEnv === 'production' ? 'require' : 'prefer');
+
 const envSchema = z
   .object({
     NODE_ENV: z
@@ -79,6 +86,34 @@ const envSchema = z
      * база начала бы отказывать.
      */
     DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
+    /**
+     * Режим TLS при подключении к PostgreSQL (#941).
+     *
+     * Выделено в переменную, потому что драйвер postgres-js по умолчанию
+     * подключается БЕЗ шифрования, а managed-PostgreSQL его требует. На Heroku
+     * это выглядело так: приложение падало на первом же запросе миграций с
+     * «no pg_hba.conf entry for host …, no encryption», а локально и в CI всё
+     * работало — там Postgres поднят без TLS, и разница обнаружилась только на
+     * боевом стенде.
+     *
+     * Значения — как в libpq:
+     *   require     — TLS обязателен, сертификат не проверяется;
+     *   prefer      — TLS если сервер умеет, иначе открытое соединение;
+     *   verify-full — TLS с проверкой цепочки (нужен доверенный CA);
+     *   off         — без TLS.
+     *
+     * По умолчанию в production — require: боевая база всегда managed (в
+     * docker-compose.prod.yml сервиса postgres нет вовсе), а молча отправлять
+     * персональные данные по открытому каналу хуже, чем не подняться.
+     * Сертификат при этом не проверяется: у Heroku он самоподписанный, и
+     * verify-full там не проходит.
+     *
+     * Вне production — prefer: локальный Postgres из docker-compose TLS не
+     * умеет, а require к нему не подключился бы вообще.
+     */
+    DATABASE_SSL: z
+      .enum(['require', 'prefer', 'verify-full', 'off'])
+      .optional(),
     JWT_ACCESS_SECRET: secretSchema.optional(),
     JWT_REFRESH_SECRET: secretSchema.optional(),
     // Через запятую для нескольких фронтенд-origin (например, dev + staging).
@@ -127,6 +162,7 @@ const envSchema = z
     JWT_REFRESH_SECRET: raw.JWT_REFRESH_SECRET ?? DEV_REFRESH_SECRET,
     LOG_LEVEL: resolveLogLevel(raw.NODE_ENV, raw.LOG_LEVEL),
     COOKIE_SECURE: resolveCookieSecure(raw.NODE_ENV, raw.COOKIE_SECURE),
+    DATABASE_SSL: resolveDatabaseSsl(raw.NODE_ENV, raw.DATABASE_SSL),
   }))
   .superRefine((value, ctx) => {
     /**
