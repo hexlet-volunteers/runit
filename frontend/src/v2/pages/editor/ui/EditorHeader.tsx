@@ -90,7 +90,9 @@ export default function EditorHeader( props: EditorHeaderProps ) {
               <IconArrowLeft />
             </ActionIcon>
           </Tooltip>
-          <UnstyledButton component={Link} to="/">
+          {/* Логотип на мобильном лишний: рядом есть стрелка «назад», а
+              ширины в шапке не хватает (#842). */}
+          <UnstyledButton component={Link} to="/" visibleFrom="sm">
             <RunitLogo size={26} />
           </UnstyledButton>
           <input
@@ -115,11 +117,13 @@ export default function EditorHeader( props: EditorHeaderProps ) {
               textOverflow: 'ellipsis',
             }}
           />
+          {/* Язык на мобильном показан в статус-баре — здесь не дублируем. */}
           <Group
             gap={6}
             px={10}
             py={4}
             wrap="nowrap"
+            visibleFrom="sm"
             style={{ background: '#f1f3f5', borderRadius: 8, flexShrink: 0 }}
           >
             <Box w={8} h={8} style={{ borderRadius: '50%', background: meta.dot }} />
@@ -144,7 +148,12 @@ export default function EditorHeader( props: EditorHeaderProps ) {
                   h={8}
                   style={{ borderRadius: '50%', background: statusMeta.color }}
                 />
-                <Text fz="sm" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+                <Text
+                  fz="sm"
+                  c="dimmed"
+                  visibleFrom="sm"
+                  style={{ whiteSpace: 'nowrap' }}
+                >
                   {statusMeta.label}
                 </Text>
               </Group>
@@ -185,12 +194,23 @@ export default function EditorHeader( props: EditorHeaderProps ) {
             </ActionIcon>
           </Tooltip>
           <Button
+            visibleFrom="sm"
             variant="light"
             leftSection={<IconShare />}
             onClick={() => setShareOpened(true)}
           >
             Поделиться
           </Button>
+          {/* На мобильном подпись не помещается, действие остаётся доступным. */}
+          <ActionIcon
+            hiddenFrom="sm"
+            variant="light"
+            size="lg"
+            aria-label="Поделиться"
+            onClick={() => setShareOpened(true)}
+          >
+            <IconShare />
+          </ActionIcon>
           <Tooltip label="Ctrl + Enter" withArrow>
             <Button
               leftSection={<IconPlay />}

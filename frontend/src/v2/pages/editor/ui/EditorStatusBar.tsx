@@ -12,10 +12,42 @@ export type StatusBarProps = {
     line: number;
     col: number;
   },
+  /**
+   * Короткий вид для мобильного (#842). На 375 px все шесть подписей не
+   * помещаются в строку 28 px и расползаются в две-три строки, ломая раскладку.
+   * Остаются язык и позиция курсора — единственное, что меняется по ходу работы;
+   * остальное (кодировка, версия, размер отступа) постоянно и на маленьком
+   * экране только занимает место.
+   */
+  compact?: boolean,
 }
 
 export default function EditorStatusBar(props: StatusBarProps) {
-  const { meta, language, cursor } = props;
+  const { meta, language, cursor, compact = false } = props;
+
+  if (compact) {
+    return (
+      <Group
+        px="sm"
+        justify="space-between"
+        wrap="nowrap"
+        style={{
+          height: 28,
+          flexShrink: 0,
+          background: '#fff',
+          borderTop: '1px solid #e9ecef',
+        }}
+      >
+        <Text fz={12} c="dimmed" truncate>
+          {meta.label}
+        </Text>
+        <Text fz={12} c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+          {cursor.line}:{cursor.col}
+        </Text>
+      </Group>
+    );
+  }
+
   return (
     <Group
       px="md"

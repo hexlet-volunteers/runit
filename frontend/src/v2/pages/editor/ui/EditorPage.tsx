@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { Box, Button, Center, Loader, Stack, Text } from '@mantine/core';
+import {
+  Box,
+  Button,
+  Center,
+  Loader,
+  SegmentedControl,
+  Stack,
+  Text,
+} from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import MonacoEditor, { type OnMount } from '@monaco-editor/react';
 
@@ -9,6 +18,7 @@ import { editorColors, langMeta, runtimeLabel } from '../../../shared/theme';
 import { useSession } from '../../../entities/user';
 
 import { ConsolePanel } from '../../../features/run-code';
+import { isPreviewLanguage } from '../../../shared/runner/preview';
 import { ShareModal } from '../../../features/share-snippet';
 import AddPackageModal from './AddPackageModal';
 
@@ -43,6 +53,20 @@ export default function EditorPage() {
   const [shareOpened, setShareOpened] = useState(false);
   const [packageOpened, setPackageOpened] = useState(false);
 
+  /**
+   * Мобильная раскладка (#842).
+   *
+   * На узком экране три панели рядом не помещаются: при 375 px код не виден
+   * вовсе — его выдавливают сайдбар файлов и консоль. Поэтому панели не
+   * сжимаются, а переключаются, а сайдбар скрыт: мультифайловость ещё не
+   * реализована (#818/#819), файл всегда один, и на мобильном это 212 px
+   * бесполезной ширины.
+   *
+   * Порог 768 px — та же граница, что у остальных адаптивных правил интерфейса.
+   */
+  const isMobile = useMediaQuery('(max-width: 767px)') ?? false;
+  const [mobilePane, setMobilePane] = useState<'code' | 'output'>('code');
+
   // Рефы для стабильных колбэков (saveNow использует их через useSnippetSave).
   const nameRef = useRef(name);
   const codeRef = useRef(code);
@@ -63,6 +87,17 @@ export default function EditorPage() {
     handleRun,
     clearLines,
   } = useRunner(code, language);
+
+  /**
+   * На мобильном при запуске сразу показываем вывод: иначе пользователь нажимает
+   * «Выполнить» и остаётся на панели кода, где ничего не происходит.
+   *
+   * Слежение за состоянием, а не обёртка вокруг кнопки: запуск бывает и с
+   * хоткея, и из превью вёрстки (там running не поднимается, меняется runKey).
+   */
+  useEffect(() => {
+    if (isMobile && (running || runKey > 0)) setMobilePane('output');
+  }, [isMobile, running, runKey]);
   const {
     saveManually,
     markDirty,
@@ -195,21 +230,40 @@ export default function EditorPage() {
       />
 
       {/* ===== Основная область ===== */}
+      {isMobile && (
+        /*
+          Переключатель панелей вместо трёх колонок. Панели остаются
+          смонтированными (скрываются через display), иначе Monaco теряет
+          историю правок и позицию курсора при каждом переключении.
+        */
+        <SegmentedControl
+          fullWidth
+          radius={0}
+          value={mobilePane}
+          onChange={(value) => setMobilePane(value as 'code' | 'output')}
+          data={[
+            { value: 'code', label: 'Код' },
+            { value: 'output', label: isPreviewLanguage(language) ? 'Превью' : 'Консоль' },
+          ]}
+        />
+      )}
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         {/* --- Левый сайдбар (212px) --- */}
-        <EditorSidebar
-          fileName={fileName}
-          meta={meta}
-          language={language}
-          setPackageOpened={setPackageOpened}
-        />
+        {!isMobile && (
+          <EditorSidebar
+            fileName={fileName}
+            meta={meta}
+            language={language}
+            setPackageOpened={setPackageOpened}
+          />
+        )}
 
         {/* --- Центр: редактор кода --- */}
         <div
           style={{
             flex: 1,
             minWidth: 0,
-            display: 'flex',
+            display: isMobile && mobilePane !== 'code' ? 'none' : 'flex',
             flexDirection: 'column',
             background: editorColors.bg,
           }}
@@ -263,8 +317,14 @@ export default function EditorPage() {
           </div>
         </div>
 
-        {/* --- Правая панель: консоль/ввод (~25%) --- */}
-        <div style={{ width: '25%', flexShrink: 0, minWidth: 260 }}>
+        {/* --- Правая панель: консоль/ввод (~25%, на мобильном — во всю ширину) --- */}
+        <div
+          style={
+            isMobile
+              ? { flex: 1, minWidth: 0, display: mobilePane === 'output' ? 'block' : 'none' }
+              : { width: '25%', flexShrink: 0, minWidth: 260 }
+          }
+        >
           <ConsolePanel
             tab={tab}
             onTabChange={setTab}
@@ -282,7 +342,12 @@ export default function EditorPage() {
       </div>
 
       {/* ===== Статус-бар (28px) ===== */}
-      <EditorStatusBar meta={meta} language={language} cursor={cursor} />
+      <EditorStatusBar
+        meta={meta}
+        language={language}
+        cursor={cursor}
+        compact={isMobile}
+      />
 
       <ShareModal
         opened={shareOpened}
