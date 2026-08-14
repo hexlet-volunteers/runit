@@ -6,8 +6,6 @@ export interface DockerArgsParams {
   limits: RunLimits;
   /** Имя контейнера — по нему гарантированно убираем его при таймауте. */
   containerName: string;
-  /** Каталог на хосте с файлом кода (монтируется только для чтения). */
-  hostCodeDir: string;
   imageTag: string;
   /** Имя файла внутри /app. */
   fileName: string;
@@ -20,20 +18,53 @@ export interface DockerArgsParams {
  * песочницы (#860) — поэтому функция чистая и покрыта юнит-тестами: любое
  * ослабление флагов ломает тест.
  *
+ * Как код попадает в контейнер: первой строкой stdin, в base64. Внутри
+ * контейнера крошечный пролог на sh раскодирует её в файл в /tmp и запускает
+ * язык, а всё, что идёт в stdin дальше, достаётся уже самой программе.
+ *
+ * Почему не монтирование каталога, как было раньше. Путь в `-v host:/app`
+ * разбирает демон, а не тот, кто вызывает CLI. Пока код монтировался, запуск
+ * работал ровно в одном случае: приложение и демон видят одну файловую систему.
+ * В прод-схемах это неверно — приложение в контейнере (его /tmp демону не виден)
+ * или демон на отдельном runner-хосте (нашей файловой системы у него нет
+ * вовсе). Проявлялось не ошибкой запуска, а пустым монтом: контейнер
+ * поднимался, а интерпретатор отвечал «can't open file '/app/main.py'».
+ *
+ * Почему не `docker cp` в созданный контейнер: демон отказывается копировать в
+ * контейнер с read-only rootfs («container rootfs is marked read-only»), а
+ * снимать этот флаг ради доставки файла нельзя — он часть песочницы.
+ *
  * Никогда не добавлять: --privileged, -v /var/run/docker.sock, --cap-add,
  * --security-opt seccomp=unconfined, --pid=host, --net=host.
  */
+/** Безопасное одинарное кавычивание для встраивания argv в строку sh -c. */
+const shQuote = (arg: string): string => `'${arg.replaceAll("'", `'\\''`)}'`;
+
+/**
+ * Пролог внутри контейнера: раскодировать первую строку stdin в файл и запустить
+ * язык.
+ *
+ * `IFS= read -r` читает ровно одну строку и не трогает обратные слэши, а
+ * base64 — одна строка без переводов, поэтому дальше в stdin остаётся ровно то,
+ * что пользователь ввёл во вкладке «Ввод». `exec` заменяет оболочку процессом
+ * языка: не остаётся лишнего процесса, и сигналы доходят напрямую.
+ */
+export function bootstrap(containerPath: string, spec: LanguageSpec): string {
+  const command = spec.command(containerPath).map(shQuote).join(' ');
+  return (
+    `IFS= read -r __runit_src; printf %s "$__runit_src" | base64 -d > ${containerPath}; ` +
+    `exec ${command}`
+  );
+}
+
 export function buildDockerArgs(params: DockerArgsParams): string[] {
-  const {
-    spec,
-    limits,
-    containerName,
-    hostCodeDir,
-    imageTag,
-    fileName,
-    seccompProfile,
-  } = params;
-  const containerPath = `/app/${fileName}`;
+  const { spec, limits, containerName, imageTag, fileName, seccompProfile } =
+    params;
+  /**
+   * Код лежит в /tmp, а не в /app: /tmp — единственная writable точка при
+   * read-only rootfs, а файл создаётся уже внутри контейнера.
+   */
+  const containerPath = `/tmp/${fileName}`;
   // Вторая линия обороны: если наш watchdog умрёт (например, рестарт сервера
   // ровно во время запуска), процесс всё равно будет убит ядром по CPU-секундам.
   const cpuSeconds = Math.ceil(limits.timeoutMs / 1000) + 2;
@@ -56,6 +87,7 @@ export function buildDockerArgs(params: DockerArgsParams): string[] {
   const args = [
     'run',
     '--rm',
+    // stdin: первой строкой едет код, остальное — ввод самой программы.
     '-i',
     '--name',
     containerName,
@@ -104,8 +136,11 @@ export function buildDockerArgs(params: DockerArgsParams): string[] {
     `cpu=${cpuSeconds}`,
     // Иначе демон параллельно пишет весь вывод контейнера на диск хоста.
     '--log-driver=none',
+    // Рабочий каталог — writable /tmp: сниппет, который создаёт файл рядом с
+    // собой (обычное дело в задачах на файлы), при /app получал бы отказ,
+    // потому что rootfs только для чтения.
     '--workdir',
-    '/app',
+    '/tmp',
   ];
 
   for (const [key, value] of Object.entries({
@@ -115,13 +150,7 @@ export function buildDockerArgs(params: DockerArgsParams): string[] {
     args.push('--env', `${key}=${value}`);
   }
 
-  // :ro — код не может править собственный исходник или использовать монт как хранилище.
-  args.push(
-    '-v',
-    `${hostCodeDir}:/app:ro`,
-    imageTag,
-    ...spec.command(containerPath),
-  );
+  args.push(imageTag, 'sh', '-c', bootstrap(containerPath, spec));
 
   return args;
 }

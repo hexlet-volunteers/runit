@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { test } from 'node:test';
 import { runnerConfig } from './config';
 import type { ProcessResult } from './process';
@@ -20,9 +21,33 @@ const okDeps = (result: Partial<ProcessResult>): RunDeps => ({
     }) as ProcessResult,
 });
 
-const tmpDirsBefore = () =>
-  readdirSync(runnerConfig.tmpDir).filter((n) => n.startsWith('runit-runner-'))
-    .length;
+/** Что реально уехало в контейнер: argv и stdin единственного вызова docker. */
+const captureCall = async (
+  params: Parameters<typeof runCode>[0],
+): Promise<{ args: string[]; input: string }> => {
+  let call: { args: string[]; input: string } | null = null;
+  await runCode(params, {
+    checkDaemon: async () => ({ ok: true }),
+    checkImage: async () => ({ ok: true }),
+    runProcess: async (opts) => {
+      call = { args: opts.args, input: opts.input };
+      return {
+        stdout: '',
+        stderr: '',
+        exitCode: 0,
+        signal: null,
+        timedOut: false,
+        truncated: false,
+      } as ProcessResult;
+    },
+  });
+  assert.ok(call, 'docker не был вызван');
+  return call as unknown as { args: string[]; input: string };
+};
+
+/** Код, который контейнер получит первой строкой stdin. */
+const sourceFrom = (input: string): string =>
+  Buffer.from(input.split('\n')[0], 'base64').toString('utf8');
 
 test('успешный запуск: stdout и exitCode проходят наружу', async () => {
   const out = await runCode(
@@ -146,8 +171,14 @@ test('семафор: при исчерпании слотов возвраща�
   assert.match(busy[0].message ?? '', /занят/i);
 });
 
-test('временный каталог удаляется во всех ветках', async () => {
-  const before = tmpDirsBefore();
+test('на диске приложения не остаётся ничего: файлов кода больше нет', async () => {
+  // Раньше код писался во временный каталог и монтировался в контейнер, а сам
+  // каталог приходилось убирать во всех ветках. Теперь код едет через stdin, и
+  // на хосте приложения не появляется ни файла, ни каталога — убирать нечего.
+  const before = readdirSync(tmpdir()).filter((n) =>
+    n.startsWith('runit-runner-'),
+  ).length;
+
   await runCode(
     { language: 'python', code: 'print(1)' },
     okDeps({ exitCode: 0 }),
@@ -156,20 +187,10 @@ test('временный каталог удаляется во всех вет�
     { language: 'python', code: 'x' },
     okDeps({ timedOut: true, exitCode: null }),
   );
-  await runCode(
-    { language: 'python', code: 'x' },
-    {
-      checkDaemon: async () => ({ ok: true }),
-      checkImage: async () => ({ ok: true }),
-      runProcess: async () => {
-        throw new Error('внутренний сбой');
-      },
-    },
-  );
+
   assert.equal(
-    tmpDirsBefore(),
+    readdirSync(tmpdir()).filter((n) => n.startsWith('runit-runner-')).length,
     before,
-    'остались неудалённые каталоги runit-runner-*',
   );
 });
 
@@ -206,84 +227,51 @@ test('отключённый язык не доходит до docker', async ()
   assert.match(out.message ?? '', /отключён/);
 });
 
-test('stdin передаётся в процесс', async () => {
-  let captured: string | null = null;
-  const out = await runCode(
-    { language: 'python', code: 'print(input())', stdin: 'hi' },
-    {
-      checkDaemon: async () => ({ ok: true }),
-      checkImage: async () => ({ ok: true }),
-      runProcess: async (opts) => {
-        captured = opts.input;
-        return {
-          stdout: 'hi\n',
-          stderr: '',
-          exitCode: 0,
-          signal: null,
-          timedOut: false,
-          truncated: false,
-        } as ProcessResult;
-      },
-    },
-  );
-  assert.equal(captured, 'hi');
-  assert.equal(out.stdout, 'hi\n');
-});
+test('имя файла в контейнере берётся из кода (java — по имени класса)', async () => {
+  const { args } = await captureCall({
+    language: 'java',
+    code: 'public class Solution { }',
+  });
 
-test('файл кода пишется с ожидаемым именем (java — по имени класса)', async () => {
-  let mounted: string | null = null;
-  await runCode(
-    { language: 'java', code: 'public class Solution { }' },
-    {
-      checkDaemon: async () => ({ ok: true }),
-      checkImage: async () => ({ ok: true }),
-      runProcess: async (opts) => {
-        const vIdx = opts.args.indexOf('-v');
-        mounted = opts.args[vIdx + 1].split(':')[0];
-        assert.ok(
-          existsSync(`${mounted}/Solution.java`),
-          'файл Solution.java не создан',
-        );
-        return {
-          stdout: '',
-          stderr: '',
-          exitCode: 0,
-          signal: null,
-          timedOut: false,
-          truncated: false,
-        } as ProcessResult;
-      },
-    },
-  );
-  assert.ok(mounted);
-  assert.ok(
-    !existsSync(mounted as unknown as string),
-    'каталог не убран после запуска',
+  const bootstrap = args[args.length - 1];
+  assert.match(
+    bootstrap,
+    /\/tmp\/Solution\.java/,
+    `имя файла из имени класса, а не ${bootstrap}`,
   );
 });
 
-test('файл кода читаем пользователем контейнера (не 0600)', async () => {
-  // Контейнер работает под --user 10001, поэтому файл, записанный только для
-  // владельца, интерпретатор внутри не откроет: Permission denied.
-  let mode: number | null = null;
-  await runCode(
-    { language: 'python', code: 'print(1)' },
-    {
-      checkDaemon: async () => ({ ok: true }),
-      checkImage: async () => ({ ok: true }),
-      runProcess: async (opts) => {
-        const dir = opts.args[opts.args.indexOf('-v') + 1].split(':')[0];
-        mode = statSync(`${dir}/main.py`).mode & 0o777;
-        return {
-          stdout: '',
-          stderr: '',
-          exitCode: 0,
-          signal: null,
-          timedOut: false,
-          truncated: false,
-        } as ProcessResult;
-      },
-    },
-  );
-  assert.equal(mode, 0o644, 'файл кода должен быть читаем всеми');
+test('код едет первой строкой stdin, ввод пользователя — следом', async () => {
+  /**
+   * Ровно то, что было сломано в проде: код доставлялся монтированием каталога,
+   * а путь монтирования разбирает демон. В контейнере и на отдельном
+   * runner-хосте контейнер получал пустой /app.
+   */
+  const { args, input } = await captureCall({
+    language: 'python',
+    code: 'print(input())',
+    stdin: 'привет\nвторая строка',
+  });
+
+  assert.equal(args[0], 'run', 'запуск — одна команда docker run');
+  assert.equal(args.includes('-v'), false, 'bind-mount кода недопустим');
+  assert.equal(sourceFrom(input), 'print(input())');
+  // После первой строки в stdin остаётся ровно ввод пользователя.
+  assert.equal(input.slice(input.indexOf('\n') + 1), 'привет\nвторая строка');
+});
+
+test('подготовка кода применяется до отправки (php получает тег)', async () => {
+  const { input } = await captureCall({
+    language: 'php',
+    code: "echo 'привет';",
+  });
+  assert.equal(sourceFrom(input), "<?php echo 'привет';");
+});
+
+test('кавычки и переводы строк в коде не ломают команду', async () => {
+  // base64 выбран именно за это: код попадает в контейнер как данные, а не как
+  // часть shell-команды, поэтому кавычки, $ и переводы строк безопасны.
+  const code = `print("a'b"c$d")\nprint('конец')`;
+  const { input } = await captureCall({ language: 'python', code });
+  assert.equal(sourceFrom(input), code);
 });

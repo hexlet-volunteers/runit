@@ -26,7 +26,6 @@ const argsFor = (language: RunnerLanguage) =>
     spec: specFor(language),
     limits: { ...limits, ...specFor(language).limits },
     containerName: 'runit-run-test',
-    hostCodeDir: '/tmp/runit-runner-abc',
     imageTag: `runit-runner-${language}:1`,
     fileName: specFor(language).fileName('class Main {}'),
   });
@@ -79,9 +78,27 @@ test('лимит памяти не обходится свопом: --memory-swa
   assert.equal(pairValue(args, '--memory-swap'), pairValue(args, '--memory'));
 });
 
-test('код монтируется только для чтения', () => {
-  const mount = pairValue(argsFor('python'), '-v');
-  assert.equal(mount, '/tmp/runit-runner-abc:/app:ro');
+test('код не монтируется с хоста: он едет в контейнер через stdin', () => {
+  const args = argsFor('python');
+  // Монтирование работало только там, где приложение и демон видят одну
+  // файловую систему. В контейнере и с удалённым демоном контейнер получал
+  // пустой /app и отвечал «can't open file '/app/main.py'». Теперь код едет
+  // первой строкой stdin, а внутри контейнера его раскодирует пролог.
+  assert.equal(args[0], 'run');
+  const bootstrap = args[args.length - 1];
+  assert.match(bootstrap, /base64 -d > \/tmp\/main\.py/);
+  assert.match(bootstrap, /^IFS= read -r /);
+  assert.match(bootstrap, /exec 'python' '-u' '\/tmp\/main\.py'$/);
+  assert.equal(
+    args.includes('-v'),
+    false,
+    'bind-mount не используется: путь монтирования разбирает демон, а не мы',
+  );
+  assert.equal(
+    args.includes('--volume'),
+    false,
+    'длинная форма bind-mount тоже недопустима',
+  );
 });
 
 test('ulimit fsize задан числом для каждого языка', () => {
@@ -230,7 +247,6 @@ test('seccomp: без переменной профиль docker, с перем�
     spec: specFor('python'),
     limits,
     containerName: 'runit-run-test',
-    hostCodeDir: '/tmp/runit-runner-abc',
     imageTag: 'runit-runner-python:1',
     fileName: 'main.py',
     seccompProfile: '/etc/runit/seccomp.json',
@@ -252,7 +268,6 @@ test('/tmp: скриптовым языкам noexec, компилируемым
         spec: specFor(lang),
         limits: { ...limits, ...specFor(lang).limits },
         containerName: 'runit-run-test',
-        hostCodeDir: '/tmp/runit-runner-abc',
         imageTag: `runit-runner-${lang}:1`,
         fileName: specFor(lang).fileName('class Main {}'),
       }),
@@ -298,7 +313,6 @@ test('изоляция сохраняется для всех серверных
       spec: specFor(lang),
       limits: { ...limits, ...specFor(lang).limits },
       containerName: 'runit-run-test',
-      hostCodeDir: '/tmp/runit-runner-abc',
       imageTag: `runit-runner-${lang}:1`,
       fileName: specFor(lang).fileName('class Main {}'),
     });
@@ -310,9 +324,10 @@ test('изоляция сохраняется для всех серверных
       '10001:10001',
       `${lang}: не non-root`,
     );
-    assert.ok(
-      (pairValue(args, '-v') ?? '').endsWith(':ro'),
-      `${lang}: код смонтирован не read-only`,
+    assert.equal(
+      args.includes('-v'),
+      false,
+      `${lang}: bind-mount кода недопустим — файл доставляется docker cp`,
     );
   }
 });

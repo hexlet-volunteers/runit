@@ -1,4 +1,3 @@
-import os from 'node:os';
 import { RUNNER_LANGUAGES, type RunLimits, type RunnerLanguage } from './types';
 
 // Конфигурация раннера читается отдельно от src/config/env.ts, чтобы не конфликтовать
@@ -57,7 +56,6 @@ export const runnerConfig = {
   dockerBin: process.env.RUNNER_DOCKER_BIN || 'docker',
   imagePrefix: process.env.RUNNER_IMAGE_PREFIX || 'runit-runner',
   imageTag: process.env.RUNNER_IMAGE_TAG || '1',
-  tmpDir: process.env.RUNNER_TMP_DIR || os.tmpdir(),
   /**
    * Путь к seccomp-профилю (#860). Пусто — работает штатный профиль docker.
    * Задавать имеет смысл только полный выверенный аллоулист: свой файл

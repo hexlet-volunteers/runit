@@ -1,7 +1,5 @@
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { promises as fsp } from 'node:fs';
-import path from 'node:path';
 import { type Availability, checkDaemon, checkImage } from './availability';
 import { dockerEnv, imageTagFor, runnerConfig } from './config';
 import { buildDockerArgs } from './dockerArgs';
@@ -170,34 +168,38 @@ export async function runCode(
   const spec = specFor(language);
   const limits: RunLimits = { ...runnerConfig.limits, ...spec.limits };
   const containerName = `runit-run-${randomUUID()}`;
-  let tmpDir: string | null = null;
 
   try {
-    tmpDir = await fsp.mkdtemp(path.join(runnerConfig.tmpDir, 'runit-runner-'));
     const fileName = spec.fileName(code);
     const source = spec.prepare ? spec.prepare(code) : code;
-    // Права важны: контейнер работает под другим пользователем (--user 10001),
-    // поэтому и файл, и каталог обязаны быть читаемы всеми, иначе интерпретатор
-    // получает Permission denied. Секрета в файле нет — это код самого
-    // пользователя, каталог временный и монтируется только для чтения.
-    await fsp.writeFile(path.join(tmpDir, fileName), source, { mode: 0o644 });
-    await fsp.chmod(path.join(tmpDir, fileName), 0o644);
-    await fsp.chmod(tmpDir, 0o755);
 
-    const args = buildDockerArgs({
-      spec,
-      limits,
-      containerName,
-      hostCodeDir: tmpDir,
-      imageTag: imageTagFor(language),
-      fileName,
-      seccompProfile: runnerConfig.seccompProfile,
-    });
+    /**
+     * Код едет первой строкой stdin в base64, а не файлом на диске.
+     *
+     * Раньше он писался во временный каталог приложения и монтировался в
+     * контейнер (`-v /tmp/xxx:/app:ro`). Путь монтирования разбирает демон, а не
+     * тот, кто вызывает CLI, поэтому это работало ровно там, где приложение и
+     * демон видят одну файловую систему. В прод-схемах — приложение в
+     * контейнере или демон на отдельном runner-хосте — контейнер получал пустой
+     * /app и отвечал «can't open file '/app/main.py'», хотя сам поднимался.
+     *
+     * base64 выбран потому, что это одна строка без переводов и без кавычек:
+     * пролог внутри контейнера читает ровно её (`IFS= read -r`), а всё
+     * остальное в stdin достаётся программе как её собственный ввод.
+     */
+    const input = `${Buffer.from(source, 'utf8').toString('base64')}\n${stdin}`;
 
     const result = await deps.runProcess({
       bin: runnerConfig.dockerBin,
-      args,
-      input: stdin,
+      args: buildDockerArgs({
+        spec,
+        limits,
+        containerName,
+        imageTag: imageTagFor(language),
+        fileName,
+        seccompProfile: runnerConfig.seccompProfile,
+      }),
+      input,
       timeoutMs: limits.timeoutMs,
       maxOutputBytes: limits.maxOutputBytes,
       env: dockerEnv(),
@@ -219,8 +221,5 @@ export async function runCode(
     };
   } finally {
     release();
-    if (tmpDir) {
-      await fsp.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
-    }
   }
 }
