@@ -102,6 +102,23 @@ export async function checkDaemon(): Promise<Availability> {
   return remember('daemon', { ok: true });
 }
 
+/**
+ * Отличает «образа нет» от «демон не ответил».
+ *
+ * `docker image inspect` возвращает ненулевой код в обоих случаях, и раньше оба
+ * объяснялись одинаково — «Образ не собран, выполните runner:build-images».
+ * Совет бывал прямо вредным: во время обновления Docker Desktop демон
+ * отказывался отвечать на inspect по имени, притом что образ был на месте и
+ * `docker run` с ним работал. Человеку предлагалось пересобирать девять
+ * образов, хотя нужно было подождать полминуты.
+ *
+ * Разбираем по тексту ошибки самого docker — другого признака у CLI нет.
+ */
+export const looksLikeDaemonProblem = (stderr: string): boolean =>
+  /cannot connect to the docker daemon|is the docker daemon running|daemon is not running|connection refused|context deadline exceeded|EOF/i.test(
+    stderr,
+  );
+
 export async function checkImage(language: string): Promise<Availability> {
   const tag = imageTagFor(language);
   const hit = cached(`image:${tag}`);
@@ -117,8 +134,24 @@ export async function checkImage(language: string): Promise<Availability> {
     env: dockerEnv(),
   });
 
-  if (result.exitCode !== 0) {
+  if (result.exitCode !== 0 || result.spawnErrorCode) {
     logProbe(`docker image inspect ${tag}`, result.stderr);
+
+    if (result.spawnErrorCode || looksLikeDaemonProblem(result.stderr)) {
+      /**
+       * Сбой демона, а не отсутствие образа. Не запоминаем это как приговор
+       * образу: отрицательный кэш живёт секунды, поэтому после возвращения
+       * демона язык заработает сам, без перезапуска приложения.
+       */
+      return {
+        ok: false,
+        reason: 'no_daemon',
+        message: audienceMessage(
+          'Docker сейчас не отвечает (перезапуск или обновление). Повторите через полминуты.',
+        ),
+      };
+    }
+
     return remember(`image:${tag}`, {
       ok: false,
       reason: 'no_image',
