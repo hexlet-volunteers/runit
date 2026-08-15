@@ -100,6 +100,20 @@ export function toRunResult(out: ServerRunOutput): RunResult {
   };
 }
 
+/**
+ * Отличает истёкшее ожидание от обрыва связи.
+ *
+ * AbortSignal.timeout бросает DOMException с именем TimeoutError, а клиент tRPC
+ * заворачивает её в свою ошибку — поэтому смотрим и на саму ошибку, и на
+ * причину.
+ */
+const isTimeout = (error: unknown): boolean => {
+  const names = [error, (error as { cause?: unknown } | null)?.cause]
+    .filter(Boolean)
+    .map((e) => (e as { name?: string }).name);
+  return names.includes('TimeoutError') || names.includes('AbortError');
+};
+
 export async function runOnServer(
   client: RunnerClient,
   params: { language: ServerLanguage; code: string; stdin?: string },
@@ -112,13 +126,24 @@ export async function runOnServer(
       signal: AbortSignal.timeout(timeoutMs),
     });
     return toRunResult(out);
-  } catch {
-    // Сеть недоступна / сервер не отвечает — не роняем UI и не крутим спиннер вечно.
+  } catch (error) {
+    /**
+     * Сюда попадают только сбои связи: если сервер ответил, но исполнение
+     * недоступно (нет docker, язык выключен), это нормальный ответ со статусом
+     * unavailable и своим сообщением — он идёт через toRunResult выше.
+     *
+     * Прежний текст «Сервер исполнения недоступен» этих случаев не различал и
+     * вводил в заблуждение: при остановленном бэкенде человек читал, что не
+     * работает запуск кода, и шёл искать проблему в раннере — хотя не отвечало
+     * само приложение.
+     */
     return {
       lines: [
         {
           type: 'system',
-          text: 'Сервер исполнения недоступен, попробуйте позже.',
+          text: isTimeout(error)
+            ? `Ответ не пришёл за ${Math.round(timeoutMs / 1000)} с. Запуск слишком долгий или сервер перегружен.`
+            : 'Не удалось связаться с сервером — проверьте соединение и попробуйте снова.',
         },
       ],
       exitCode: 1,
