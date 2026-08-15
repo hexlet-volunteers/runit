@@ -46,9 +46,19 @@ console.log('Позиций в корзине:', items.length);
 console.log('Сумма без скидки:', total, '₽');
 `;
 
-/** Мета-информация для каждого статуса сохранения. */
-export const SAVE_STATUS_META: Record<SaveStatus, { color: string; label: string }> = {
+/**
+ * Подписи статуса сохранения.
+ *
+ * «Не сохранено» заменено на «Сохранить»: прежний текст описывал состояние, но
+ * не подсказывал действия, и человек искал глазами кнопку «Сохранить», которой
+ * в редакторе нет — сохранение автоматическое. Глагол на том же месте отвечает
+ * на вопрос «а как сохранить?» без изменения раскладки.
+ */
+export const SAVE_STATUS_META: Record<
+  SaveStatus,
+  { color: string; label: string }
+> = {
   saved: { color: '#51cf66', label: 'Сохранено' },
   saving: { color: '#4dabf7', label: 'Сохранение…' },
-  unsaved: { color: '#adb5bd', label: 'Не сохранено' },
+  unsaved: { color: '#fab005', label: 'Сохранить' },
 };

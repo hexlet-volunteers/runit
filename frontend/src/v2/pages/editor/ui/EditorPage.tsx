@@ -31,6 +31,7 @@ import {
   STARTER_CODE,
   SAVE_STATUS_META,
   monacoLanguage,
+  useSaveHotkey,
   useSnippetSave,
 } from '..';
 import EditorHeader from './EditorHeader';
@@ -243,6 +244,15 @@ export default function EditorPage() {
     }
   }, [snippetId, draftNameQuery.data]);
 
+  /**
+   * Ctrl/Cmd+S за пределами редактора: имя сниппета, консоль, вкладка «Ввод».
+   * Внутри Monaco работает своя команда (см. handleEditorMount) — она
+   * перехватывает нажатие раньше и предотвращает диалог браузера сама.
+   */
+  const saveManuallyRef = useRef(saveManually);
+  saveManuallyRef.current = saveManually;
+  useSaveHotkey(saveManually);
+
   /** Обработчик монтирования Monaco Editor: отслеживание позиции курсора и хоткей Ctrl+Enter. */
   const handleEditorMount: OnMount = (editor, monaco) => {
     editor.onDidChangeCursorPosition((e) => {
@@ -251,6 +261,18 @@ export default function EditorPage() {
     // eslint-disable-next-line no-bitwise
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
       void runRef.current();
+    });
+    /**
+     * Ctrl/Cmd+S — сохранить сейчас.
+     *
+     * Сохранение и так автоматическое, но привычка жать Ctrl+S сильнее любой
+     * подписи, а браузер на неё открывает диалог «сохранить страницу». Человек
+     * получал окно сохранения HTML вместо своего сниппета и делал вывод, что
+     * сохранения нет вовсе.
+     */
+    // eslint-disable-next-line no-bitwise
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      saveManuallyRef.current();
     });
   };
 

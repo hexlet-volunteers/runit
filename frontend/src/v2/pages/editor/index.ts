@@ -2,3 +2,4 @@ export { default } from './ui/EditorPage';
 export type { SaveStatus, Meta } from './types';
 export { FILE_NAME_BY_LANGUAGE, STARTER_CODE, SAVE_STATUS_META, monacoLanguage } from './lib/constants';
 export { useSnippetSave } from './model';
+export { default as useSaveHotkey } from './model/useSaveHotkey';
