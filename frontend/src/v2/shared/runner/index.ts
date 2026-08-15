@@ -6,6 +6,12 @@ export type { ConsoleLine, RunResult } from './types';
 export type { RunnerClient, ServerLanguage, ServerRunOutput } from './server';
 export { runJavaScript } from './javascript';
 export { toRunResult } from './server';
+export {
+  RUNNER_STATUS_QUERY_KEY,
+  unavailableReason,
+  useRunnerStatus,
+} from './useRunnerStatus';
+export type { RunnerStatus, RunnerStatusClient } from './useRunnerStatus';
 
 /**
  * Языки, которые исполняет сервер (в docker) — список должен совпадать с

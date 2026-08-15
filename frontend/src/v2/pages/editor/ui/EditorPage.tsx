@@ -23,6 +23,7 @@ import { useSession } from '../../../entities/user';
 
 import { ConsolePanel } from '../../../features/run-code';
 import { isPreviewLanguage } from '../../../shared/runner/preview';
+import { unavailableReason, useRunnerStatus } from '../../../shared/runner';
 import { ShareModal } from '../../../features/share-snippet';
 import AddPackageModal from './AddPackageModal';
 
@@ -89,6 +90,13 @@ export default function EditorPage() {
    * Расположение консоли учитывается только на широком экране: на узком панели
    * переключаются кнопкой (#842), делить там высоту не на чем.
    */
+  /**
+   * Доступно ли серверное исполнение на этом стенде. Спрашиваем заранее, чтобы
+   * не выяснять это нажатием «Выполнить»: на PaaS без docker девять языков не
+   * запускаются в принципе, и человек видел это только по ошибке в консоли.
+   */
+  const runnerStatus = useRunnerStatus(trpc as never);
+
   const prefs = useEditorPrefs();
   const consoleAtBottom = !isMobile && prefs.consoleLayout === 'bottom';
 
@@ -300,6 +308,9 @@ export default function EditorPage() {
     );
   }
 
+  /** Текст о том, почему этот язык здесь не запустится (null — запустится). */
+  const runnerBlocked = unavailableReason(language, runnerStatus);
+
   const meta = langMeta[language] ?? {
     label: language,
     dot: '#adb5bd',
@@ -332,6 +343,15 @@ export default function EditorPage() {
         running={running}
         markDirty={markDirty}
       />
+
+      {runnerBlocked && (
+        <Alert color="yellow" radius={0} py={8}>
+          <Text fz="sm">
+            {runnerBlocked} Запускать можно JavaScript (выполняется в браузере) и
+            HTML/CSS (превью).
+          </Text>
+        </Alert>
+      )}
 
       {isForeign && (
         <Alert color="yellow" radius={0} py={8}>
