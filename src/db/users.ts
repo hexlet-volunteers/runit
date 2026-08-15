@@ -62,11 +62,15 @@ export const updateUserSchema = z.object({
 
 /**
  * Аватар лежит в базе строкой data:base64, поэтому размер ограничен здесь.
- * ~1.4 МБ строки — это примерно 1 МБ картинки: без предела один запрос мог
+ * 700 000 символов — это примерно 500 КБ картинки: без предела один запрос мог
  * записать в text-поле десятки мегабайт, и они возвращались бы в каждом ответе
  * getUserSettings.
+ *
+ * Предел согласован с лимитом тела запроса (BODY_LIMIT_BYTES в src/index.ts):
+ * прежние 1,4 МБ его превышали, и сервер отвечал 413 «Request body is too
+ * large» раньше, чем наша проверка успевала объяснить причину человеку.
  */
-export const MAX_AVATAR_LENGTH = 1_400_000;
+export const MAX_AVATAR_LENGTH = 700_000;
 
 export const updateUserSettingsSchema = z.object({
   userId: z.number().int().positive(),
