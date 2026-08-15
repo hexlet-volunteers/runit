@@ -1,6 +1,6 @@
 # Локальный запуск Runit в контейнерах.
 #
-#   cp .env.example .env   # и задать JWT-секреты, см. README
+#   cp .env.example .env   # и задать JWT-секреты, см. docs/deployment.md
 #   docker compose up --build
 #   → http://localhost:8080
 #
@@ -68,7 +68,7 @@ services:
     # контейнера, ему нужен доступ к docker-сокету. Доступ к сокету равносилен
     # root на хосте, а раннер исполняет ЧУЖОЙ код — поэтому по умолчанию сокет
     # НЕ монтируется. Для прода используйте выделенный runner-хост или
-    # rootless/удалённый демон (см. README). Раскомментируйте только локально:
+    # rootless/удалённый демон (см. docs/runner.md). Раскомментируйте локально:
     # volumes:
     #   - /var/run/docker.sock:/var/run/docker.sock
     expose:

@@ -4,7 +4,7 @@
 // сознательно: vm не является границей безопасности.
 // HTML и CSS тоже не входят: их результат — превью страницы, которое рендерится
 // в браузере в sandbox-iframe (frontend/src/v2/shared/runner/preview.ts).
-// Подробнее — README, раздел «Серверное исполнение кода».
+// Подробнее — docs/runner.md.
 
 export const RUNNER_LANGUAGES = [
   'python',
