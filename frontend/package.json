@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@fontsource-variable/golos-text": "^5.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@mantine/core": "^8.3.5",
     "@mantine/form": "^8.3.10",
     "@mantine/hooks": "^8.3.5",
