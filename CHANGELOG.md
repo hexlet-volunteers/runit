@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.2](https://github.com/hexlet-volunteers/runit/compare/v0.2.1...v0.2.2) (2026-08-17)
+
+
+### Bug Fixes
+
+* **editor:** предупреждать о недоступном исполнении заранее ([#958](https://github.com/hexlet-volunteers/runit/issues/958)) ([7501f6f](https://github.com/hexlet-volunteers/runit/commit/7501f6f96ab87812111aaed5e0e900e787962416))
+* **runner:** не путать сбой docker с несобранным образом ([#956](https://github.com/hexlet-volunteers/runit/issues/956)) ([e3a6a2d](https://github.com/hexlet-volunteers/runit/commit/e3a6a2df9ac9ac7dcb7a1764e7bee3e4ebdbc2d7))
+
+
+### Performance Improvements
+
+* **frontend:** убрать блокирующие Google Fonts и заглушку загрузки ([#960](https://github.com/hexlet-volunteers/runit/issues/960)) ([d88d0b3](https://github.com/hexlet-volunteers/runit/commit/d88d0b3cd0f3567b660b4852775db322b05992a3))
+
 ## [0.2.1](https://github.com/hexlet-volunteers/runit/compare/v0.2.0...v0.2.1) (2026-08-15)
 
 
