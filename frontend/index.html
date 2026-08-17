@@ -5,16 +5,30 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Runit</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap"
-      rel="stylesheet"
-    />
+    <!--
+      Шрифты подключаются из сборки (src/v2/app/AppProviders.tsx), а не с
+      fonts.googleapis.com. Внешний <link rel="stylesheet"> в <head> блокирует
+      отрисовку: пока чужой сервер не ответит, страница не рисуется вообще, — а
+      из России этот хост отвечает нестабильно.
+    -->
   </head>
 
   <body>
-    <div id="main"></div>
+    <!--
+      Заглушка до запуска приложения. Без неё страница до исполнения JS пустая:
+      в #main ничего нет, фон не задан, и человек видит белый экран (или цвет
+      темы браузера), не понимая, грузится ли что-нибудь. Разметка инлайновая
+      намеренно — она обязана работать до того, как приедут стили и скрипты.
+      React заменяет содержимое #main при монтировании.
+    -->
+    <div id="main">
+      <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#f8f9fa;color:#495057;font:500 15px/1.5 system-ui,-apple-system,sans-serif">
+        <div style="width:34px;height:34px;border:3px solid #dee2e6;border-top-color:#4dabf7;border-radius:50%;animation:runit-spin .9s linear infinite"></div>
+        <div>Загружаем Runit…</div>
+        <noscript>Для работы редактора нужен включённый JavaScript.</noscript>
+      </div>
+    </div>
+    <style>@keyframes runit-spin{to{transform:rotate(360deg)}}</style>
     <script src="./src/index.js" type="module">
     </script>
   </body>
