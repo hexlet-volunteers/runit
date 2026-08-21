@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.3](https://github.com/hexlet-volunteers/runit/compare/v0.2.2...v0.2.3) (2026-08-21)
+
+
+### Features
+
+* **db:** add login_attempts table for failed login tracking ([#953](https://github.com/hexlet-volunteers/runit/issues/953)) ([872a804](https://github.com/hexlet-volunteers/runit/commit/872a8040d278c81ba680ba6c5381d0f66fabb0c0))
+
+
+### Miscellaneous
+
+* **docs:** удалить CONTRIBUTING.md ([#964](https://github.com/hexlet-volunteers/runit/issues/964)) ([33c68fa](https://github.com/hexlet-volunteers/runit/commit/33c68fa946acccbd14e6fe292747af99ed7d76dc))
+
 ## [0.2.2](https://github.com/hexlet-volunteers/runit/compare/v0.2.1...v0.2.2) (2026-08-17)
 
 
