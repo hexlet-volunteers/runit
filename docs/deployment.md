@@ -256,8 +256,9 @@ Docker на PaaS обычно недоступен, поэтому сервер�
 
 # Выпуск версии
 
-Как участвовать в разработке — правила мержа, ограничения `main` и полный процесс
-выпуска — в [CONTRIBUTING.md](../CONTRIBUTING.md). Ниже — техническая сторона.
+Мержим **squash**: один PR — один коммит в `main` — одна запись в CHANGELOG.
+Мерж-коммит и rebase унесли бы в `main` внутренние коммиты ветки, и release-please
+прочитал бы каждый — в CHANGELOG попадали бы `wip` и `поправил опечатку`.
 
 Теги руками не ставят. Версию считает
 [release-please](https://github.com/googleapis/release-please) по conventional
