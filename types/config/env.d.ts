@@ -13,6 +13,8 @@ export declare const DEV_REFRESH_SECRET = "dev-only-refresh-secret-not-for-produ
  */
 export declare const resolveLogLevel: (nodeEnv: "development" | "test" | "production", override?: string) => string;
 export declare const resolveCookieSecure: (nodeEnv: "development" | "test" | "production", override?: boolean) => boolean;
+/** Режим TLS для базы — см. DATABASE_SSL в схеме ниже. */
+export declare const resolveDatabaseSsl: (nodeEnv: "development" | "test" | "production", override?: "require" | "prefer" | "verify-full" | "off") => "require" | "prefer" | "verify-full" | "off";
 declare const envSchema: z.ZodPipe<z.ZodObject<{
     NODE_ENV: z.ZodDefault<z.ZodEnum<{
         development: "development";
@@ -23,6 +25,12 @@ declare const envSchema: z.ZodPipe<z.ZodObject<{
     PORT: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
     DATABASE_URL: z.ZodDefault<z.ZodString>;
     DATABASE_POOL_MAX: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
+    DATABASE_SSL: z.ZodOptional<z.ZodEnum<{
+        require: "require";
+        prefer: "prefer";
+        "verify-full": "verify-full";
+        off: "off";
+    }>>;
     JWT_ACCESS_SECRET: z.ZodOptional<z.ZodString>;
     JWT_REFRESH_SECRET: z.ZodOptional<z.ZodString>;
     CORS_ORIGIN: z.ZodDefault<z.ZodString>;
@@ -35,6 +43,7 @@ declare const envSchema: z.ZodPipe<z.ZodObject<{
         trace: "trace";
         silent: "silent";
     }>>;
+    TRUST_PROXY_HOPS: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
     COOKIE_SECURE: z.ZodOptional<z.ZodPipe<z.ZodEnum<{
         true: "true";
         false: "false";
@@ -44,12 +53,14 @@ declare const envSchema: z.ZodPipe<z.ZodObject<{
     JWT_REFRESH_SECRET: string;
     LOG_LEVEL: string;
     COOKIE_SECURE: boolean;
+    DATABASE_SSL: "require" | "prefer" | "verify-full" | "off";
     NODE_ENV: "development" | "test" | "production";
     HOST: string;
     PORT: number;
     DATABASE_URL: string;
     DATABASE_POOL_MAX: number;
     CORS_ORIGIN: string;
+    TRUST_PROXY_HOPS: number;
 }, {
     NODE_ENV: "development" | "test" | "production";
     HOST: string;
@@ -57,6 +68,8 @@ declare const envSchema: z.ZodPipe<z.ZodObject<{
     DATABASE_URL: string;
     DATABASE_POOL_MAX: number;
     CORS_ORIGIN: string;
+    TRUST_PROXY_HOPS: number;
+    DATABASE_SSL?: "require" | "prefer" | "verify-full" | "off" | undefined;
     JWT_ACCESS_SECRET?: string | undefined;
     JWT_REFRESH_SECRET?: string | undefined;
     LOG_LEVEL?: "error" | "fatal" | "warn" | "info" | "debug" | "trace" | "silent" | undefined;

@@ -5,17 +5,22 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
     transformer: false;
 }, import("@trpc/server").TRPCDecorateCreateRouterOptions<{
     /**
-     * Сниппет по id — путь редактора. Приватный отдаём только владельцу: до
-     * появления авторизации приватный сниппет читался перебором id (#792).
-     * Публичный и доступный по ссылке открыт всем, в том числе гостю.
+     * Сниппет по id — путь редактора (/editor/:id).
+     *
+     * Постороннему по id доступен только публичный сниппет. Уровень 'link'
+     * означает «открыт тому, кому автор дал ссылку», а id — это последовательное
+     * число: пока здесь проверялся лишь 'private', сниппеты «по ссылке»
+     * вычитывались перебором /editor/1, /editor/2, … то есть ссылка ничего не
+     * защищала. Раздача по ссылке идёт через короткий код
+     * (getSnippetByShortCode) — он не перебирается, и этот путь остаётся рабочим.
      */
     getSnippetById: import("@trpc/server").TRPCQueryProcedure<{
         input: unknown;
         output: {
-            id: number;
             code: string;
             name: string;
-            visibility: "link" | "private" | "public";
+            visibility: "private" | "link" | "public";
+            id: number;
             createdAt: Date;
             updatedAt: Date;
             userId: number | null;
@@ -36,10 +41,10 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             slug: string;
         };
         output: {
-            id: number;
             code: string;
             name: string;
-            visibility: "link" | "private" | "public";
+            visibility: "private" | "link" | "public";
+            id: number;
             createdAt: Date;
             updatedAt: Date;
             userId: number | null;
@@ -53,10 +58,10 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
     getAllSnippets: import("@trpc/server").TRPCQueryProcedure<{
         input: void;
         output: {
-            id: number;
             code: string;
             name: string;
-            visibility: "link" | "private" | "public";
+            visibility: "private" | "link" | "public";
+            id: number;
             createdAt: Date;
             updatedAt: Date;
             userId: number | null;
@@ -70,10 +75,10 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
     getMySnippets: import("@trpc/server").TRPCQueryProcedure<{
         input: void;
         output: {
-            id: number;
             code: string;
             name: string;
-            visibility: "link" | "private" | "public";
+            visibility: "private" | "link" | "public";
+            id: number;
             createdAt: Date;
             updatedAt: Date;
             userId: number | null;
@@ -93,10 +98,10 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             username: string;
         };
         output: {
-            id: number;
             code: string;
             name: string;
-            visibility: "link" | "private" | "public";
+            visibility: "private" | "link" | "public";
+            id: number;
             createdAt: Date;
             updatedAt: Date;
             userId: number | null;
@@ -113,13 +118,13 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             code: string;
             language: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css";
             slug?: string | undefined;
-            visibility?: "link" | "private" | "public" | undefined;
+            visibility?: "private" | "link" | "public" | undefined;
         };
         output: {
-            id: number;
             code: string;
             name: string;
-            visibility: "link" | "private" | "public";
+            visibility: "private" | "link" | "public";
+            id: number;
             createdAt: Date;
             updatedAt: Date;
             userId: number | null;
@@ -136,13 +141,13 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
             code?: string | undefined;
             slug?: string | undefined;
             language?: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css" | undefined;
-            visibility?: "link" | "private" | "public" | undefined;
+            visibility?: "private" | "link" | "public" | undefined;
         };
         output: {
-            id: number;
             code: string;
             name: string;
-            visibility: "link" | "private" | "public";
+            visibility: "private" | "link" | "public";
+            id: number;
             createdAt: Date;
             updatedAt: Date;
             userId: number | null;
@@ -166,10 +171,10 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
     getSnippetByShortCode: import("@trpc/server").TRPCQueryProcedure<{
         input: string;
         output: {
-            id: number;
             code: string;
             name: string;
-            visibility: "link" | "private" | "public";
+            visibility: "private" | "link" | "public";
+            id: number;
             createdAt: Date;
             updatedAt: Date;
             userId: number | null;
@@ -185,13 +190,13 @@ export declare const snippetRouter: import("@trpc/server").TRPCBuiltRouter<{
     setVisibility: import("@trpc/server").TRPCMutationProcedure<{
         input: {
             id: number;
-            visibility: "link" | "private" | "public";
+            visibility: "private" | "link" | "public";
         };
         output: {
-            id: number;
             code: string;
             name: string;
-            visibility: "link" | "private" | "public";
+            visibility: "private" | "link" | "public";
+            id: number;
             createdAt: Date;
             updatedAt: Date;
             userId: number | null;

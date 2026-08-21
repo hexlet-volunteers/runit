@@ -31,6 +31,17 @@ export declare const updateUserSchema: z.ZodObject<{
     username: z.ZodOptional<z.ZodString>;
     email: z.ZodOptional<z.ZodPipe<z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>, z.ZodString>>;
 }, z.core.$strip>;
+/**
+ * Аватар лежит в базе строкой data:base64, поэтому размер ограничен здесь.
+ * 700 000 символов — это примерно 500 КБ картинки: без предела один запрос мог
+ * записать в text-поле десятки мегабайт, и они возвращались бы в каждом ответе
+ * getUserSettings.
+ *
+ * Предел согласован с лимитом тела запроса (BODY_LIMIT_BYTES в src/index.ts):
+ * прежние 1,4 МБ его превышали, и сервер отвечал 413 «Request body is too
+ * large» раньше, чем наша проверка успевала объяснить причину человеку.
+ */
+export declare const MAX_AVATAR_LENGTH = 700000;
 export declare const updateUserSettingsSchema: z.ZodObject<{
     userId: z.ZodNumber;
     theme: z.ZodOptional<z.ZodEnum<{
@@ -47,6 +58,13 @@ export declare const updateUserSettingsSchema: z.ZodObject<{
     }>>;
     avatarBase64: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, z.core.$strip>;
+/**
+ * Идентификаторы — целые положительные. `int()` здесь не украшение: столбцы
+ * объявлены как serial, и дробное значение (id=1.5, пришедшее из адреса или
+ * подставленное вручную) доходило до запроса, где PostgreSQL отвергал его
+ * ошибкой типа — то есть клиент получал 500 «внутренняя ошибка» вместо
+ * понятного «некорректные данные».
+ */
 export declare const deleteUserSchema: z.ZodObject<{
     id: z.ZodCoercedNumber<unknown>;
 }, z.core.$strip>;
@@ -54,7 +72,7 @@ export declare const setUserRoleSchema: z.ZodObject<{
     id: z.ZodNumber;
     isAdmin: z.ZodBoolean;
 }, z.core.$strip>;
-export declare const getUserByIdSchema: z.ZodNumber;
+export declare const getUserByIdSchema: z.ZodCoercedNumber<unknown>;
 export declare const getUserByEmailSchema: z.ZodPipe<z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>, z.ZodString>;
 export declare const getUserByUsernameSchema: z.ZodString;
 export type CreateUserInput = z.infer<typeof createUserSchema>;

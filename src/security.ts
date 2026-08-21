@@ -3,6 +3,7 @@ import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { env } from './config/env';
+import { parsePositiveNumber } from './utils/parse-positive-number';
 
 /**
  * Заголовки безопасности (#856) и ограничение частоты запросов (#858).
@@ -16,11 +17,11 @@ import { env } from './config/env';
 /** Лимиты подобраны так, чтобы не мешать человеку, но гасить автоматический абьюз. */
 const LIMITS = {
   /** Запуск кода: дороже всего, поэтому строже всего. */
-  runnerPerMinute: num(process.env.RATE_LIMIT_RUNNER, 12),
+  runnerPerMinute: parsePositiveNumber(process.env.RATE_LIMIT_RUNNER, 12),
   /** Остальные процедуры: обычная работа в редакторе создаёт десятки запросов. */
-  apiPerMinute: num(process.env.RATE_LIMIT_API, 300),
+  apiPerMinute: parsePositiveNumber(process.env.RATE_LIMIT_API, 300),
   /** oEmbed запрашивают площадки, ответ кэшируется на 5 минут. */
-  oembedPerMinute: num(process.env.RATE_LIMIT_OEMBED, 60),
+  oembedPerMinute: parsePositiveNumber(process.env.RATE_LIMIT_OEMBED, 60),
   /**
    * Вход, регистрация и смена пароля: перебор пароля общим лимитом 300/мин не
    * остановить. Порог накрывает весь префикс auth.* — в том числе
@@ -30,13 +31,8 @@ const LIMITS = {
    * запросов. Нужен ещё счётчик неудач на конкретный логин — он опирается на
    * таблицу refresh_tokens и остаётся в #858.
    */
-  authPerMinute: num(process.env.RATE_LIMIT_AUTH, 10),
+  authPerMinute: parsePositiveNumber(process.env.RATE_LIMIT_AUTH, 10),
 };
-
-function num(raw: string | undefined, fallback: number): number {
-  const parsed = Number(raw);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
 
 const isRunnerRun = (url: string): boolean =>
   url.startsWith('/trpc/runner.run');

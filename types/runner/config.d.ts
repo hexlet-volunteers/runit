@@ -3,7 +3,6 @@ export declare const runnerConfig: {
     dockerBin: string;
     imagePrefix: string;
     imageTag: string;
-    tmpDir: string;
     /**
      * Путь к seccomp-профилю (#860). Пусто — работает штатный профиль docker.
      * Задавать имеет смысл только полный выверенный аллоулист: свой файл

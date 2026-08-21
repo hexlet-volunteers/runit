@@ -1,33 +1,10 @@
 import { z } from 'zod/v4';
 import { type Snippet } from './schema/schema';
-export declare const snippetSchema: z.ZodObject<{
-    id: z.ZodNumber;
-    name: z.ZodString;
-    slug: z.ZodNullable<z.ZodString>;
-    code: z.ZodString;
-    language: z.ZodEnum<{
-        javascript: "javascript";
-        typescript: "typescript";
-        python: "python";
-        php: "php";
-        ruby: "ruby";
-        java: "java";
-        go: "go";
-        cpp: "cpp";
-        sql: "sql";
-        bash: "bash";
-        html: "html";
-        css: "css";
-    }>;
-    userId: z.ZodNumber;
-    createdAt: z.ZodDate;
-    updatedAt: z.ZodDate;
-}, z.core.$strip>;
 /** Уровни доступа к сниппету. */
 export declare const VISIBILITIES: readonly ["private", "link", "public"];
 export declare const visibilitySchema: z.ZodEnum<{
-    link: "link";
     private: "private";
+    link: "link";
     public: "public";
 }>;
 export type Visibility = (typeof VISIBILITIES)[number];
@@ -35,11 +12,18 @@ export declare const getSnippetByShortCodeSchema: z.ZodString;
 export declare const setVisibilitySchema: z.ZodObject<{
     id: z.ZodNumber;
     visibility: z.ZodEnum<{
-        link: "link";
         private: "private";
+        link: "link";
         public: "public";
     }>;
 }, z.core.$strip>;
+/**
+ * Ограничения на размер кода — первая линия защиты от переполнения БД и
+ * раздувания ответов. min(1) убран сознательно: пустой сниппет — нормальное
+ * состояние. Раньше выключенный тумблер «Начать с примера кода» отправлял
+ * code: '' и получал BAD_REQUEST, а очистка редактора ломала автосохранение.
+ */
+export declare const MAX_CODE_LENGTH = 100000;
 export declare const createSnippetSchema: z.ZodObject<{
     name: z.ZodString;
     code: z.ZodString;
@@ -59,8 +43,8 @@ export declare const createSnippetSchema: z.ZodObject<{
         css: "css";
     }>;
     visibility: z.ZodOptional<z.ZodEnum<{
-        link: "link";
         private: "private";
+        link: "link";
         public: "public";
     }>>;
 }, z.core.$strip>;
@@ -83,12 +67,20 @@ export declare const updateSnippetSchema: z.ZodObject<{
         css: "css";
     }>>;
     visibility: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
-        link: "link";
         private: "private";
+        link: "link";
         public: "public";
     }>>>;
     id: z.ZodNumber;
 }, z.core.$strip>;
+/**
+ * Идентификаторы — целые положительные. `int()` здесь не украшение: столбцы
+ * объявлены как serial, и дробное значение (id=1.5, пришедшее из адреса или
+ * подставленное вручную) доходило до запроса, где PostgreSQL отвергал его
+ * ошибкой типа — то есть клиент получал 500 «внутренняя ошибка» вместо
+ * понятного «некорректные данные».
+ */
+export declare const idSchema: z.ZodCoercedNumber<unknown>;
 export declare const getSnippetByIdSchema: z.ZodCoercedNumber<unknown>;
 export declare const deleteSnippetSchema: z.ZodObject<{
     id: z.ZodCoercedNumber<unknown>;

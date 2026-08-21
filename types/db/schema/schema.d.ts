@@ -493,7 +493,7 @@ export declare const snippets: import("drizzle-orm/pg-core").PgTableWithColumns<
             tableName: "snippets";
             dataType: "string";
             columnType: "PgEnumColumn";
-            data: "link" | "private" | "public";
+            data: "private" | "link" | "public";
             driverParam: string;
             notNull: true;
             hasDefault: true;
@@ -713,30 +713,71 @@ export declare const passwordHistory: import("drizzle-orm/pg-core").PgTableWithC
     };
     dialect: "pg";
 }>;
-export declare const usersRelations: import("drizzle-orm").Relations<"users", {
-    snippets: import("drizzle-orm").Many<"snippets">;
-    settings: import("drizzle-orm").One<"user_settings", true>;
-    refreshTokens: import("drizzle-orm").Many<"refresh_tokens">;
-    passwordHistory: import("drizzle-orm").Many<"password_history">;
-}>;
-export declare const snippetsRelations: import("drizzle-orm").Relations<"snippets", {
-    user: import("drizzle-orm").One<"users", false>;
-}>;
-export declare const userSettingsRelations: import("drizzle-orm").Relations<"user_settings", {
-    user: import("drizzle-orm").One<"users", true>;
-}>;
-export declare const refreshTokensRelations: import("drizzle-orm").Relations<"refresh_tokens", {
-    user: import("drizzle-orm").One<"users", true>;
-}>;
-export declare const passwordHistoryRelations: import("drizzle-orm").Relations<"password_history", {
-    user: import("drizzle-orm").One<"users", true>;
+export declare const loginAttempts: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "login_attempts";
+    schema: undefined;
+    columns: {
+        email: import("drizzle-orm/pg-core").PgColumn<{
+            name: "email";
+            tableName: "login_attempts";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 254;
+        }>;
+        failedCount: import("drizzle-orm/pg-core").PgColumn<{
+            name: "failed_count";
+            tableName: "login_attempts";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        lastFailedAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "last_failed_at";
+            tableName: "login_attempts";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+    };
+    dialect: "pg";
 }>;
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
-export type RefreshToken = typeof refreshTokens.$inferSelect;
 export type NewRefreshToken = typeof refreshTokens.$inferInsert;
-export type PasswordHistoryEntry = typeof passwordHistory.$inferSelect;
 export type NewPasswordHistoryEntry = typeof passwordHistory.$inferInsert;
+export type LoginAttempt = typeof loginAttempts.$inferSelect;
 export type Snippet = typeof snippets.$inferSelect;
 export type NewSnippet = typeof snippets.$inferInsert;
 export type UserSettings = typeof userSettings.$inferSelect;

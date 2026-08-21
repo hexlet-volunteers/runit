@@ -5,8 +5,6 @@ export interface DockerArgsParams {
     limits: RunLimits;
     /** Имя контейнера — по нему гарантированно убираем его при таймауте. */
     containerName: string;
-    /** Каталог на хосте с файлом кода (монтируется только для чтения). */
-    hostCodeDir: string;
     imageTag: string;
     /** Имя файла внутри /app. */
     fileName: string;
@@ -14,11 +12,13 @@ export interface DockerArgsParams {
     seccompProfile?: string;
 }
 /**
- * Сборка argv для `docker run`. Единственное место, где живёт модель изоляции
- * песочницы (#860) — поэтому функция чистая и покрыта юнит-тестами: любое
- * ослабление флагов ломает тест.
+ * Пролог внутри контейнера: раскодировать первую строку stdin в файл и запустить
+ * язык.
  *
- * Никогда не добавлять: --privileged, -v /var/run/docker.sock, --cap-add,
- * --security-opt seccomp=unconfined, --pid=host, --net=host.
+ * `IFS= read -r` читает ровно одну строку и не трогает обратные слэши, а
+ * base64 — одна строка без переводов, поэтому дальше в stdin остаётся ровно то,
+ * что пользователь ввёл во вкладке «Ввод». `exec` заменяет оболочку процессом
+ * языка: не остаётся лишнего процесса, и сигналы доходят напрямую.
  */
+export declare function bootstrap(containerPath: string, spec: LanguageSpec): string;
 export declare function buildDockerArgs(params: DockerArgsParams): string[];

@@ -1,4 +1,4 @@
-import { type User } from './schema/schema';
+import { type LoginAttempt, type User } from './schema/schema';
 export declare function hashToken(token: string): string;
 /**
  * Возвращает полную запись пользователя, включая password-хеш — только для
@@ -28,3 +28,27 @@ export declare function revokeRefreshToken(token: string): Promise<void>;
 export declare function revokeAllRefreshTokensForUser(userId: number): Promise<void>;
 export declare function getRecentPasswordHashes(userId: number, limit: number): Promise<string[]>;
 export declare function addPasswordHistoryEntry(userId: number, passwordHashValue: string): Promise<void>;
+/**
+ * Счётчик неудачных попыток входа (#858) — ключ по email, а не userId: попытки
+ * на несуществующий email тоже нужно считать, иначе перебор email остаётся без
+ * лимита. Порог и длительность блокировки решает вызывающий код — здесь только
+ * чтение и запись счётчика.
+ *
+ * Email приходит уже нормализованным через emailSchema (trim + toLowerCase,
+ * см. src/auth/email.ts) — повторной нормализации здесь нет намеренно, чтобы
+ * не дублировать её в двух местах и не разойтись с схемой ввода.
+ *
+ * TODO: сейчас этот инвариант держится только на этом комментарии — тип
+ * параметра email всюду ниже просто string, и ничто не мешает передать сюда
+ * сырую строку в обход emailSchema. Ужесточить до branded type:
+ *   export type NormalizedEmail = string & { readonly __brand: 'NormalizedEmail' };
+ * в src/auth/email.ts, привести normalizeEmail к сигнатуре
+ * (email: string) => NormalizedEmail и поменять email: string на
+ * email: NormalizedEmail в сигнатурах recordFailedLoginAttempt,
+ * resetLoginAttempts и getLoginAttempt ниже — тогда emailSchema возвращает
+ * NormalizedEmail, и передать сюда непрошедшую нормализацию строку не даст
+ * уже компилятор, а не только память того, кто вызывает эти функции.
+ */
+export declare function recordFailedLoginAttempt(email: string): Promise<void>;
+export declare function resetLoginAttempts(email: string): Promise<void>;
+export declare function getLoginAttempt(email: string): Promise<LoginAttempt | undefined>;

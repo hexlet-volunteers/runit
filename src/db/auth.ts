@@ -1,7 +1,9 @@
 import { createHash } from 'node:crypto';
-import { and, desc, eq, gt, isNull } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull, sql } from 'drizzle-orm';
 import { db } from './connection';
 import {
+  type LoginAttempt,
+  loginAttempts,
   type NewPasswordHistoryEntry,
   type NewRefreshToken,
   passwordHistory,
@@ -121,4 +123,54 @@ export async function addPasswordHistoryEntry(
   };
 
   await db.insert(passwordHistory).values(entry);
+}
+
+/**
+ * Счётчик неудачных попыток входа (#858) — ключ по email, а не userId: попытки
+ * на несуществующий email тоже нужно считать, иначе перебор email остаётся без
+ * лимита. Порог и длительность блокировки решает вызывающий код — здесь только
+ * чтение и запись счётчика.
+ *
+ * Email приходит уже нормализованным через emailSchema (trim + toLowerCase,
+ * см. src/auth/email.ts) — повторной нормализации здесь нет намеренно, чтобы
+ * не дублировать её в двух местах и не разойтись с схемой ввода.
+ *
+ * TODO: сейчас этот инвариант держится только на этом комментарии — тип
+ * параметра email всюду ниже просто string, и ничто не мешает передать сюда
+ * сырую строку в обход emailSchema. Ужесточить до branded type:
+ *   export type NormalizedEmail = string & { readonly __brand: 'NormalizedEmail' };
+ * в src/auth/email.ts, привести normalizeEmail к сигнатуре
+ * (email: string) => NormalizedEmail и поменять email: string на
+ * email: NormalizedEmail в сигнатурах recordFailedLoginAttempt,
+ * resetLoginAttempts и getLoginAttempt ниже — тогда emailSchema возвращает
+ * NormalizedEmail, и передать сюда непрошедшую нормализацию строку не даст
+ * уже компилятор, а не только память того, кто вызывает эти функции.
+ */
+export async function recordFailedLoginAttempt(email: string): Promise<void> {
+  await db
+    .insert(loginAttempts)
+    .values({ email, failedCount: 1, lastFailedAt: new Date() })
+    .onConflictDoUpdate({
+      target: loginAttempts.email,
+      set: {
+        failedCount: sql`${loginAttempts.failedCount} + 1`,
+        lastFailedAt: new Date(),
+      },
+    });
+}
+
+export async function resetLoginAttempts(email: string): Promise<void> {
+  await db.delete(loginAttempts).where(eq(loginAttempts.email, email));
+}
+
+export async function getLoginAttempt(
+  email: string,
+): Promise<LoginAttempt | undefined> {
+  const [record] = await db
+    .select()
+    .from(loginAttempts)
+    .where(eq(loginAttempts.email, email))
+    .limit(1);
+
+  return record;
 }

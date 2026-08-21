@@ -82,7 +82,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         transformer: false;
     }, import("@trpc/server").TRPCDecorateCreateRouterOptions<{
         getUserById: import("@trpc/server").TRPCQueryProcedure<{
-            input: number;
+            input: unknown;
             output: import("../auth/publicUser").PublicProfile;
             meta: object;
         }>;
@@ -140,7 +140,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
             meta: object;
         }>;
         getUserSettings: import("@trpc/server").TRPCQueryProcedure<{
-            input: number;
+            input: unknown;
             output: {
                 createdAt: Date;
                 updatedAt: Date;
@@ -171,7 +171,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
             meta: object;
         }>;
         getData: import("@trpc/server").TRPCQueryProcedure<{
-            input: number;
+            input: unknown;
             output: {
                 currentUser: import("../db/users").SafeUser & {
                     language: string;
@@ -179,10 +179,10 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                     avatarBase64: string | null;
                 };
                 snippets: ({
-                    id: number;
                     code: string;
                     name: string;
-                    visibility: "link" | "private" | "public";
+                    visibility: "private" | "link" | "public";
+                    id: number;
                     createdAt: Date;
                     updatedAt: Date;
                     userId: number | null;
@@ -205,10 +205,10 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         getSnippetById: import("@trpc/server").TRPCQueryProcedure<{
             input: unknown;
             output: {
-                id: number;
                 code: string;
                 name: string;
-                visibility: "link" | "private" | "public";
+                visibility: "private" | "link" | "public";
+                id: number;
                 createdAt: Date;
                 updatedAt: Date;
                 userId: number | null;
@@ -224,10 +224,10 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 slug: string;
             };
             output: {
-                id: number;
                 code: string;
                 name: string;
-                visibility: "link" | "private" | "public";
+                visibility: "private" | "link" | "public";
+                id: number;
                 createdAt: Date;
                 updatedAt: Date;
                 userId: number | null;
@@ -240,10 +240,10 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         getAllSnippets: import("@trpc/server").TRPCQueryProcedure<{
             input: void;
             output: {
-                id: number;
                 code: string;
                 name: string;
-                visibility: "link" | "private" | "public";
+                visibility: "private" | "link" | "public";
+                id: number;
                 createdAt: Date;
                 updatedAt: Date;
                 userId: number | null;
@@ -256,10 +256,10 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         getMySnippets: import("@trpc/server").TRPCQueryProcedure<{
             input: void;
             output: {
-                id: number;
                 code: string;
                 name: string;
-                visibility: "link" | "private" | "public";
+                visibility: "private" | "link" | "public";
+                id: number;
                 createdAt: Date;
                 updatedAt: Date;
                 userId: number | null;
@@ -274,10 +274,10 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 username: string;
             };
             output: {
-                id: number;
                 code: string;
                 name: string;
-                visibility: "link" | "private" | "public";
+                visibility: "private" | "link" | "public";
+                id: number;
                 createdAt: Date;
                 updatedAt: Date;
                 userId: number | null;
@@ -293,13 +293,13 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 code: string;
                 language: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css";
                 slug?: string | undefined;
-                visibility?: "link" | "private" | "public" | undefined;
+                visibility?: "private" | "link" | "public" | undefined;
             };
             output: {
-                id: number;
                 code: string;
                 name: string;
-                visibility: "link" | "private" | "public";
+                visibility: "private" | "link" | "public";
+                id: number;
                 createdAt: Date;
                 updatedAt: Date;
                 userId: number | null;
@@ -316,13 +316,13 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 code?: string | undefined;
                 slug?: string | undefined;
                 language?: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css" | undefined;
-                visibility?: "link" | "private" | "public" | undefined;
+                visibility?: "private" | "link" | "public" | undefined;
             };
             output: {
-                id: number;
                 code: string;
                 name: string;
-                visibility: "link" | "private" | "public";
+                visibility: "private" | "link" | "public";
+                id: number;
                 createdAt: Date;
                 updatedAt: Date;
                 userId: number | null;
@@ -345,10 +345,10 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         getSnippetByShortCode: import("@trpc/server").TRPCQueryProcedure<{
             input: string;
             output: {
-                id: number;
                 code: string;
                 name: string;
-                visibility: "link" | "private" | "public";
+                visibility: "private" | "link" | "public";
+                id: number;
                 createdAt: Date;
                 updatedAt: Date;
                 userId: number | null;
@@ -363,13 +363,13 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         setVisibility: import("@trpc/server").TRPCMutationProcedure<{
             input: {
                 id: number;
-                visibility: "link" | "private" | "public";
+                visibility: "private" | "link" | "public";
             };
             output: {
-                id: number;
                 code: string;
                 name: string;
-                visibility: "link" | "private" | "public";
+                visibility: "private" | "link" | "public";
+                id: number;
                 createdAt: Date;
                 updatedAt: Date;
                 userId: number | null;

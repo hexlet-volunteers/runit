@@ -10,7 +10,7 @@ export declare const userRouter: import("@trpc/server").TRPCBuiltRouter<{
      * Свои полные данные пользователь получает через auth.me.
      */
     getUserById: import("@trpc/server").TRPCQueryProcedure<{
-        input: number;
+        input: unknown;
         output: import("../auth/publicUser").PublicProfile;
         meta: object;
     }>;
@@ -83,7 +83,7 @@ export declare const userRouter: import("@trpc/server").TRPCBuiltRouter<{
         meta: object;
     }>;
     getUserSettings: import("@trpc/server").TRPCQueryProcedure<{
-        input: number;
+        input: unknown;
         output: {
             createdAt: Date;
             updatedAt: Date;
@@ -118,7 +118,7 @@ export declare const userRouter: import("@trpc/server").TRPCBuiltRouter<{
      * Публичный список сниппетов профиля живёт в snippets.getPublicSnippetsByUsername.
      */
     getData: import("@trpc/server").TRPCQueryProcedure<{
-        input: number;
+        input: unknown;
         output: {
             currentUser: import("../db/users").SafeUser & {
                 language: string;
@@ -126,10 +126,10 @@ export declare const userRouter: import("@trpc/server").TRPCBuiltRouter<{
                 avatarBase64: string | null;
             };
             snippets: ({
-                id: number;
                 code: string;
                 name: string;
-                visibility: "link" | "private" | "public";
+                visibility: "private" | "link" | "public";
+                id: number;
                 createdAt: Date;
                 updatedAt: Date;
                 userId: number | null;
