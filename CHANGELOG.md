@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.3](https://github.com/hexlet-volunteers/runit/compare/v0.2.2...v0.2.3) (2026-08-27)
+
+
+### Features
+
+* **auth:** счётчик неудачных попыток входа и логика блокировки ([#858](https://github.com/hexlet-volunteers/runit/issues/858)/2-3) ([#963](https://github.com/hexlet-volunteers/runit/issues/963)) ([e57016a](https://github.com/hexlet-volunteers/runit/commit/e57016a988d43a8ad250267b3c7c388386d4f794))
+* **db:** add login_attempts table for failed login tracking ([#953](https://github.com/hexlet-volunteers/runit/issues/953)) ([872a804](https://github.com/hexlet-volunteers/runit/commit/872a8040d278c81ba680ba6c5381d0f66fabb0c0))
+
+
+### Miscellaneous
+
+* **agents:** скиллы mattpocock/skills в репозитории + make skills-update ([#972](https://github.com/hexlet-volunteers/runit/issues/972)) ([7e0fb41](https://github.com/hexlet-volunteers/runit/commit/7e0fb41e17c38dcd1d2415d4190c39f77f4154fc))
+* **docs:** наполнить AGENTS.md правилами, которых нет в конфигах ([#974](https://github.com/hexlet-volunteers/runit/issues/974)) ([9488293](https://github.com/hexlet-volunteers/runit/commit/9488293d0139645d338f16f9b66092e9f97da2f3))
+* **docs:** один абзац — одна строка в docs/agents ([#975](https://github.com/hexlet-volunteers/runit/issues/975)) ([077a414](https://github.com/hexlet-volunteers/runit/commit/077a414612dd8469d4c4841a59ab4238c5b07d06))
+* **docs:** правило «абзац — одна строка» и весь маркдаун по нему ([#976](https://github.com/hexlet-volunteers/runit/issues/976)) ([49edebe](https://github.com/hexlet-volunteers/runit/commit/49edebe0b64646861c4919beed9ac4fb92798da1))
+* **docs:** удалить CONTRIBUTING.md ([#964](https://github.com/hexlet-volunteers/runit/issues/964)) ([33c68fa](https://github.com/hexlet-volunteers/runit/commit/33c68fa946acccbd14e6fe292747af99ed7d76dc))
+
 ## [0.2.2](https://github.com/hexlet-volunteers/runit/compare/v0.2.1...v0.2.2) (2026-08-17)
 
 
