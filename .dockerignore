@@ -11,6 +11,8 @@ database.sqlite
 .git
 .github
 .claude
+# Скиллы агентов: нужны только человеку с агентом, в образе им делать нечего.
+.agents
 docs
 results.json
 *.log

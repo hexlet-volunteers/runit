@@ -33,6 +33,14 @@ db-generate:
 db-studio:
 	npm run db:studio
 
+# Скиллы агентов из mattpocock/skills. Канонические копии лежат в
+# .agents/skills — оттуда их читают Codex, OpenCode и Cursor, а .claude/skills
+# держит симлинки для Claude Code. Всё это версионируется вместе с кодом, так
+# что после обновления изменения нужно закоммитить (аналогично drizzle/).
+# Источник и хеш каждого скилла записаны в skills-lock.json.
+skills-update:
+	npx skills@latest update -p -y
+
 # Цели для выпуска здесь нет намеренно — версию считает release-please, теги
 # руками не ставят. См. README, раздел «Выпуск версии».
 #
@@ -41,4 +49,4 @@ db-studio:
 # v81…v109), на remote с именем upstream и на `git push heroku`. Ни скрипта, ни
 # remote больше нет, теги стали semver, а раскатку делает CI.
 
-.PHONY: install dev dev-frontend build lint-backend lint-fix-backend test db-migrate db-generate db-studio
+.PHONY: install dev dev-frontend build lint-backend lint-fix-backend test db-migrate db-generate db-studio skills-update
