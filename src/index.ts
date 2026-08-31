@@ -4,6 +4,7 @@ import {
 } from '@trpc/server/adapters/fastify';
 import { fastify } from 'fastify';
 
+import { startLoginAttemptCleanup } from './auth/bruteforce';
 import { registerAuthPlugins } from './auth/plugins';
 import { env } from './config/env';
 import { createContext } from './context';
@@ -95,6 +96,12 @@ const getApp = async () => {
 
   registerHealthRoute(server);
   registerOembedRoutes(server);
+
+  // Периодическая уборка login_attempts (#858) — без нового процесса/cron,
+  // раз в час удаляет записи, по которым давно не было попыток входа.
+  startLoginAttemptCleanup((error) =>
+    reportError(error, { where: 'login-attempt-cleanup' }),
+  );
 
   // Уборка контейнеров, переживших аварийное завершение прошлого процесса
   // (деплой, OOM, kill -9). Без этого вызова убитый на середине запуск

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { and, desc, eq, gt, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull, lt, sql } from 'drizzle-orm';
 import { db } from './connection';
 import {
   type LoginAttempt,
@@ -173,4 +173,21 @@ export async function getLoginAttempt(
     .limit(1);
 
   return record;
+}
+
+/**
+ * Удаляет записи login_attempts, по которым давно не было попыток (#858).
+ *
+ * Успешный вход и так удаляет свою запись (resetLoginAttempts) — без уборки
+ * копились бы только «висячие» строки: несуществующие email, которые
+ * подбирали и бросили, и заблокированные аккаунты, которые так и не вошли.
+ * Без периодической очистки таблица растёт неограниченно, а её реальный смысл
+ * (окно в LOCKOUT_DURATION_MS) давно истёк для этих строк.
+ */
+export async function cleanupStaleLoginAttempts(
+  olderThan: Date,
+): Promise<void> {
+  await db
+    .delete(loginAttempts)
+    .where(lt(loginAttempts.lastFailedAt, olderThan));
 }

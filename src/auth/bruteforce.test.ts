@@ -6,7 +6,9 @@ import {
   secondsUntilUnlock,
 } from './bruteforce';
 
-function makeAttempt(overrides: Partial<LoginAttempt> = {}): LoginAttempt {
+function makeAttempt(
+  overrides: { failedCount?: number; lastFailedAt?: Date } = {},
+): LoginAttempt & { lastFailedAt: Date } {
   return {
     email: 'user@example.com',
     failedCount: LOCKOUT_THRESHOLD,

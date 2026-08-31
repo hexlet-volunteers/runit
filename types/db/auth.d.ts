@@ -52,3 +52,13 @@ export declare function addPasswordHistoryEntry(userId: number, passwordHashValu
 export declare function recordFailedLoginAttempt(email: string): Promise<void>;
 export declare function resetLoginAttempts(email: string): Promise<void>;
 export declare function getLoginAttempt(email: string): Promise<LoginAttempt | undefined>;
+/**
+ * Удаляет записи login_attempts, по которым давно не было попыток (#858).
+ *
+ * Успешный вход и так удаляет свою запись (resetLoginAttempts) — без уборки
+ * копились бы только «висячие» строки: несуществующие email, которые
+ * подбирали и бросили, и заблокированные аккаунты, которые так и не вошли.
+ * Без периодической очистки таблица растёт неограниченно, а её реальный смысл
+ * (окно в LOCKOUT_DURATION_MS) давно истёк для этих строк.
+ */
+export declare function cleanupStaleLoginAttempts(olderThan: Date): Promise<void>;

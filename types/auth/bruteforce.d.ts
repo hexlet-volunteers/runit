@@ -12,11 +12,16 @@ export declare const LOCKOUT_DURATION_MS: number;
  * Блокировка не хранится в БД отдельным полем (locked_until), а вычисляется
  * из failedCount и lastFailedAt на каждый запрос — так порог и длительность
  * можно менять на лету, не трогая уже накопленные записи.
+ *
+ * Type predicate, а не просто boolean: после `if (isLockedOut(attempt))`
+ * компилятор сам знает, что attempt.lastFailedAt точно есть — вызывающему
+ * коду (secondsUntilUnlock) не нужен приведение типа или ручная проверка.
  */
-export declare function isLockedOut(attempt: LoginAttempt | undefined): boolean;
-/**
- * Сколько секунд осталось до снятия блокировки — для сообщения в ответе 429.
- * Вызывать только когда isLockedOut(attempt) уже вернул true — тогда
- * lastFailedAt точно есть.
- */
-export declare function secondsUntilUnlock(attempt: LoginAttempt): number;
+export declare function isLockedOut(attempt: LoginAttempt | undefined): attempt is LoginAttempt & {
+    lastFailedAt: Date;
+};
+/** Сколько секунд осталось до снятия блокировки — для сообщения в ответе 429. */
+export declare function secondsUntilUnlock(attempt: LoginAttempt & {
+    lastFailedAt: Date;
+}): number;
+export declare function startLoginAttemptCleanup(onError: (error: unknown) => void): NodeJS.Timeout;

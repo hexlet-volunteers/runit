@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { TRPCError } from '@trpc/server';
 import type { FastifyReply } from 'fastify';
 import { z } from 'zod/v4';
+import { isLockedOut, secondsUntilUnlock } from '../auth/bruteforce';
 import { isAcceptedConsentVersion } from '../auth/consent';
 import { clearAuthCookies, setAuthCookies } from '../auth/cookies';
 import { emailSchema } from '../auth/email';
@@ -23,9 +24,12 @@ import { protectedProcedure, publicProcedure, router } from '../context';
 import {
   addPasswordHistoryEntry,
   findActiveRefreshToken,
+  getLoginAttempt,
   getRecentPasswordHashes,
   getUserByEmailWithCredentials,
   getUserByIdWithCredentials,
+  recordFailedLoginAttempt,
+  resetLoginAttempts,
   revokeAllRefreshTokensForUser,
   revokeRefreshToken,
   storeRefreshToken,
@@ -151,6 +155,15 @@ export const authRouter = router({
       return { user: toPublicUser(user), csrfToken };
     }),
 
+  /**
+   * Анти-брутфорс на вход (#858) — счётчик неудач по email (см.
+   * src/auth/bruteforce.ts). Лимит по IP из security.ts не останавливает
+   * перебор пароля одного аккаунта с разных адресов; этот счётчик — нет.
+   *
+   * Блокировка проверяется до обращения к паролю: заблокированный email не
+   * должен получать никакой информации о том, существует ли пользователь и
+   * верен ли пароль — реагирует только на превышение попыток.
+   */
   login: publicProcedure
     .input(loginInputSchema)
     .mutation(async ({ input, ctx }) => {
@@ -159,8 +172,21 @@ export const authRouter = router({
         message: 'Неверный email или пароль',
       });
 
+      const attempt = await getLoginAttempt(input.email);
+      if (isLockedOut(attempt)) {
+        ctx.req.log.warn(
+          { email: input.email, ip: ctx.req.ip },
+          'login lockout: слишком много неудачных попыток',
+        );
+        throw new TRPCError({
+          code: 'TOO_MANY_REQUESTS',
+          message: `Слишком много попыток входа. Попробуйте через ${secondsUntilUnlock(attempt)} с.`,
+        });
+      }
+
       const user = await getUserByEmailWithCredentials(input.email);
       if (!user) {
+        await recordFailedLoginAttempt(input.email);
         throw genericError;
       }
 
@@ -169,9 +195,11 @@ export const authRouter = router({
         user.password,
       );
       if (!passwordMatches) {
+        await recordFailedLoginAttempt(input.email);
         throw genericError;
       }
 
+      await resetLoginAttempts(input.email);
       const csrfToken = await issueSession(ctx.res, user);
 
       return { user: toPublicUser(user), csrfToken };

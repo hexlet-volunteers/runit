@@ -17,6 +17,15 @@ export declare const authRouter: import("@trpc/server").TRPCBuiltRouter<{
         };
         meta: object;
     }>;
+    /**
+     * Анти-брутфорс на вход (#858) — счётчик неудач по email (см.
+     * src/auth/bruteforce.ts). Лимит по IP из security.ts не останавливает
+     * перебор пароля одного аккаунта с разных адресов; этот счётчик — нет.
+     *
+     * Блокировка проверяется до обращения к паролю: заблокированный email не
+     * должен получать никакой информации о том, существует ли пользователь и
+     * верен ли пароль — реагирует только на превышение попыток.
+     */
     login: import("@trpc/server").TRPCMutationProcedure<{
         input: {
             email: string;
