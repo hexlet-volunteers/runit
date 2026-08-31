@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/hexlet-volunteers/runit/compare/v0.2.3...v0.2.4) (2026-08-31)
+
+
+### Features
+
+* **auth:** проверка блокировки, логирование и очистка старых записей ([#858](https://github.com/hexlet-volunteers/runit/issues/858)-4-7) ([#977](https://github.com/hexlet-volunteers/runit/issues/977)) ([220491d](https://github.com/hexlet-volunteers/runit/commit/220491d3f85badc055d2ab3ed3043e28918a4964))
+
 ## [0.2.3](https://github.com/hexlet-volunteers/runit/compare/v0.2.2...v0.2.3) (2026-08-27)
 
 
