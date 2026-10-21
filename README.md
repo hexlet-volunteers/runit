@@ -133,3 +133,4 @@ make lint-fix-backend   # автоисправление
 [![© ООО «Хекслет Рус» logo](https://raw.githubusercontent.com/Hexlet/assets/master/images/hexlet_logo128.png)](https://hexlet.io/?utm_source=github&utm_medium=link&utm_campaign=hexlet-editor)
 
 Этот репозиторий создаётся и поддерживается командой и сообществом © ООО «Хекслет Рус», образовательный проект. [Подробнее о Хекслете](https://hexlet.io/?utm_source=github&utm_medium=link&utm_campaign=hexlet-editor).
+.
