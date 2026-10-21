@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.2.4](https://github.com/hexlet-volunteers/runit/compare/v0.2.3...v0.2.4) (2026-10-21)
+
+
+### Features
+
+* **auth:** проверка блокировки, логирование и очистка старых записей ([#858](https://github.com/hexlet-volunteers/runit/issues/858)-4-7) ([#977](https://github.com/hexlet-volunteers/runit/issues/977)) ([220491d](https://github.com/hexlet-volunteers/runit/commit/220491d3f85badc055d2ab3ed3043e28918a4964))
+
+
+### Bug Fixes
+
+* **security:** доверять прокси по адресу и обновить fastify до 5.12.7 ([#1002](https://github.com/hexlet-volunteers/runit/issues/1002)) ([ad15d3a](https://github.com/hexlet-volunteers/runit/commit/ad15d3a3b1133bdf9a45f486b7d298a21f3e533b))
+
+
+### Miscellaneous
+
+* **tests:** перевести тесты на vitest ([#984](https://github.com/hexlet-volunteers/runit/issues/984)) ([fc525de](https://github.com/hexlet-volunteers/runit/commit/fc525de4e6cb7d492380caca1b0630f4a9d3db92))
+
+
+### Build System
+
+* **deps-dev:** bump vite from 8.2.2 to 8.3.4 ([#998](https://github.com/hexlet-volunteers/runit/issues/998)) ([b9fe78a](https://github.com/hexlet-volunteers/runit/commit/b9fe78a3e6ab9387a741ba8cdd122cdf0b8c6350))
+
 ## [0.2.3](https://github.com/hexlet-volunteers/runit/compare/v0.2.2...v0.2.3) (2026-08-27)
 
 
