@@ -43,7 +43,7 @@ declare const envSchema: z.ZodPipe<z.ZodObject<{
         trace: "trace";
         silent: "silent";
     }>>;
-    TRUST_PROXY_HOPS: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
+    TRUST_PROXY: z.ZodPipe<z.ZodDefault<z.ZodString>, z.ZodTransform<false | string[], string>>;
     COOKIE_SECURE: z.ZodOptional<z.ZodPipe<z.ZodEnum<{
         true: "true";
         false: "false";
@@ -60,7 +60,7 @@ declare const envSchema: z.ZodPipe<z.ZodObject<{
     DATABASE_URL: string;
     DATABASE_POOL_MAX: number;
     CORS_ORIGIN: string;
-    TRUST_PROXY_HOPS: number;
+    TRUST_PROXY: false | string[];
 }, {
     NODE_ENV: "development" | "test" | "production";
     HOST: string;
@@ -68,7 +68,7 @@ declare const envSchema: z.ZodPipe<z.ZodObject<{
     DATABASE_URL: string;
     DATABASE_POOL_MAX: number;
     CORS_ORIGIN: string;
-    TRUST_PROXY_HOPS: number;
+    TRUST_PROXY: false | string[];
     DATABASE_SSL?: "require" | "prefer" | "verify-full" | "off" | undefined;
     JWT_ACCESS_SECRET?: string | undefined;
     JWT_REFRESH_SECRET?: string | undefined;
