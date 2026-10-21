@@ -64,10 +64,12 @@ const getApp = async () => {
      *
      * Без этого fastify не разбирает X-Forwarded-For, а лимитер брал заголовок
      * напрямую — и обходился подстановкой любого значения. Теперь адрес
-     * клиента определяет fastify по числу доверенных хопов: 0 (по умолчанию) —
-     * только адрес сокета, подделать нельзя.
+     * клиента определяет fastify, и заголовку верит, только если запрос пришёл
+     * с адреса доверенного прокси. По умолчанию доверия нет — только адрес
+     * сокета, подделать нельзя. Почему не число хопов — см. TRUST_PROXY в
+     * config/env.ts.
      */
-    trustProxy: env.TRUST_PROXY_HOPS > 0 ? env.TRUST_PROXY_HOPS : false,
+    trustProxy: env.TRUST_PROXY,
     routerOptions: {
       maxParamLength: 1000,
       caseSensitive: false,

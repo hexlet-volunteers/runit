@@ -108,11 +108,11 @@ heroku config:set \
   JWT_ACCESS_SECRET="$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")" \
   JWT_REFRESH_SECRET="$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")" \
   CORS_ORIGIN="https://<приложение>.herokuapp.com" \
-  TRUST_PROXY_HOPS=1 \
+  TRUST_PROXY=uniquelocal \
   DATABASE_POOL_MAX=5
 ```
 
-`TRUST_PROXY_HOPS=1` — перед приложением ровно один прокси, маршрутизатор платформы. С нулём все посетители попадают в одну корзину лимитера, и один скрипт выключает вход для всех. `DATABASE_POOL_MAX=5` — у младшего тарифа PostgreSQL общий предел соединений на все инстансы (у `essential-0` это 20).
+`TRUST_PROXY=uniquelocal` — доверять X-Forwarded-For от маршрутизатора платформы, который приходит из частной сети. Без этого все посетители попадают в одну корзину лимитера, и один скрипт выключает вход для всех. Прежняя переменная `TRUST_PROXY_HOPS` больше не поддерживается: с ней приложение не стартует, её надо удалить (`heroku config:unset TRUST_PROXY_HOPS`, #985). `DATABASE_POOL_MAX=5` — у младшего тарифа PostgreSQL общий предел соединений на все инстансы (у `essential-0` это 20).
 
 ### Перевод боевой базы со схемы TypeORM
 

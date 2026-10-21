@@ -191,8 +191,8 @@ export async function registerSecurity(server: FastifyInstance): Promise<void> {
      * заголовок перезаписывает, все посетители попадали в один бакет, и один
      * скрипт мог выключить вход для всех.
      *
-     * request.ip учитывает заголовок ровно настолько, насколько разрешено
-     * переменной TRUST_PROXY_HOPS.
+     * request.ip учитывает заголовок, только если запрос пришёл от прокси из
+     * переменной TRUST_PROXY.
      */
     keyGenerator: (request: FastifyRequest) => request.ip,
     errorResponseBuilder: (_request, context) => ({
