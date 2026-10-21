@@ -186,8 +186,13 @@ const envSchema = z
      * Старое имя не игнорируем молча: на стенде, где осталось только оно,
      * приложение поднялось бы без доверия прокси, и лимитер снова свёл бы
      * всех посетителей в одну корзину — без единого сообщения в логе.
+     *
+     * Ноль пропускаем: он значил «не доверять», то есть ровно новый дефолт, и
+     * стоял в прежнем .env.example — иначе у каждого, кто его скопировал,
+     * перестал бы запускаться локальный сервер.
      */
-    if (process.env.TRUST_PROXY_HOPS !== undefined) {
+    const legacyHops = process.env.TRUST_PROXY_HOPS;
+    if (legacyHops !== undefined && legacyHops !== '0') {
       ctx.addIssue({
         code: 'custom',
         path: ['TRUST_PROXY_HOPS'],
