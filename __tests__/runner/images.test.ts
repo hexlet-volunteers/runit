@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'vitest';
-import { ensureImages, type ImageDeps, isRemoteImage } from '../../src/runner/images';
-import type { ProcessResult, RunProcessOptions } from '../../src/runner/process';
+import {
+  ensureImages,
+  type ImageDeps,
+  isRemoteImage,
+} from '../../src/runner/images';
+import type {
+  ProcessResult,
+  RunProcessOptions,
+} from '../../src/runner/process';
 
 /**
  * Доставка образов раннера на хост.

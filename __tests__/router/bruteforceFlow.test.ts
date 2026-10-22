@@ -9,7 +9,10 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createTestDatabase, dropTestDatabase } from '../../src/db/testDatabase';
+import {
+  createTestDatabase,
+  dropTestDatabase,
+} from '../../src/db/testDatabase';
 
 const TEST_DATABASE = 'runit_test_bruteforce';
 process.env.DATABASE_URL = await createTestDatabase(TEST_DATABASE);
