@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { looksLikeDaemonProblem } from './availability';
+import { test } from 'vitest';
+import { looksLikeDaemonProblem } from '../../src/runner/availability';
 
 /**
  * Разбор ошибок docker при проверке образа.

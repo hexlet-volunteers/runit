@@ -11,7 +11,11 @@
  * никак не проявлялось — они не доходили до записи в новые таблицы.
  */
 
-import { createTestDatabase, dropTestDatabase } from '../db/testDatabase';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import {
+  createTestDatabase,
+  dropTestDatabase,
+} from '../../src/db/testDatabase';
 
 // Своя база под файл — см. пояснение в db/testDatabase.ts.
 const TEST_DATABASE = 'runit_test_authflow';
@@ -24,10 +28,10 @@ process.env.RATE_LIMIT_AUTH = '500';
 // docker в фоне.
 process.env.RUNNER_ENABLED = 'false';
 
-const { default: getApp } = await import('../index');
-const { closeDbConnection } = await import('../db/connection');
+const { default: getApp } = await import('../../src/index');
+const { closeDbConnection } = await import('../../src/db/connection');
 
-const { CURRENT_CONSENT_VERSION } = await import('../auth/consent');
+const { CURRENT_CONSENT_VERSION } = await import('../../src/auth/consent');
 
 const CREDENTIALS = {
   username: 'flowuser',
@@ -307,8 +311,8 @@ describe('регистрация, вход и сессия', () => {
   });
 
   test('версия и дата согласия сохраняются', async () => {
-    const { db } = await import('../db/connection');
-    const { users } = await import('../db/schema/schema');
+    const { db } = await import('../../src/db/connection');
+    const { users } = await import('../../src/db/schema/schema');
     const { eq } = await import('drizzle-orm');
 
     const [row] = await db

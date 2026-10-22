@@ -2,7 +2,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "types": ["vitest/globals", "node"],
-    "noEmit": true
+    "noEmit": true,
+    "rootDir": "."
   },
   // Объявления типов (*.d.ts) включены наравне с тестами, потому что иначе
   // расширения интерфейсов до этой проверки не доходят. Тесты тянут за собой
@@ -10,6 +11,6 @@
   // на `Property 'isAppPage' does not exist on type 'FastifyRequest'`, хотя
   // основной tsc проходил. Тот же разрыв ждал global.d.ts (декларация для
   // *.svg) — первый же тест, задевший импорт картинки, упёрся бы в него.
-  "include": ["src/**/*.test.ts", "src/**/*.d.ts"],
+  "include": ["__tests__/**/*.test.ts", "src/**/*.d.ts"],
   "exclude": ["node_modules", "dist", "types"]
 }

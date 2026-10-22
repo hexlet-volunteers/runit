@@ -1,9 +1,10 @@
+import { describe, expect, test } from 'vitest';
 import {
   hashPassword,
   isPasswordReused,
   validatePasswordPolicy,
   verifyPassword,
-} from './password';
+} from '../../src/auth/password';
 
 describe('validatePasswordPolicy', () => {
   test('отклоняет пароль короче 8 символов', () => {
