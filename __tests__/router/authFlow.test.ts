@@ -12,7 +12,10 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createTestDatabase, dropTestDatabase } from '../../src/db/testDatabase';
+import {
+  createTestDatabase,
+  dropTestDatabase,
+} from '../../src/db/testDatabase';
 
 // Своя база под файл — см. пояснение в db/testDatabase.ts.
 const TEST_DATABASE = 'runit_test_authflow';

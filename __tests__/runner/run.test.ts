@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import { test } from 'vitest';
 import { readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { test } from 'vitest';
 import { runnerConfig } from '../../src/runner/config';
 import type { ProcessResult } from '../../src/runner/process';
 import { type RunDeps, runCode } from '../../src/runner/run';
