@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.6](https://github.com/hexlet-volunteers/runit/compare/v0.2.5...v0.2.6) (2026-11-01)
+
+
+### Build System
+
+* **deps-dev:** bump js-yaml from 4.3.1 to 4.3.2 in /frontend ([#988](https://github.com/hexlet-volunteers/runit/issues/988)) ([eafb5a6](https://github.com/hexlet-volunteers/runit/commit/eafb5a61785da608c21e45524634024f7f68a2f4))
+
 ## [0.2.5](https://github.com/hexlet-volunteers/runit/compare/v0.2.4...v0.2.5) (2026-11-01)
 
 
