@@ -6,7 +6,8 @@
  * выглядит не как ошибка, а как «логин не запоминается».
  */
 
-import { resolveCookieSecure, resolveLogLevel } from './env';
+import { describe, expect, test } from 'vitest';
+import { resolveCookieSecure, resolveLogLevel } from '../../src/config/env';
 
 describe('resolveCookieSecure', () => {
   test('в production Secure включён по умолчанию', () => {

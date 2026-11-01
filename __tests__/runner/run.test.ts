@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { runnerConfig } from './config';
-import type { ProcessResult } from './process';
-import { type RunDeps, runCode } from './run';
+import { test } from 'vitest';
+import { runnerConfig } from '../../src/runner/config';
+import type { ProcessResult } from '../../src/runner/process';
+import { type RunDeps, runCode } from '../../src/runner/run';
 
 const okDeps = (result: Partial<ProcessResult>): RunDeps => ({
   checkDaemon: async () => ({ ok: true }),

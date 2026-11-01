@@ -12,7 +12,8 @@
  * в rateLimitTrustProxy.test.ts, окружение читается один раз на файл.
  */
 
-import { createTestDatabase, dropTestDatabase } from './db/testDatabase';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createTestDatabase, dropTestDatabase } from '../src/db/testDatabase';
 
 const TEST_DATABASE = 'runit_test_ratelimit';
 process.env.DATABASE_URL = await createTestDatabase(TEST_DATABASE);
@@ -20,8 +21,8 @@ process.env.DATABASE_URL = await createTestDatabase(TEST_DATABASE);
 process.env.RATE_LIMIT_AUTH = '2';
 process.env.RUNNER_ENABLED = 'false';
 
-const { default: getApp } = await import('./index');
-const { closeDbConnection } = await import('./db/connection');
+const { default: getApp } = await import('../src/index');
+const { closeDbConnection } = await import('../src/db/connection');
 
 let app: Awaited<ReturnType<typeof getApp>>;
 

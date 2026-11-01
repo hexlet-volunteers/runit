@@ -1,10 +1,11 @@
-import type { LoginAttempt } from '../db/schema/schema';
+import { describe, expect, test } from 'vitest';
 import {
   isLockedOut,
   LOCKOUT_DURATION_MS,
   LOCKOUT_THRESHOLD,
   secondsUntilUnlock,
-} from './bruteforce';
+} from '../../src/auth/bruteforce';
+import type { LoginAttempt } from '../../src/db/schema/schema';
 
 function makeAttempt(
   overrides: { failedCount?: number; lastFailedAt?: Date } = {},

@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
-import { ensureImages, type ImageDeps, isRemoteImage } from './images';
-import type { ProcessResult, RunProcessOptions } from './process';
+import { test } from 'vitest';
+import {
+  ensureImages,
+  type ImageDeps,
+  isRemoteImage,
+} from '../../src/runner/images';
+import type {
+  ProcessResult,
+  RunProcessOptions,
+} from '../../src/runner/process';
 
 /**
  * Доставка образов раннера на хост.
@@ -63,7 +71,7 @@ test('существующий образ не скачивается занов
 
 test('отсутствующий образ из реестра скачивается', async () => {
   process.env.RUNNER_IMAGE_PREFIX = 'ghcr.io/hexlet-volunteers/runit-runner';
-  const { runnerConfig } = await import('./config');
+  const { runnerConfig } = await import('../../src/runner/config');
   // config читается один раз при импорте, поэтому правим уже собранное значение.
   runnerConfig.imagePrefix = 'ghcr.io/hexlet-volunteers/runit-runner';
 
@@ -81,7 +89,7 @@ test('отсутствующий образ из реестра скачивае
 });
 
 test('неудачное скачивание не бросает исключение, а объясняет причину', async () => {
-  const { runnerConfig } = await import('./config');
+  const { runnerConfig } = await import('../../src/runner/config');
   runnerConfig.imagePrefix = 'ghcr.io/hexlet-volunteers/runit-runner';
 
   const { deps } = depsFor((args) =>
@@ -97,7 +105,7 @@ test('неудачное скачивание не бросает исключе
 });
 
 test('локальный образ не пытаются тянуть из сети', async () => {
-  const { runnerConfig } = await import('./config');
+  const { runnerConfig } = await import('../../src/runner/config');
   runnerConfig.imagePrefix = 'runit-runner';
 
   const { deps, calls } = depsFor(() => result({ exitCode: 1 }));

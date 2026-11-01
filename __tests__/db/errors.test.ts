@@ -1,4 +1,8 @@
-import { isUniqueViolationOn, uniqueViolationConstraint } from './errors';
+import { describe, expect, test } from 'vitest';
+import {
+  isUniqueViolationOn,
+  uniqueViolationConstraint,
+} from '../../src/db/errors';
 
 /**
  * Разбор ошибок уникальности. Проверяется отдельно, потому что ошибка здесь не

@@ -7,7 +7,8 @@
  * поэтому значения из них убраны, а имя процедуры (оно в пути) осталось.
  */
 
-import { sanitizeUrl } from './monitoring';
+import { describe, expect, test } from 'vitest';
+import { sanitizeUrl } from '../src/monitoring';
 
 describe('sanitizeUrl', () => {
   test('убирает значения параметров, оставляя путь', () => {

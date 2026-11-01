@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { runnerConfig } from './config';
-import { buildDockerArgs } from './dockerArgs';
-import { LANGUAGE_SPECS, specFor } from './languages';
-import type { RunLimits, RunnerLanguage } from './types';
+import { test } from 'vitest';
+import { runnerConfig } from '../../src/runner/config';
+import { buildDockerArgs } from '../../src/runner/dockerArgs';
+import { LANGUAGE_SPECS, specFor } from '../../src/runner/languages';
+import type { RunLimits, RunnerLanguage } from '../../src/runner/types';
 
 /**
  * Полный набор лимитов. Раньше здесь не было maxFileBytes, и для языков без
