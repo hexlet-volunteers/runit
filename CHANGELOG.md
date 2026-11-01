@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.5](https://github.com/hexlet-volunteers/runit/compare/v0.2.4...v0.2.5) (2026-11-01)
+
+
+### Build System
+
+* **deps-dev:** bump brace-expansion from 1.1.18 to 1.1.21 in /frontend ([#993](https://github.com/hexlet-volunteers/runit/issues/993)) ([22da290](https://github.com/hexlet-volunteers/runit/commit/22da290f05839af57fb3a854d25e965cb1f18323))
+* **deps-dev:** bump browserslist from 4.25.4 to 4.29.5 in /frontend ([#982](https://github.com/hexlet-volunteers/runit/issues/982)) ([0ba8ba4](https://github.com/hexlet-volunteers/runit/commit/0ba8ba4255707b8a42f53f3bec23572227406581))
+* **deps-dev:** bump postcss-selector-parser from 7.1.4 to 7.1.7 in /frontend ([#996](https://github.com/hexlet-volunteers/runit/issues/996)) ([3225deb](https://github.com/hexlet-volunteers/runit/commit/3225debe39353de958854158811649f275d4e9af))
+* **deps-dev:** bump vite from 7.3.6 to 7.3.7 in /frontend ([#999](https://github.com/hexlet-volunteers/runit/issues/999)) ([f58ae3f](https://github.com/hexlet-volunteers/runit/commit/f58ae3fe293d3797a1dfc43fa721a783800a1f06))
+* **deps:** bump @vitest/mocker, @vitest/coverage-v8 and vitest in /frontend ([#1003](https://github.com/hexlet-volunteers/runit/issues/1003)) ([8206dab](https://github.com/hexlet-volunteers/runit/commit/8206dab1a8a423738e74d2cca9bfdf85dc5a7e6c))
+* **deps:** bump source-map-js from 1.2.1 to 1.2.2 in /frontend ([#1001](https://github.com/hexlet-volunteers/runit/issues/1001)) ([066c7c7](https://github.com/hexlet-volunteers/runit/commit/066c7c7571e2b5130532976d9e2ae40d36d2bd9a))
+
 ## [0.2.4](https://github.com/hexlet-volunteers/runit/compare/v0.2.3...v0.2.4) (2026-10-21)
 
 
