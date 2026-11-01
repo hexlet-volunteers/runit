@@ -49,9 +49,9 @@ export declare const createSnippetSchema: z.ZodObject<{
     }>>;
 }, z.core.$strip>;
 export declare const updateSnippetSchema: z.ZodObject<{
-    name: z.ZodOptional<z.ZodString>;
     code: z.ZodOptional<z.ZodString>;
-    slug: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    name: z.ZodOptional<z.ZodString>;
+    id: z.ZodNumber;
     language: z.ZodOptional<z.ZodEnum<{
         javascript: "javascript";
         typescript: "typescript";
@@ -66,13 +66,8 @@ export declare const updateSnippetSchema: z.ZodObject<{
         html: "html";
         css: "css";
     }>>;
-    visibility: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
-        private: "private";
-        link: "link";
-        public: "public";
-    }>>>;
-    id: z.ZodNumber;
-}, z.core.$strip>;
+    slug: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+}, z.core.$strict>;
 /**
  * Идентификаторы — целые положительные. `int()` здесь не украшение: столбцы
  * объявлены как serial, и дробное значение (id=1.5, пришедшее из адреса или

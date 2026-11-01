@@ -51,9 +51,13 @@ export const createSnippetSchema = z.object({
   visibility: visibilitySchema.optional(),
 });
 
-export const updateSnippetSchema = createSnippetSchema.partial().extend({
-  id: z.number().int().positive(),
-});
+export const updateSnippetSchema = createSnippetSchema
+  .partial()
+  .extend({
+    id: z.number().int().positive(),
+  })
+  .omit({ visibility: true })
+  .strict();
 
 /**
  * Идентификаторы — целые положительные. `int()` здесь не украшение: столбцы
