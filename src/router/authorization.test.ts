@@ -323,6 +323,17 @@ describe('изменение сниппетов', () => {
     });
     expect(updated.code).toBe('console.log(42)');
   });
+
+  test('updateSnippet отклоняет изменение видимости', async () => {
+    const input = {
+      id: privateSnippetId,
+      visibility: 'public' as const,
+    };
+
+    await expect(owner.snippets.updateSnippet(input)).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    });
+  });
 });
 
 describe('пользователи', () => {
