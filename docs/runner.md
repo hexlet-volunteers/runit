@@ -26,7 +26,7 @@ npm run runner:pull-images
 Юнит-тесты раннера (не требуют ни Docker, ни PostgreSQL):
 
 ```bash
-npm test -- src/runner
+npm test -- __tests__/runner
 ```
 
 Реальное исполнение всех языков проверяется смоуком — ему нужен запущенный Docker и собранные образы:
