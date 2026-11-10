@@ -54,14 +54,42 @@ export function snippetUrl(source: SnippetLinkSource): string {
 /** Абсолютная ссылка на виджет. */
 export function embedUrl(
   source: SnippetLinkSource,
-  params?: { theme?: string; height?: number },
+  params?: {
+    theme?: string;
+    height?: number;
+    output?: boolean;
+    readonly?: boolean;
+    autorun?: boolean;
+  },
 ): string {
   const path = embedPath(source);
+
   if (!path) return '';
+
   const query = new URLSearchParams();
-  if (params?.theme) query.set('theme', params.theme);
-  if (params?.height) query.set('height', String(params.height));
+
+  if (params?.theme) {
+    query.set('theme', params.theme);
+  }
+
+  if (params?.height) {
+    query.set('height', String(params.height));
+  }
+
+  if (params?.output !== undefined) {
+    query.set('output', params.output ? '1' : '0');
+  }
+
+  if (params?.readonly !== undefined) {
+    query.set('readonly', params.readonly ? '1' : '0');
+  }
+
+  if (params?.autorun !== undefined) {
+    query.set('autorun', params.autorun ? '1' : '0');
+  }
+
   const suffix = query.toString();
+
   return `${publicBaseUrl()}${path}${suffix ? `?${suffix}` : ''}`;
 }
 
