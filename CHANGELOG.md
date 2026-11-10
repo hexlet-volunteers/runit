@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.7](https://github.com/hexlet-volunteers/runit/compare/v0.2.6...v0.2.7) (2026-11-10)
+
+
+### Miscellaneous
+
+* **tests:** перенести тесты в __tests__ и исправить импорты ([#997](https://github.com/hexlet-volunteers/runit/issues/997)) ([05265d9](https://github.com/hexlet-volunteers/runit/commit/05265d918a0e8172771020a6c6bec94a292ffe8f))
+
 ## [0.2.6](https://github.com/hexlet-volunteers/runit/compare/v0.2.5...v0.2.6) (2026-11-01)
 
 
