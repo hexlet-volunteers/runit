@@ -1,4 +1,5 @@
-import { emailSchema } from './email';
+import { describe, expect, test } from 'vitest';
+import { emailSchema } from '../../src/auth/email';
 
 describe('emailSchema', () => {
   test('принимает простой валидный email', () => {

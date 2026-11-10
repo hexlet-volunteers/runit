@@ -10,7 +10,11 @@
  * забыть middleware в новой процедуре легко, и снаружи это никак не видно.
  */
 
-import { createTestDatabase, dropTestDatabase } from '../db/testDatabase';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import {
+  createTestDatabase,
+  dropTestDatabase,
+} from '../../src/db/testDatabase';
 
 // Своя база под этот файл, и создать её нужно до импорта connection.ts:
 // соединение открывается на уровне модуля, и подменить адрес позже нельзя.
@@ -18,11 +22,15 @@ const TEST_DATABASE = 'runit_test_authz';
 process.env.DATABASE_URL = await createTestDatabase(TEST_DATABASE);
 
 const { db, runMigrations, closeDbConnection } = await import(
-  '../db/connection'
+  '../../src/db/connection'
 );
-const { users, snippets, userSettings } = await import('../db/schema/schema');
-const { appRouter } = await import('./index');
-const { hashPassword, verifyPassword } = await import('../auth/password');
+const { users, snippets, userSettings } = await import(
+  '../../src/db/schema/schema'
+);
+const { appRouter } = await import('../../src/router/index');
+const { hashPassword, verifyPassword } = await import(
+  '../../src/auth/password'
+);
 const { eq } = await import('drizzle-orm');
 
 type Caller = ReturnType<typeof appRouter.createCaller>;

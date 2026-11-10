@@ -32,7 +32,7 @@ npm run lint && npx tsc --noEmit && npx tsc --noEmit -p tsconfig.test.json && np
 
 Проверок типов две: основная и `-p tsconfig.test.json`. Основной конфиг исключает `*.test.ts`, и ошибка, проходящая мимо первой проверки и валящая вторую, уже случалась (#945).
 
-`npm test` — это vitest, один прогон на весь бэкенд. Нужна живая PostgreSQL: `docker compose up -d db`. Части набора запускаются так же, через `--`: `npm test -- src/runner` (тесты раннера, им не нужны ни Docker, ни база) и `npm test -- --exclude 'src/runner/**'` (всё остальное). Фронтенд проверяется отдельно, из `frontend/`: `npx tsc --noEmit && npm test`.
+`npm test` — это vitest, один прогон на весь бэкенд. Нужна живая PostgreSQL: `docker compose up -d db`. Части набора запускаются так же, через `--`: `npm test -- __tests__/runner` (тесты раннера, им не нужны ни Docker, ни база) и `npm test -- --exclude '__tests__/runner/**'` (всё остальное). Фронтенд проверяется отдельно, из `frontend/`: `npx tsc --noEmit && npm test`.
 
 Зависимости ставятся через `npm ci`. Обычный `npm install` поверх существующего `node_modules` вычищает из `package-lock.json` платформенные пакеты — те, что помечены `os` и `cpu` и подключены через `optionalDependencies` ([npm/cli#4828](https://github.com/npm/cli/issues/4828), [npm/cli#7961](https://github.com/npm/cli/issues/7961)). В этом дереве их сорок один: 26 у esbuild (его тянут `drizzle-kit`, `tsx` и `vite`) и 15 у rolldown. Пропажа не видна локально — на своей платформе всё уже распаковано, и `npm ci` проходит, — но сломанный lockfile уезжает в коммит и роняет CI на linux. Проверять это надо на чистом дереве: `rm -rf node_modules && npm ci`.
 

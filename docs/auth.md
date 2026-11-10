@@ -28,7 +28,7 @@
 Тесты прав доступа. Docker не нужен, но нужна запущенная PostgreSQL: каждый тестовый файл создаёт себе отдельную базу и удаляет её после прогона (vitest запускает файлы параллельно, и общая база означала бы, что тесты видят чужие строки).
 
 ```bash
-npm test -- --exclude 'src/runner/**'
+npm test -- --exclude '__tests__/runner/**'
 ```
 
-`src/router/authorization.test.ts` проверяет права на уровне процедур, `src/router/authFlow.test.ts` — полный цикл по HTTP: регистрация, вход, cookie, CSRF, смена пароля, выход.
+`__tests__/router/authorization.test.ts` проверяет права на уровне процедур, `__tests__/router/authFlow.test.ts` — полный цикл по HTTP: регистрация, вход, cookie, CSRF, смена пароля, выход.
