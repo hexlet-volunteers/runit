@@ -48,6 +48,13 @@ export declare const createSnippetSchema: z.ZodObject<{
         public: "public";
     }>>;
 }, z.core.$strip>;
+/**
+ * Видимость здесь не меняется: для этого есть отдельная процедура
+ * setVisibility. Пока поле проходило схему, updateSnippet отвечал успехом
+ * и молча выбрасывал его — автор считал сниппет опубликованным, а тот
+ * оставался приватным (#969). `strict()` превращает такой вызов в
+ * BAD_REQUEST, а не в тихое «сохранено».
+ */
 export declare const updateSnippetSchema: z.ZodObject<{
     code: z.ZodOptional<z.ZodString>;
     name: z.ZodOptional<z.ZodString>;
