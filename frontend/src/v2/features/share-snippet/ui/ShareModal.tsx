@@ -13,6 +13,7 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
+import { editorColors } from '../../../shared/theme';
 import type { Props } from '../types';
 import { useShareModal } from '../model/useShareModal';
 
@@ -174,9 +175,9 @@ export default function ShareModal({
             style={{
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-all',
-              backgroundColor: '#1a1b26',
+              backgroundColor: editorColors.bg,
               color: '#9ece6a',
-              border: '1px solid #2a2b3a',
+              border: `1px solid ${editorColors.border}`,
             }}
           >
             {embedCode}

@@ -7,8 +7,13 @@ import EmbedHeader from './EmbedHeader';
 import EmbedEditor from './EmbedEditor';
 import EmbedOutput from './EmbedOutput';
 
+// Компактный embed-виджет (без AppHeader/AppFooter — страница живёт внутри iframe).
+// TODO(#841): варианты оформления card/minimal/tabs (query-параметр variant).
 export default function EmbedSnippet() {
   const {
+    shortCode,
+    username,
+    slug,
     isDark,
     widgetHeight,
     showOutput,
@@ -62,10 +67,12 @@ export default function EmbedSnippet() {
     currentSnippet.language,
   );
 
+  // Как и на странице шаринга: на роуте короткой ссылки username и slug пусты,
+  // поэтому путь строится из данных сниппета, а параметры адреса — запасной вариант.
   const shareHref = snippetPath({
-    shortCode: currentSnippet.shortCode,
-    authorUsername: currentSnippet.authorUsername,
-    slug: currentSnippet.slug,
+    shortCode: shortCode ?? currentSnippet.shortCode,
+    authorUsername: currentSnippet.authorUsername ?? username,
+    slug: currentSnippet.slug ?? slug,
   });
 
   const runSnippet = () => {
@@ -87,6 +94,7 @@ export default function EmbedSnippet() {
     >
       <EmbedHeader
         snippet={currentSnippet}
+        colors={colors}
         fileName={fileName}
         shareHref={shareHref}
         running={running}

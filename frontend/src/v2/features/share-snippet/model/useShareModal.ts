@@ -23,9 +23,19 @@ export function useShareModal({
   const [showOutput, setShowOutput] = useState(true);
   const [readOnly, setReadOnly] = useState(false);
   const [autorun, setAutorun] = useState(false);
+  // Оптимистичное состояние тумблера: сервер подтверждает мутацией.
   const [shared, setShared] = useState((visibility ?? 'private') !== 'private');
   const [saving, setSaving] = useState(false);
 
+  /**
+   * Ссылки строит общий модуль (shared/lib/snippetLinks), а не эта модалка.
+   *
+   * Раньше адрес брался из window.location.origin — то есть скопированный код
+   * содержал адрес того окружения, где его скопировали: со стейджинга или с
+   * localhost:3000 такой iframe на чужом сайте не открывался вообще. Общий
+   * модуль знает про VITE_PUBLIC_BASE_URL и про то, что короткая ссылка
+   * каноническая.
+   */
   const linkSource = { shortCode, username, slug };
   const pagePath = shortCode ? `/s/${shortCode}` : `/s/${username}/${slug}`;
   const shareUrl = snippetUrl(linkSource);

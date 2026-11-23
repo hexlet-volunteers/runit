@@ -31,13 +31,17 @@ export function useEmbedSnippet() {
 
   const [result, setResult] = useState<RunResult | null>(null);
   const [running, setRunning] = useState(false);
+  // Счётчик запусков превью вёрстки: инкремент форсирует перерисовку iframe.
   const [runKey, setRunKey] = useState(0);
   const [code, setCode] = useState('');
 
+  // Автозапуск один раз на загрузку: без флага повторный приход данных
+  // из кеша react-query снова отправлял бы код в раннер.
   const autoRunRef = useRef(false);
 
   const trpc = useTRPCClient();
 
+  // Источник данных зависит от вида ссылки: короткая /s/:code или /s/:user/:slug.
   const byShortCode = useSnippetByShortCode(shortCode);
   const bySlug = useSnippetBySlug(
     shortCode ? '' : username,
@@ -57,6 +61,7 @@ export function useEmbedSnippet() {
   }, [snippet]);
 
   const run = async (s: Snippet, codeToRun = code) => {
+    // html/css показываем как страницу, а не как вывод в консоль (#853).
     if (isPreviewLanguage(s.language)) {
       setRunKey((key) => key + 1);
       return;
@@ -92,6 +97,9 @@ export function useEmbedSnippet() {
   }, [autorun, snippet]);
 
   return {
+    shortCode,
+    username,
+    slug,
     theme,
     isDark,
     widgetHeight,

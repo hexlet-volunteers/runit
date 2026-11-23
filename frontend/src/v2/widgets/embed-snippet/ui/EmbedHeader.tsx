@@ -4,6 +4,8 @@ import { langMeta } from '../../../shared/theme';
 
 type Props = {
   snippet: Snippet;
+  /** Цвета рамки виджета: без них в тёмной теме имя файла сливается с фоном. */
+  colors: { text: string; dim: string; border: string };
   fileName: string;
   shareHref: string;
   running: boolean;
@@ -12,6 +14,7 @@ type Props = {
 
 export default function EmbedHeader({
   snippet,
+  colors,
   fileName,
   shareHref,
   running,
@@ -24,10 +27,10 @@ export default function EmbedHeader({
       justify="space-between"
       px="md"
       py={8}
-      style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+      style={{ borderBottom: `1px solid ${colors.border}` }}
     >
       <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
-        <Text ff="monospace" fz="sm" truncate>
+        <Text ff="monospace" fz="sm" c={colors.text} truncate>
           {fileName}
         </Text>
 
@@ -42,7 +45,7 @@ export default function EmbedHeader({
           }}
         />
 
-        <Text fz="xs" c="dimmed" visibleFrom="xs">
+        <Text fz="xs" c={colors.dim} visibleFrom="xs">
           {meta?.label ?? snippet.language}
         </Text>
       </Group>
