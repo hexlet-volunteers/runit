@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.8](https://github.com/hexlet-volunteers/runit/compare/v0.2.7...v0.2.8) (2026-11-23)
+
+
+### Build System
+
+* **deps:** bump minimatch and @fastify/static ([#1009](https://github.com/hexlet-volunteers/runit/issues/1009)) ([b8f3016](https://github.com/hexlet-volunteers/runit/commit/b8f3016c6671918bfd171d38fdea6f5b0dce1749))
+
 ## [0.2.7](https://github.com/hexlet-volunteers/runit/compare/v0.2.6...v0.2.7) (2026-11-10)
 
 
