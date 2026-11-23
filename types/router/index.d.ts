@@ -312,11 +312,10 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         updateSnippet: import("@trpc/server").TRPCMutationProcedure<{
             input: {
                 id: number;
-                name?: string | undefined;
                 code?: string | undefined;
-                slug?: string | undefined;
+                name?: string | undefined;
                 language?: "javascript" | "typescript" | "python" | "php" | "ruby" | "java" | "go" | "cpp" | "sql" | "bash" | "html" | "css" | undefined;
-                visibility?: "private" | "link" | "public" | undefined;
+                slug?: string | undefined;
             };
             output: {
                 code: string;

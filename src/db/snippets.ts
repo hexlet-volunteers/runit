@@ -51,9 +51,20 @@ export const createSnippetSchema = z.object({
   visibility: visibilitySchema.optional(),
 });
 
-export const updateSnippetSchema = createSnippetSchema.partial().extend({
-  id: z.number().int().positive(),
-});
+/**
+ * Видимость здесь не меняется: для этого есть отдельная процедура
+ * setVisibility. Пока поле проходило схему, updateSnippet отвечал успехом
+ * и молча выбрасывал его — автор считал сниппет опубликованным, а тот
+ * оставался приватным (#969). `strict()` превращает такой вызов в
+ * BAD_REQUEST, а не в тихое «сохранено».
+ */
+export const updateSnippetSchema = createSnippetSchema
+  .partial()
+  .extend({
+    id: z.number().int().positive(),
+  })
+  .omit({ visibility: true })
+  .strict();
 
 /**
  * Идентификаторы — целые положительные. `int()` здесь не украшение: столбцы
