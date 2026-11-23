@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.9](https://github.com/hexlet-volunteers/runit/compare/v0.2.8...v0.2.9) (2026-11-23)
+
+
+### Bug Fixes
+
+* **snippets:** отклонять изменение видимости через updateSnippet ([#1004](https://github.com/hexlet-volunteers/runit/issues/1004)) ([ee0f347](https://github.com/hexlet-volunteers/runit/commit/ee0f3473efc9de6733828cdc1942916a17b4beea))
+
 ## [0.2.8](https://github.com/hexlet-volunteers/runit/compare/v0.2.7...v0.2.8) (2026-11-23)
 
 
