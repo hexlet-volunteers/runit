@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { notifications } from '@mantine/notifications';
 import { copyToClipboard, embedUrl, snippetUrl } from '../../../shared/lib';
 import { useTRPCClient } from '../../../shared/api';
@@ -25,6 +25,11 @@ export function useShareModal({
   const [autorun, setAutorun] = useState(false);
   // Оптимистичное состояние тумблера: сервер подтверждает мутацией.
   const [shared, setShared] = useState((visibility ?? 'private') !== 'private');
+
+  useEffect(() => {
+    setShared((visibility ?? 'private') !== 'private');
+  }, [visibility]);
+
   const [saving, setSaving] = useState(false);
 
   /**
@@ -40,15 +45,21 @@ export function useShareModal({
   const pagePath = shortCode ? `/s/${shortCode}` : `/s/${username}/${slug}`;
   const shareUrl = snippetUrl(linkSource);
 
+  const parsedHeight = Number(height);
+  const safeHeight =
+    Number.isFinite(parsedHeight) && parsedHeight > 0
+      ? parsedHeight
+      : 380;
+
   const embedSrc = embedUrl(linkSource, {
     theme,
-    height: Number(height),
+    height: safeHeight,
     output: showOutput,
     readonly: readOnly,
     autorun,
   });
 
-  const embedCode = `<iframe src="${embedSrc}" width="100%" height="${height}" style="border:0;border-radius:12px" title="Runit"></iframe>`;
+  const embedCode = `<iframe src="${embedSrc}" width="100%" height="${safeHeight}" style="border:0;border-radius:12px" title="Runit"></iframe>`;
 
   const toggleShared = async (next: boolean) => {
     if (snippetId == null) return;
@@ -67,7 +78,9 @@ export function useShareModal({
           ? 'Сниппет доступен по ссылке'
           : 'Сниппет снова приватный',
       });
-    } catch {
+    } catch (error) {
+      console.error('Не удалось изменить доступ к сниппету:', error);
+
       setShared(!next);
 
       notifications.show({

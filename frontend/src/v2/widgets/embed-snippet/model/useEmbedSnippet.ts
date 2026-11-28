@@ -84,6 +84,8 @@ export function useEmbedSnippet() {
           client: trpc,
         }),
       );
+    } catch (error) {
+      console.error('Не удалось выполнить сниппет:', error);
     } finally {
       setRunning(false);
     }
