@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link } from 'react-router';
 import {
   Anchor,
@@ -14,10 +13,9 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
-import { copyToClipboard, embedUrl, snippetUrl } from '../../../shared/lib';
-import { useTRPCClient } from '../../../shared/api';
-import { type Props } from '..'
+import { editorColors } from '../../../shared/theme';
+import type { Props } from '../types';
+import { useShareModal } from '../model/useShareModal';
 
 /** Модальное окно со ссылкой на сниппет и кодом для встраивания на сайт. */
 export default function ShareModal({
@@ -30,54 +28,41 @@ export default function ShareModal({
   shortCode,
   visibility,
 }: Props) {
-  const trpc = useTRPCClient();
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [height, setHeight] = useState('380');
-  // Оптимистичное состояние тумблера: сервер подтверждает мутацией.
-  const [shared, setShared] = useState((visibility ?? 'private') !== 'private');
-  const [saving, setSaving] = useState(false);
-
-  /**
-   * Ссылки строит общий модуль (shared/lib/snippetLinks), а не эта модалка.
-   *
-   * Раньше адрес брался из window.location.origin — то есть скопированный код
-   * содержал адрес того окружения, где его скопировали: со стейджинга или с
-   * localhost:3000 такой iframe на чужом сайте не открывался вообще. Общий
-   * модуль знает про VITE_PUBLIC_BASE_URL и про то, что короткая ссылка
-   * каноническая.
-   */
-  const linkSource = { shortCode, username, slug };
-  const pagePath = shortCode ? `/s/${shortCode}` : `/s/${username}/${slug}`;
-  const shareUrl = snippetUrl(linkSource);
-  const embedSrc = embedUrl(linkSource, { theme, height: Number(height) });
-  const embedCode = `<iframe src="${embedSrc}" width="100%" height="${height}" style="border:0;border-radius:12px" title="Runit"></iframe>`;
-
-  /** Публикация и снятие публикации. */
-  const toggleShared = async (next: boolean) => {
-    if (snippetId == null) return;
-    setShared(next);
-    setSaving(true);
-    try {
-      await trpc.snippets.setVisibility.mutate({
-        id: snippetId,
-        visibility: next ? 'link' : 'private',
-      });
-      notifications.show({
-        message: next ? 'Сниппет доступен по ссылке' : 'Сниппет снова приватный',
-      });
-    } catch {
-      setShared(!next);
-      notifications.show({ message: 'Не удалось изменить доступ', color: 'red' });
-    } finally {
-      setSaving(false);
-    }
-  };
+  const {
+    theme,
+    setTheme,
+    height,
+    setHeight,
+    showOutput,
+    setShowOutput,
+    readOnly,
+    setReadOnly,
+    autorun,
+    setAutorun,
+    shared,
+    saving,
+    pagePath,
+    shareUrl,
+    embedCode,
+    toggleShared,
+    copyToClipboard,
+  } = useShareModal({
+    username,
+    slug,
+    snippetId,
+    shortCode,
+    visibility,
+  });
 
   return (
     <Modal
       opened={opened}
       onClose={onClose}
-      title={<Text fw={800} fz="lg">Поделиться сниппетом</Text>}
+      title={
+        <Text fw={800} fz="lg">
+          Поделиться сниппетом
+        </Text>
+      }
       centered
       radius="lg"
       size="lg"
@@ -101,11 +86,22 @@ export default function ShareModal({
         </Group>
 
         <div>
-          <Text fz={11} fw={700} c="dimmed" mb={6} style={{ letterSpacing: '0.08em' }}>
+          <Text
+            fz={11}
+            fw={700}
+            c="dimmed"
+            mb={6}
+            style={{ letterSpacing: '0.08em' }}
+          >
             ССЫЛКА
           </Text>
           <Group gap="sm" wrap="nowrap">
-            <TextInput value={shareUrl} readOnly style={{ flex: 1 }} ff="monospace" />
+            <TextInput
+              value={shareUrl}
+              readOnly
+              style={{ flex: 1 }}
+              ff="monospace"
+            />
             <Button
               variant="light"
               disabled={!shared}
@@ -124,7 +120,13 @@ export default function ShareModal({
         <Divider />
 
         <div>
-          <Text fz={11} fw={700} c="dimmed" mb={6} style={{ letterSpacing: '0.08em' }}>
+          <Text
+            fz={11}
+            fw={700}
+            c="dimmed"
+            mb={6}
+            style={{ letterSpacing: '0.08em' }}
+          >
             ВСТРОИТЬ НА САЙТ
           </Text>
           <Group gap="sm" mb="sm">
@@ -148,8 +150,36 @@ export default function ShareModal({
               allowDeselect={false}
             />
           </Group>
-          {/* TODO(#841): опции «Показывать результат / Только чтение / Автозапуск» для embed */}
-          <Code block style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+          <Stack gap="xs" mb="md">
+            <Switch
+              label="Показывать результат"
+              checked={showOutput}
+              onChange={(event) => setShowOutput(event.currentTarget.checked)}
+            />
+
+            <Switch
+              label="Только чтение"
+              checked={readOnly}
+              onChange={(event) => setReadOnly(event.currentTarget.checked)}
+            />
+
+            <Switch
+              label="Автозапуск"
+              checked={autorun}
+              onChange={(event) => setAutorun(event.currentTarget.checked)}
+            />
+          </Stack>
+
+          <Code
+            block
+            style={{
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all',
+              backgroundColor: editorColors.bg,
+              color: '#9ece6a',
+              border: `1px solid ${editorColors.border}`,
+            }}
+          >
             {embedCode}
           </Code>
           <Group justify="space-between" mt="sm">
@@ -167,7 +197,9 @@ export default function ShareModal({
             <Button
               variant="default"
               disabled={!shared}
-              onClick={() => copyToClipboard(embedCode, 'Код для вставки скопирован')}
+              onClick={() =>
+                copyToClipboard(embedCode, 'Код для вставки скопирован')
+              }
             >
               Копировать код
             </Button>
@@ -179,15 +211,27 @@ export default function ShareModal({
         {/* Встраивание по ссылке (oEmbed) — как у YouTube: площадка сама
             разворачивает ссылку в виджет, iframe писать не нужно. */}
         <div>
-          <Text fz={11} fw={700} c="dimmed" mb={6} style={{ letterSpacing: '0.08em' }}>
+          <Text
+            fz={11}
+            fw={700}
+            c="dimmed"
+            mb={6}
+            style={{ letterSpacing: '0.08em' }}
+          >
             ИЛИ ПРОСТО ВСТАВЬТЕ ССЫЛКУ
           </Text>
           <Text fz="sm" c="dimmed" mb="xs">
-            В WordPress, Notion, Discourse и мессенджерах достаточно вставить ссылку на
-            сниппет — виджет появится сам, без кода. Ссылка та же, что выше.
+            В WordPress, Notion, Discourse и мессенджерах достаточно вставить
+            ссылку на сниппет — виджет появится сам, без кода. Ссылка та же, что
+            выше.
           </Text>
           <Group gap="sm" wrap="nowrap">
-            <TextInput value={shareUrl} readOnly style={{ flex: 1 }} ff="monospace" />
+            <TextInput
+              value={shareUrl}
+              readOnly
+              style={{ flex: 1 }}
+              ff="monospace"
+            />
             <Button
               variant="light"
               disabled={!shared}

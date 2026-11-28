@@ -87,6 +87,17 @@ describe('абсолютные ссылки', () => {
       'https://runit.hexlet.ru/embed/s/aB3xK9?theme=dark&height=520',
     );
   });
+
+  test('тумблеры модалки уезжают флагами 1/0, как ждёт виджет', () => {
+    vi.stubEnv('VITE_PUBLIC_BASE_URL', 'https://runit.hexlet.ru');
+    const url = embedUrl(
+      { shortCode: 'aB3xK9' },
+      { theme: 'dark', output: true, readonly: false, autorun: true },
+    );
+    expect(url).toBe(
+      'https://runit.hexlet.ru/embed/s/aB3xK9?theme=dark&output=1&readonly=0&autorun=1',
+    );
+  });
 });
 
 describe('код для вставки', () => {

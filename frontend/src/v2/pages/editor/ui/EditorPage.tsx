@@ -17,7 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import MonacoEditor, { type OnMount } from '@monaco-editor/react';
 
 import { useTRPCClient } from '../../../shared/api';
-import { useEditorPrefs } from '../../../shared/lib';
+import { monacoLanguage, useEditorPrefs } from '../../../shared/lib';
 import { editorColors, langMeta, runtimeLabel } from '../../../shared/theme';
 import { useSession } from '../../../entities/user';
 
@@ -31,7 +31,6 @@ import {
   FILE_NAME_BY_LANGUAGE,
   STARTER_CODE,
   SAVE_STATUS_META,
-  monacoLanguage,
   useSaveHotkey,
   useSnippetSave,
 } from '..';

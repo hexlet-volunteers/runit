@@ -24,3 +24,4 @@ export {
   fileExtension,
   snippetFileName,
 } from './languageFiles';
+export { monacoLanguage } from './monacoLanguage';
